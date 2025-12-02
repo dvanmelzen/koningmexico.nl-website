@@ -420,7 +420,6 @@ section {
    ======================================== */
 .rangorde {
     background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%);
-    color: var(--color-white);
 }
 
 .rangorde h2,
