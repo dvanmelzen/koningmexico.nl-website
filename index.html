@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,58 +21,95 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes diceFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .dice-float { animation: diceFloat 3s ease-in-out infinite; }
+        .dice-float:nth-child(2) { animation-delay: 0.5s; }
+        .pulse-anim { animation: pulse 2s ease-in-out infinite; }
+    </style>
     <link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
-<body>
+<body class="font-body bg-cream-light text-brown-dark leading-relaxed">
     <!-- Header -->
-    <header class="site-header">
-        <div class="container">
-            <div class="logo-container">
-                <img src="assets/logo.png" alt="Koning Mexico Logo" class="logo">
+    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-8 flex justify-between items-center max-w-7xl">
+            <div class="flex-shrink-0">
+                <img src="assets/logo.png" alt="Koning Mexico Logo" class="h-15 w-auto">
             </div>
-            <nav class="main-nav" id="main-navigation">
-                <a href="#intro">Over Mexico</a>
-                <a href="#rangorde">Rangorde</a>
-                <a href="#spelverloop">Spelverloop</a>
+            <nav id="main-navigation" class="hidden md:flex gap-8">
+                <a href="#intro" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">Over Mexico</a>
+                <a href="#rangorde" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">Rangorde</a>
+                <a href="#spelverloop" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">Spelverloop</a>
             </nav>
-            <button class="mobile-menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="main-navigation">
-                <span></span>
-                <span></span>
-                <span></span>
+            <button class="mobile-menu-toggle md:hidden flex flex-col gap-1 p-2" aria-label="Menu" aria-expanded="false" aria-controls="main-navigation">
+                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
+                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
+                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
             </button>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <img src="assets/logo.png" alt="Koning Mexico" class="hero-logo">
-            <h1>Mexico</h1>
-            <p class="hero-subtitle">Het snelste, gemeenste en meest verslavende dobbelspel</p>
-            <p class="hero-description">
+    <section class="relative bg-gradient-to-br from-red via-red-light to-gold-dark text-white py-16 md:py-24 text-center overflow-hidden" id="home">
+        <div class="relative z-10">
+            <img src="assets/logo.png" alt="Koning Mexico" class="w-48 md:w-52 h-auto mx-auto mb-8 drop-shadow-lg">
+            <h1 class="font-heading text-5xl md:text-7xl font-bold mb-4 drop-shadow-lg">Mexico</h1>
+            <p class="text-xl md:text-2xl font-semibold mb-6 text-gold-light">Het snelste, gemeenste en meest verslavende dobbelspel</p>
+            <p class="text-lg md:text-xl max-w-2xl mx-auto mb-12 px-4 opacity-95">
                 Een spel van risico, lef en psychologie. Hoe ver durf je te gooien, en hoeveel kansen gun je de rest?
             </p>
-            <a href="#intro" class="cta-button">Leer het spel</a>
+            <a href="#intro" class="inline-block bg-gradient-to-r from-gold to-gold-light text-brown-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">Leer het spel</a>
         </div>
-        <div class="hero-decoration">
-            <div class="dice-display">
-                <div class="die">⚁</div>
-                <div class="die">⚀</div>
-            </div>
+        <div class="flex justify-center gap-8 mt-12">
+            <div class="dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚁</div>
+            <div class="dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚀</div>
         </div>
     </section>
 
     <!-- Intro Section -->
-    <section class="intro" id="intro">
-        <div class="container">
-            <h2>Wat is Mexico?</h2>
-            <p class="intro-text">
+    <section class="py-16 bg-white" id="intro">
+        <div class="container mx-auto px-8 max-w-5xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-8">Wat is Mexico?</h2>
+            <p class="text-xl text-center mb-6 max-w-4xl mx-auto">
                 In Mexico probeer je zo lang mogelijk in het spel te blijven door geen punten te verliezen.
-                Elke ronde eindigt iemand onderaan — en die moet draaien. Maar let op: <strong class="mexico-highlight">Mexico (21)</strong>
+                Elke ronde eindigt iemand onderaan — en die moet draaien. Maar let op: <strong class="text-red text-xl font-bold">Mexico (21)</strong>
                 is de koning der worpen en kan de straf enorm verhogen.
             </p>
-            <p class="intro-text">
+            <p class="text-xl text-center max-w-4xl mx-auto">
                 Wat Mexico zo leuk maakt, is dat het overal nét anders wordt gespeeld. Er bestaan tientallen huisregels
                 en varianten. Op deze site vind je de basis, onze huisvariant, en een overzicht van populaire
                 spelvarianten zodat je makkelijk kunt kiezen wat bij jullie tafel past.
@@ -81,84 +118,78 @@
     </section>
 
     <!-- Benodigdheden Section -->
-    <section class="benodigdheden" id="benodigdheden">
-        <div class="container">
-            <h2>Wat heb je nodig?</h2>
-            <div class="requirements-grid">
-                <div class="requirement-card">
-                    <div class="icon">🥃</div>
-                    <h3>1 Dobbelbeker</h3>
-                    <p>Voor het schudden en verbergen van je worp</p>
+    <section class="py-16 bg-gradient-to-br from-cream to-cream-light" id="benodigdheden">
+        <div class="container mx-auto px-8 max-w-7xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-12">Wat heb je nodig?</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                    <div class="text-5xl mb-4">🥃</div>
+                    <h3 class="font-heading text-xl font-bold text-green mb-2">1 Dobbelbeker</h3>
+                    <p class="text-sm text-brown-medium">Voor het schudden en verbergen van je worp</p>
                 </div>
-                <div class="requirement-card">
-                    <div class="icon">🎲</div>
-                    <h3>2 Dobbelstenen</h3>
-                    <p>Zeskantige dobbelstenen (standaard)</p>
+                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                    <div class="text-5xl mb-4">🎲</div>
+                    <h3 class="font-heading text-xl font-bold text-green mb-2">2 Dobbelstenen</h3>
+                    <p class="text-sm text-brown-medium">Zeskantige dobbelstenen (standaard)</p>
                 </div>
-                <div class="requirement-card">
-                    <div class="icon">⚫</div>
-                    <h3>Draaistenen</h3>
-                    <p>Per speler een draaisteen om de punten bij te houden</p>
+                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                    <div class="text-5xl mb-4">⚫</div>
+                    <h3 class="font-heading text-xl font-bold text-green mb-2">Draaistenen</h3>
+                    <p class="text-sm text-brown-medium">Per speler een draaisteen om de punten bij te houden</p>
                 </div>
-                <div class="requirement-card">
-                    <div class="icon">6️⃣</div>
-                    <h3>Startpunten</h3>
-                    <p>Elke speler begint met 6 punten</p>
+                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                    <div class="text-5xl mb-4">6️⃣</div>
+                    <h3 class="font-heading text-xl font-bold text-green mb-2">Startpunten</h3>
+                    <p class="text-sm text-brown-medium">Elke speler begint met 6 punten</p>
                 </div>
-                <div class="requirement-card">
-                    <div class="icon">💰</div>
-                    <h3>Inzet (optioneel)</h3>
-                    <p>Geld, tokens of rondje drinken als de pot</p>
+                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                    <div class="text-5xl mb-4">💰</div>
+                    <h3 class="font-heading text-xl font-bold text-green mb-2">Inzet (optioneel)</h3>
+                    <p class="text-sm text-brown-medium">Geld, tokens of rondje drinken als de pot</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Doel Section -->
-    <section class="doel">
-        <div class="container">
-            <h2>Doel van het spel</h2>
-            <div class="goal-content">
-                <div class="goal-text">
-                    <ul class="goal-list">
-                        <li>Blijf als <strong>laatste speler over</strong></li>
-                        <li>Na elke ronde moet de speler met de <strong>laagste score draaien</strong></li>
-                        <li>Bij <strong>0 punten</strong> lig je eruit</li>
-                    </ul>
-                </div>
-                <div class="goal-visual">
-                    <div class="crown-icon">👑</div>
-                </div>
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-8 max-w-5xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-12">Doel van het spel</h2>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                <ul class="space-y-4 flex-1">
+                    <li class="p-4 bg-cream-light border-l-4 border-gold rounded-lg">Blijf als <strong>laatste speler over</strong></li>
+                    <li class="p-4 bg-cream-light border-l-4 border-gold rounded-lg">Na elke ronde moet de speler met de <strong>laagste score draaien</strong></li>
+                    <li class="p-4 bg-cream-light border-l-4 border-gold rounded-lg">Bij <strong>0 punten</strong> lig je eruit</li>
+                </ul>
+                <div class="text-8xl md:text-9xl pulse-anim">👑</div>
             </div>
         </div>
     </section>
 
     <!-- Inzet Section -->
-    <section class="inzet">
-        <div class="container">
-            <h2>Mexico als Kroegspel 🍺</h2>
-            <p class="section-intro">
+    <section class="py-16 bg-gradient-to-br from-gold-dark via-gold to-gold-light text-brown-dark">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center mb-6">Mexico als Kroegspel 🍺</h2>
+            <p class="text-xl text-center max-w-3xl mx-auto mb-12 italic">
                 <strong>Mexico is een écht kroegspel!</strong> Vergeet niet dat je hier twee afspraken over kunt maken:
             </p>
-
-            <div class="inzet-options">
-                <div class="inzet-card">
-                    <div class="inzet-icon">🍻</div>
-                    <h3>Rondje drinken</h3>
-                    <p>De verliezer betaalt een rondje voor de hele groep. Simpel en sociaal!</p>
+            <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div class="bg-white/95 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all">
+                    <div class="text-6xl text-center mb-6">🍻</div>
+                    <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">Rondje drinken</h3>
+                    <p class="text-center text-lg">De verliezer betaalt een rondje voor de hele groep. Simpel en sociaal!</p>
                 </div>
-
-                <div class="inzet-card highlight">
-                    <div class="inzet-icon">💰</div>
-                    <h3>De Pot (meest gangbaar)</h3>
-                    <p>
+                <div class="bg-white/95 p-8 rounded-xl shadow-xl border-3 border-gold-dark hover:shadow-2xl hover:-translate-y-2 transition-all">
+                    <div class="text-6xl text-center mb-6">💰</div>
+                    <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">De Pot (meest gangbaar)</h3>
+                    <p class="text-center text-lg mb-6">
                         Voor de regels zoals op deze site: <strong>elke ronde begint met inzetten</strong>, niet met voorgooien.
                         Iedere speler zet geld of tokens in de pot aan het begin van de ronde.
                     </p>
-                    <ul class="pot-details">
-                        <li>Dit kan <strong>€2, €10, €50</strong> zijn, of tokens uit een pokerset</li>
-                        <li>Zolang alle spelers maar akkoord zijn met de inzet</li>
-                        <li><strong>De winnaar pakt de pot</strong></li>
+                    <ul class="space-y-2 bg-cream-light p-4 rounded-lg border-l-4 border-gold-dark">
+                        <li class="flex items-start gap-2"><span>💎</span> Dit kan <strong>€2, €10, €50</strong> zijn, of tokens uit een pokerset</li>
+                        <li class="flex items-start gap-2"><span>💎</span> Zolang alle spelers maar akkoord zijn met de inzet</li>
+                        <li class="flex items-start gap-2"><span>💎</span> <strong>De winnaar pakt de pot</strong></li>
                     </ul>
                 </div>
             </div>
@@ -166,75 +197,75 @@
     </section>
 
     <!-- Rangorde Section -->
-    <section class="rangorde" id="rangorde">
-        <div class="container">
-            <h2>Worpen en rangorde</h2>
-            <p class="section-intro">Je maakt altijd een tweecijferig getal met het <strong>hoogste cijfer vooraan</strong> (3 en 5 = 53)</p>
+    <section class="py-16 bg-gradient-to-br from-green to-green-light" id="rangorde">
+        <div class="container mx-auto px-8 max-w-5xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-white mb-6">Worpen en rangorde</h2>
+            <p class="text-xl text-center text-white mb-12 max-w-3xl mx-auto">
+                Je maakt altijd een tweecijferig getal met het <strong>hoogste cijfer vooraan</strong> (3 en 5 = 53)
+            </p>
 
-            <div class="rangorde-list">
-                <!-- Mexico -->
-                <div class="rangorde-item mexico-special">
-                    <div class="rank-badge">👑</div>
-                    <div class="rank-info">
-                        <h3>Mexico (21)</h3>
-                        <p>De hoogste worp - één en twee</p>
-                        <div class="dice-example">
-                            <span class="die-mini">⚁</span>
-                            <span class="die-mini">⚀</span>
-                        </div>
+            <!-- Mexico -->
+            <div class="bg-gradient-to-r from-gold-light to-gold p-6 rounded-xl mb-6 flex items-center gap-6 shadow-xl border-3 border-gold-dark">
+                <div class="text-5xl">👑</div>
+                <div class="flex-1">
+                    <h3 class="font-heading text-2xl font-bold text-brown-dark mb-2">Mexico (21)</h3>
+                    <p class="text-brown-medium mb-2">De hoogste worp - één en twee</p>
+                    <div class="flex gap-2">
+                        <span class="text-2xl bg-white px-2 py-1 rounded shadow">⚁</span>
+                        <span class="text-2xl bg-white px-2 py-1 rounded shadow">⚀</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Dubbels -->
-                <div class="rangorde-category">
-                    <h4>Dubbels (als honderden)</h4>
-                    <div class="doubles-grid">
-                        <div class="double-item">
-                            <span class="die-mini">⚅⚅</span>
-                            <span class="value">600</span>
-                        </div>
-                        <div class="double-item">
-                            <span class="die-mini">⚄⚄</span>
-                            <span class="value">500</span>
-                        </div>
-                        <div class="double-item">
-                            <span class="die-mini">⚃⚃</span>
-                            <span class="value">400</span>
-                        </div>
-                        <div class="double-item">
-                            <span class="die-mini">⚂⚂</span>
-                            <span class="value">300</span>
-                        </div>
-                        <div class="double-item">
-                            <span class="die-mini">⚁⚁</span>
-                            <span class="value">200</span>
-                        </div>
-                        <div class="double-item">
-                            <span class="die-mini">⚀⚀</span>
-                            <span class="value">100</span>
-                        </div>
+            <!-- Dubbels -->
+            <div class="bg-white/95 p-6 rounded-xl mb-6 shadow-lg">
+                <h4 class="font-heading text-xl font-bold text-green mb-4">Dubbels (als honderden)</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚅⚅</span>
+                        <span class="font-bold text-gold-dark text-lg">600</span>
+                    </div>
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚄⚄</span>
+                        <span class="font-bold text-gold-dark text-lg">500</span>
+                    </div>
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚃⚃</span>
+                        <span class="font-bold text-gold-dark text-lg">400</span>
+                    </div>
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚂⚂</span>
+                        <span class="font-bold text-gold-dark text-lg">300</span>
+                    </div>
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚁⚁</span>
+                        <span class="font-bold text-gold-dark text-lg">200</span>
+                    </div>
+                    <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚀⚀</span>
+                        <span class="font-bold text-gold-dark text-lg">100</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Gewone worpen -->
-                <div class="rangorde-category">
-                    <h4>Gewone worpen (hoogste vooraan)</h4>
-                    <p class="range-description">Van hoog naar laag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31</p>
-                    <div class="normal-examples">
-                        <div class="normal-item">
-                            <span class="die-mini">⚅⚄</span>
-                            <span class="value">65</span>
-                        </div>
-                        <div class="arrow">→</div>
-                        <div class="normal-item">
-                            <span class="die-mini">⚅⚃</span>
-                            <span class="value">64</span>
-                        </div>
-                        <div class="arrow">→</div>
-                        <div class="normal-item">
-                            <span class="die-mini">⚂⚀</span>
-                            <span class="value">31</span>
-                        </div>
+            <!-- Gewone worpen -->
+            <div class="bg-white/95 p-6 rounded-xl shadow-lg">
+                <h4 class="font-heading text-xl font-bold text-green mb-4">Gewone worpen (hoogste vooraan)</h4>
+                <p class="italic text-brown-medium mb-4">Van hoog naar laag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31</p>
+                <div class="flex flex-wrap items-center justify-center gap-4">
+                    <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚅⚄</span>
+                        <span class="font-bold text-gold-dark text-lg">65</span>
+                    </div>
+                    <span class="text-2xl text-gold-dark">→</span>
+                    <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚅⚃</span>
+                        <span class="font-bold text-gold-dark text-lg">64</span>
+                    </div>
+                    <span class="text-2xl text-gold-dark">→</span>
+                    <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
+                        <span class="text-2xl">⚂⚀</span>
+                        <span class="font-bold text-gold-dark text-lg">31</span>
                     </div>
                 </div>
             </div>
@@ -242,90 +273,85 @@
     </section>
 
     <!-- Spelverloop Section -->
-    <section class="spelverloop" id="spelverloop">
-        <div class="container">
-            <h2>Spelverloop - Onze Variant</h2>
-            <p class="section-intro">Het spel bestaat uit vier fases per ronde</p>
+    <section class="py-16 bg-white" id="spelverloop">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-6">Spelverloop - Onze Variant</h2>
+            <p class="text-xl text-center mb-12 max-w-3xl mx-auto">Het spel bestaat uit vier fases per ronde</p>
 
-            <div class="phases">
+            <div class="space-y-8">
                 <!-- Fase 1 -->
-                <div class="phase-card highlight">
-                    <div class="phase-number">1</div>
-                    <h3>Inzetten</h3>
-                    <div class="phase-content">
-                        <p><strong>Elke ronde begint met inzetten in de pot.</strong></p>
-                        <ul>
-                            <li>Alle spelers zetten hun afgesproken bedrag in (bijv. €2, €5, €10)</li>
-                            <li>Of: gebruik tokens uit een pokerset</li>
-                            <li>Zorg dat iedereen het eens is over de inzet vóór het spel begint</li>
-                            <li>De winnaar van de ronde pakt de volledige pot</li>
-                        </ul>
-                    </div>
+                <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
+                    <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">1</div>
+                    <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Inzetten</h3>
+                    <p class="mb-4"><strong>Elke ronde begint met inzetten in de pot.</strong></p>
+                    <ul class="space-y-2 ml-6 list-disc">
+                        <li>Alle spelers zetten hun afgesproken bedrag in (bijv. €2, €5, €10)</li>
+                        <li>Of: gebruik tokens uit een pokerset</li>
+                        <li>Zorg dat iedereen het eens is over de inzet vóór het spel begint</li>
+                        <li>De winnaar van de ronde pakt de volledige pot</li>
+                    </ul>
                 </div>
 
                 <!-- Fase 2 -->
-                <div class="phase-card">
-                    <div class="phase-number">2</div>
-                    <h3>Voorgooien</h3>
-                    <div class="phase-content">
-                        <ul>
-                            <li>De <strong>verliezer van de vorige ronde</strong> is de voorgooier</li>
-                            <li>In de allereerste ronde gooit iedereen <strong>blind 1x</strong> (beker dicht)</li>
-                            <li>De voorgooier mag <strong>maximaal 3 keer</strong> gooien</li>
-                            <li>Hoeveel hij gooit bepaalt de worplimiet voor iedereen:</li>
-                        </ul>
-                        <div class="throw-limits">
-                            <div class="limit-item">
-                                <span class="limit-number">1</span> worp → iedereen precies 1 worp
-                            </div>
-                            <div class="limit-item">
-                                <span class="limit-number">2</span> worpen → iedereen max 2 worpen
-                            </div>
-                            <div class="limit-item">
-                                <span class="limit-number">3</span> worpen → iedereen max 3 worpen
-                            </div>
+                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
+                    <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">2</div>
+                    <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Voorgooien</h3>
+                    <ul class="space-y-2 ml-6 list-disc mb-4">
+                        <li>De <strong>verliezer van de vorige ronde</strong> is de voorgooier</li>
+                        <li>In de allereerste ronde gooit iedereen <strong>blind 1x</strong> (beker dicht)</li>
+                        <li>De voorgooier mag <strong>maximaal 3 keer</strong> gooien</li>
+                        <li>Hoeveel hij gooit bepaalt de worplimiet voor iedereen:</li>
+                    </ul>
+                    <div class="bg-white p-4 rounded-lg space-y-2">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 bg-gold rounded-full flex items-center justify-center text-white font-bold">1</span>
+                            <span>worp → iedereen precies 1 worp</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 bg-gold rounded-full flex items-center justify-center text-white font-bold">2</span>
+                            <span>worpen → iedereen max 2 worpen</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 bg-gold rounded-full flex items-center justify-center text-white font-bold">3</span>
+                            <span>worpen → iedereen max 3 worpen</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Fase 3 -->
-                <div class="phase-card highlight">
-                    <div class="phase-number">3</div>
-                    <h3>De Ronde Zelf</h3>
-                    <div class="phase-content">
-                        <ul>
-                            <li>Iedereen gooit om een zo <strong>hoog mogelijk resultaat</strong> neer te zetten</li>
-                            <li>Na afloop ligt er een reeks eindscores op tafel</li>
-                        </ul>
-                        <div class="lives-penalty">
-                            <h4>⚫ Draaien</h4>
-                            <p>De <strong>laagste eindscore</strong> moet draaien (punten verliezen)</p>
-                            <p>Elke <strong class="mexico-highlight">Mexico (21)</strong> die in fase 2 is gegooid verhoogt de straf met 2 punten:</p>
-                            <div class="penalty-scale">
-                                <div class="penalty-item">1× Mexico → <strong>2 punten</strong></div>
-                                <div class="penalty-item">2× Mexico → <strong>4 punten</strong></div>
-                                <div class="penalty-item">3× Mexico → <strong>6 punten</strong></div>
-                            </div>
+                <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
+                    <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">3</div>
+                    <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">De Ronde Zelf</h3>
+                    <ul class="space-y-2 ml-6 list-disc mb-6">
+                        <li>Iedereen gooit om een zo <strong>hoog mogelijk resultaat</strong> neer te zetten</li>
+                        <li>Na afloop ligt er een reeks eindscores op tafel</li>
+                    </ul>
+                    <div class="bg-white p-6 rounded-lg border-2 border-red-light">
+                        <h4 class="font-bold text-lg text-red mb-3">⚫ Draaien</h4>
+                        <p class="mb-3">De <strong>laagste eindscore</strong> moet draaien (punten verliezen)</p>
+                        <p class="mb-4">Elke <strong class="text-red text-lg">Mexico (21)</strong> die in fase 2 is gegooid verhoogt de straf met 2 punten:</p>
+                        <div class="space-y-2">
+                            <div class="bg-cream-light p-3 rounded-lg border-l-3 border-red">1× Mexico → <strong>2 punten</strong></div>
+                            <div class="bg-cream-light p-3 rounded-lg border-l-3 border-red">2× Mexico → <strong>4 punten</strong></div>
+                            <div class="bg-cream-light p-3 rounded-lg border-l-3 border-red">3× Mexico → <strong>6 punten</strong></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Fase 4 -->
-                <div class="phase-card">
-                    <div class="phase-number">4</div>
-                    <h3>Overgooien (bij vastloper)</h3>
-                    <div class="phase-content">
-                        <div class="info-box">
-                            <strong>Vastloper =</strong> het laagste getal ligt minimaal 2× op tafel
-                        </div>
-                        <ul>
-                            <li>Dan wordt er <strong>overgegooid</strong> om te bepalen wie uiteindelijk laagste is</li>
-                            <li>Mexico in fase 3 <strong>telt niet mee</strong> voor extra straflevens, maar blijft wel hoogste worp</li>
-                            <li>Fase 3 bepaalt dus alleen de <strong>tie-breaker</strong></li>
-                        </ul>
-                        <div class="special-case">
-                            <strong>1 tegen 1 eindfase:</strong> Als beide spelers 21 gooien, is dat een vastloper → fase 3
-                        </div>
+                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
+                    <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">4</div>
+                    <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Overgooien (bij vastloper)</h3>
+                    <div class="bg-white p-4 rounded-lg border-l-3 border-gold mb-4">
+                        <strong>Vastloper =</strong> het laagste getal ligt minimaal 2× op tafel
+                    </div>
+                    <ul class="space-y-2 ml-6 list-disc mb-4">
+                        <li>Dan wordt er <strong>overgegooid</strong> om te bepalen wie uiteindelijk laagste is</li>
+                        <li>Mexico in fase 3 <strong>telt niet mee</strong> voor extra straflevens, maar blijft wel hoogste worp</li>
+                        <li>Fase 3 bepaalt dus alleen de <strong>tie-breaker</strong></li>
+                    </ul>
+                    <div class="bg-white p-4 rounded-lg border-l-3 border-gold">
+                        <strong>1 tegen 1 eindfase:</strong> Als beide spelers 21 gooien, is dat een vastloper → fase 3
                     </div>
                 </div>
             </div>
@@ -333,35 +359,35 @@
     </section>
 
     <!-- Optionele Regels Section -->
-    <section class="optionele-regels">
-        <div class="container">
-            <h2>Optionele Huisregels</h2>
-            <p class="section-intro">
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-6">Optionele Huisregels</h2>
+            <p class="text-xl text-center italic mb-12 max-w-3xl mx-auto">
                 Deze regels moeten vooraf worden afgesproken tussen alle spelers:
             </p>
 
-            <div class="rules-grid">
-                <div class="rule-card">
-                    <div class="rule-icon">💎</div>
-                    <h3>Winnaar van 6 = Dubbele Pot</h3>
-                    <p class="rule-description">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
+                    <div class="text-5xl text-center mb-6">💎</div>
+                    <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">Winnaar van 6 = Dubbele Pot</h3>
+                    <p class="text-lg text-center mb-6">
                         Als iemand het spel wint terwijl hij nog op zijn <strong>startpunten (6) staat</strong>
                         met zijn draaisteen, dan moet de pot <strong>verdubbeld worden</strong> door de andere spelers.
                     </p>
-                    <div class="rule-example">
-                        <strong>Voorbeeld:</strong> Je wint zonder te draaien → pot van €20 wordt €40
+                    <div class="bg-white p-4 rounded-lg border-l-3 border-gold-dark">
+                        <strong class="text-gold-dark">Voorbeeld:</strong> Je wint zonder te draaien → pot van €20 wordt €40
                     </div>
                 </div>
 
-                <div class="rule-card">
-                    <div class="rule-icon">🎲</div>
-                    <h3>Dobbelsteen van Tafel = Draaien</h3>
-                    <p class="rule-description">
+                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
+                    <div class="text-5xl text-center mb-6">🎲</div>
+                    <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">Dobbelsteen van Tafel = Draaien</h3>
+                    <p class="text-lg text-center mb-6">
                         Een dobbelsteen van tafel laten vallen betekent <strong>het spel verhinderen</strong>.
                         Voor straf moet je <strong>1× draaien</strong> (1 punt verliezen).
                     </p>
-                    <div class="rule-example">
-                        <strong>Let op:</strong> Het spel gaat ondertussen gewoon door, dit betekent NIET het einde van de ronde.
+                    <div class="bg-white p-4 rounded-lg border-l-3 border-gold-dark">
+                        <strong class="text-gold-dark">Let op:</strong> Het spel gaat ondertussen gewoon door, dit betekent NIET het einde van de ronde.
                     </div>
                 </div>
             </div>
@@ -369,57 +395,54 @@
     </section>
 
     <!-- Waarom Leuk Section -->
-    <section class="waarom-leuk">
-        <div class="container">
-            <h2>Waarom dit spel zo leuk is</h2>
-            <div class="reason-content">
-                <p class="reason-text">
-                    Mexico is <strong>geen puur geluksspel</strong>. De voorgooier heeft macht: hij zet de lat,
-                    én bepaalt hoeveel kansen de rest krijgt.
-                </p>
-                <p class="reason-text">
-                    Daardoor ontstaat <strong>spanning</strong>: ga je door om te verbeteren, of stop je vroeg
-                    om anderen krap te houden? Elke ronde voelt als een mini-pokerhand met dobbelstenen.
-                </p>
-                <div class="strategy-points">
-                    <div class="strategy-item">
-                        <span class="icon">🎯</span>
-                        <strong>Strategie</strong> - Wanneer stop je, wanneer gooi je door?
-                    </div>
-                    <div class="strategy-item">
-                        <span class="icon">⚡</span>
-                        <strong>Macht</strong> - Als voorgooier bepaal jij het tempo
-                    </div>
-                    <div class="strategy-item">
-                        <span class="icon">🧠</span>
-                        <strong>Psychologie</strong> - Bluffen en risico's inschatten
-                    </div>
+    <section class="py-16 bg-gradient-to-br from-red to-red-light text-white">
+        <div class="container mx-auto px-8 max-w-5xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold text-center mb-12">Waarom dit spel zo leuk is</h2>
+            <p class="text-xl text-center mb-6 max-w-3xl mx-auto">
+                Mexico is <strong>geen puur geluksspel</strong>. De voorgooier heeft macht: hij zet de lat,
+                én bepaalt hoeveel kansen de rest krijgt.
+            </p>
+            <p class="text-xl text-center mb-12 max-w-3xl mx-auto">
+                Daardoor ontstaat <strong>spanning</strong>: ga je door om te verbeteren, of stop je vroeg
+                om anderen krap te houden? Elke ronde voelt als een mini-pokerhand met dobbelstenen.
+            </p>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                    <div class="text-5xl mb-4">🎯</div>
+                    <div class="font-bold text-gold-dark text-xl mb-2">Strategie</div>
+                    <p>Wanneer stop je, wanneer gooi je door?</p>
+                </div>
+                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                    <div class="text-5xl mb-4">⚡</div>
+                    <div class="font-bold text-gold-dark text-xl mb-2">Macht</div>
+                    <p>Als voorgooier bepaal jij het tempo</p>
+                </div>
+                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                    <div class="text-5xl mb-4">🧠</div>
+                    <div class="font-bold text-gold-dark text-xl mb-2">Psychologie</div>
+                    <p>Bluffen en risico's inschatten</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-content">
-                <h2>Klaar om te spelen?</h2>
-                <p class="cta-text">
-                    Kies een variant, pak een beker, en speel.<br>
-                    <strong>Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.</strong>
-                </p>
-                <a href="#home" class="cta-button secondary">Terug naar boven</a>
-            </div>
+    <section class="py-16 bg-gradient-to-br from-gold-dark via-gold to-gold-light text-brown-dark text-center">
+        <div class="container mx-auto px-8 max-w-4xl">
+            <h2 class="font-heading text-4xl md:text-5xl font-bold mb-6">Klaar om te spelen?</h2>
+            <p class="text-xl mb-8">
+                Kies een variant, pak een beker, en speel.<br>
+                <strong class="text-2xl">Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.</strong>
+            </p>
+            <a href="#home" class="inline-block bg-white text-gold-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">Terug naar boven</a>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="site-footer">
-        <div class="container">
-            <div class="footer-content">
-                <img src="assets/logo.png" alt="Koning Mexico" class="footer-logo">
-                <p>&copy; 2025 Koning Mexico. Speel verantwoord, geniet maximaal.</p>
-            </div>
+    <footer class="bg-brown-dark text-white py-12 text-center">
+        <div class="container mx-auto px-8">
+            <img src="assets/logo.png" alt="Koning Mexico" class="w-32 h-auto mx-auto mb-4 opacity-90">
+            <p class="opacity-80">&copy; 2025 Koning Mexico. Speel verantwoord, geniet maximaal.</p>
         </div>
     </footer>
 

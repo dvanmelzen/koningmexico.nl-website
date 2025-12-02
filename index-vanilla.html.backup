@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leer het verslavende dobbelspel Mexico (Mexxen) spelen. Complete spelregels, rangorde, fases en populaire varianten. Simpel te leren, tactisch om te meesteren!">
+    <meta name="keywords" content="mexico spel, mexxen, dobbelspel, spelregels mexico, dobbelstenen spel, koning mexico">
+    <meta name="theme-color" content="#0D5E3A">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Koning Mexico | Het Dobbelspel Mexxen">
+    <meta property="og:description" content="Leer het verslavende dobbelspel Mexico (Mexxen) spelen. Complete spelregels, rangorde en varianten.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://koningmexico.nl">
+    <meta property="og:image" content="https://koningmexico.nl/assets/og-image.jpg">
+
+    <title>Koning Mexico | Het Dobbelspel Mexxen - Spelregels en Varianten</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <div class="logo-container">
+                <img src="assets/logo.png" alt="Koning Mexico Logo" class="logo">
+            </div>
+            <nav class="main-nav" id="main-navigation">
+                <a href="#intro">Over Mexico</a>
+                <a href="#rangorde">Rangorde</a>
+                <a href="#spelverloop">Spelverloop</a>
+            </nav>
+            <button class="mobile-menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="main-navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <img src="assets/logo.png" alt="Koning Mexico" class="hero-logo">
+            <h1>Mexico</h1>
+            <p class="hero-subtitle">Het snelste, gemeenste en meest verslavende dobbelspel</p>
+            <p class="hero-description">
+                Een spel van risico, lef en psychologie. Hoe ver durf je te gooien, en hoeveel kansen gun je de rest?
+            </p>
+            <a href="#intro" class="cta-button">Leer het spel</a>
+        </div>
+        <div class="hero-decoration">
+            <div class="dice-display">
+                <div class="die">⚁</div>
+                <div class="die">⚀</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro" id="intro">
+        <div class="container">
+            <h2>Wat is Mexico?</h2>
+            <p class="intro-text">
+                In Mexico probeer je zo lang mogelijk in het spel te blijven door geen punten te verliezen.
+                Elke ronde eindigt iemand onderaan — en die moet draaien. Maar let op: <strong class="mexico-highlight">Mexico (21)</strong>
+                is de koning der worpen en kan de straf enorm verhogen.
+            </p>
+            <p class="intro-text">
+                Wat Mexico zo leuk maakt, is dat het overal nét anders wordt gespeeld. Er bestaan tientallen huisregels
+                en varianten. Op deze site vind je de basis, onze huisvariant, en een overzicht van populaire
+                spelvarianten zodat je makkelijk kunt kiezen wat bij jullie tafel past.
+            </p>
+        </div>
+    </section>
+
+    <!-- Benodigdheden Section -->
+    <section class="benodigdheden" id="benodigdheden">
+        <div class="container">
+            <h2>Wat heb je nodig?</h2>
+            <div class="requirements-grid">
+                <div class="requirement-card">
+                    <div class="icon">🥃</div>
+                    <h3>1 Dobbelbeker</h3>
+                    <p>Voor het schudden en verbergen van je worp</p>
+                </div>
+                <div class="requirement-card">
+                    <div class="icon">🎲</div>
+                    <h3>2 Dobbelstenen</h3>
+                    <p>Zeskantige dobbelstenen (standaard)</p>
+                </div>
+                <div class="requirement-card">
+                    <div class="icon">⚫</div>
+                    <h3>Draaistenen</h3>
+                    <p>Per speler een draaisteen om de punten bij te houden</p>
+                </div>
+                <div class="requirement-card">
+                    <div class="icon">6️⃣</div>
+                    <h3>Startpunten</h3>
+                    <p>Elke speler begint met 6 punten</p>
+                </div>
+                <div class="requirement-card">
+                    <div class="icon">💰</div>
+                    <h3>Inzet (optioneel)</h3>
+                    <p>Geld, tokens of rondje drinken als de pot</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Doel Section -->
+    <section class="doel">
+        <div class="container">
+            <h2>Doel van het spel</h2>
+            <div class="goal-content">
+                <div class="goal-text">
+                    <ul class="goal-list">
+                        <li>Blijf als <strong>laatste speler over</strong></li>
+                        <li>Na elke ronde moet de speler met de <strong>laagste score draaien</strong></li>
+                        <li>Bij <strong>0 punten</strong> lig je eruit</li>
+                    </ul>
+                </div>
+                <div class="goal-visual">
+                    <div class="crown-icon">👑</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Inzet Section -->
+    <section class="inzet">
+        <div class="container">
+            <h2>Mexico als Kroegspel 🍺</h2>
+            <p class="section-intro">
+                <strong>Mexico is een écht kroegspel!</strong> Vergeet niet dat je hier twee afspraken over kunt maken:
+            </p>
+
+            <div class="inzet-options">
+                <div class="inzet-card">
+                    <div class="inzet-icon">🍻</div>
+                    <h3>Rondje drinken</h3>
+                    <p>De verliezer betaalt een rondje voor de hele groep. Simpel en sociaal!</p>
+                </div>
+
+                <div class="inzet-card highlight">
+                    <div class="inzet-icon">💰</div>
+                    <h3>De Pot (meest gangbaar)</h3>
+                    <p>
+                        Voor de regels zoals op deze site: <strong>elke ronde begint met inzetten</strong>, niet met voorgooien.
+                        Iedere speler zet geld of tokens in de pot aan het begin van de ronde.
+                    </p>
+                    <ul class="pot-details">
+                        <li>Dit kan <strong>€2, €10, €50</strong> zijn, of tokens uit een pokerset</li>
+                        <li>Zolang alle spelers maar akkoord zijn met de inzet</li>
+                        <li><strong>De winnaar pakt de pot</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rangorde Section -->
+    <section class="rangorde" id="rangorde">
+        <div class="container">
+            <h2>Worpen en rangorde</h2>
+            <p class="section-intro">Je maakt altijd een tweecijferig getal met het <strong>hoogste cijfer vooraan</strong> (3 en 5 = 53)</p>
+
+            <div class="rangorde-list">
+                <!-- Mexico -->
+                <div class="rangorde-item mexico-special">
+                    <div class="rank-badge">👑</div>
+                    <div class="rank-info">
+                        <h3>Mexico (21)</h3>
+                        <p>De hoogste worp - één en twee</p>
+                        <div class="dice-example">
+                            <span class="die-mini">⚁</span>
+                            <span class="die-mini">⚀</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dubbels -->
+                <div class="rangorde-category">
+                    <h4>Dubbels (als honderden)</h4>
+                    <div class="doubles-grid">
+                        <div class="double-item">
+                            <span class="die-mini">⚅⚅</span>
+                            <span class="value">600</span>
+                        </div>
+                        <div class="double-item">
+                            <span class="die-mini">⚄⚄</span>
+                            <span class="value">500</span>
+                        </div>
+                        <div class="double-item">
+                            <span class="die-mini">⚃⚃</span>
+                            <span class="value">400</span>
+                        </div>
+                        <div class="double-item">
+                            <span class="die-mini">⚂⚂</span>
+                            <span class="value">300</span>
+                        </div>
+                        <div class="double-item">
+                            <span class="die-mini">⚁⚁</span>
+                            <span class="value">200</span>
+                        </div>
+                        <div class="double-item">
+                            <span class="die-mini">⚀⚀</span>
+                            <span class="value">100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gewone worpen -->
+                <div class="rangorde-category">
+                    <h4>Gewone worpen (hoogste vooraan)</h4>
+                    <p class="range-description">Van hoog naar laag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31</p>
+                    <div class="normal-examples">
+                        <div class="normal-item">
+                            <span class="die-mini">⚅⚄</span>
+                            <span class="value">65</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="normal-item">
+                            <span class="die-mini">⚅⚃</span>
+                            <span class="value">64</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="normal-item">
+                            <span class="die-mini">⚂⚀</span>
+                            <span class="value">31</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Spelverloop Section -->
+    <section class="spelverloop" id="spelverloop">
+        <div class="container">
+            <h2>Spelverloop - Onze Variant</h2>
+            <p class="section-intro">Het spel bestaat uit vier fases per ronde</p>
+
+            <div class="phases">
+                <!-- Fase 1 -->
+                <div class="phase-card highlight">
+                    <div class="phase-number">1</div>
+                    <h3>Inzetten</h3>
+                    <div class="phase-content">
+                        <p><strong>Elke ronde begint met inzetten in de pot.</strong></p>
+                        <ul>
+                            <li>Alle spelers zetten hun afgesproken bedrag in (bijv. €2, €5, €10)</li>
+                            <li>Of: gebruik tokens uit een pokerset</li>
+                            <li>Zorg dat iedereen het eens is over de inzet vóór het spel begint</li>
+                            <li>De winnaar van de ronde pakt de volledige pot</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Fase 2 -->
+                <div class="phase-card">
+                    <div class="phase-number">2</div>
+                    <h3>Voorgooien</h3>
+                    <div class="phase-content">
+                        <ul>
+                            <li>De <strong>verliezer van de vorige ronde</strong> is de voorgooier</li>
+                            <li>In de allereerste ronde gooit iedereen <strong>blind 1x</strong> (beker dicht)</li>
+                            <li>De voorgooier mag <strong>maximaal 3 keer</strong> gooien</li>
+                            <li>Hoeveel hij gooit bepaalt de worplimiet voor iedereen:</li>
+                        </ul>
+                        <div class="throw-limits">
+                            <div class="limit-item">
+                                <span class="limit-number">1</span> worp → iedereen precies 1 worp
+                            </div>
+                            <div class="limit-item">
+                                <span class="limit-number">2</span> worpen → iedereen max 2 worpen
+                            </div>
+                            <div class="limit-item">
+                                <span class="limit-number">3</span> worpen → iedereen max 3 worpen
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fase 3 -->
+                <div class="phase-card highlight">
+                    <div class="phase-number">3</div>
+                    <h3>De Ronde Zelf</h3>
+                    <div class="phase-content">
+                        <ul>
+                            <li>Iedereen gooit om een zo <strong>hoog mogelijk resultaat</strong> neer te zetten</li>
+                            <li>Na afloop ligt er een reeks eindscores op tafel</li>
+                        </ul>
+                        <div class="lives-penalty">
+                            <h4>⚫ Draaien</h4>
+                            <p>De <strong>laagste eindscore</strong> moet draaien (punten verliezen)</p>
+                            <p>Elke <strong class="mexico-highlight">Mexico (21)</strong> die in fase 2 is gegooid verhoogt de straf met 2 punten:</p>
+                            <div class="penalty-scale">
+                                <div class="penalty-item">1× Mexico → <strong>2 punten</strong></div>
+                                <div class="penalty-item">2× Mexico → <strong>4 punten</strong></div>
+                                <div class="penalty-item">3× Mexico → <strong>6 punten</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fase 4 -->
+                <div class="phase-card">
+                    <div class="phase-number">4</div>
+                    <h3>Overgooien (bij vastloper)</h3>
+                    <div class="phase-content">
+                        <div class="info-box">
+                            <strong>Vastloper =</strong> het laagste getal ligt minimaal 2× op tafel
+                        </div>
+                        <ul>
+                            <li>Dan wordt er <strong>overgegooid</strong> om te bepalen wie uiteindelijk laagste is</li>
+                            <li>Mexico in fase 3 <strong>telt niet mee</strong> voor extra straflevens, maar blijft wel hoogste worp</li>
+                            <li>Fase 3 bepaalt dus alleen de <strong>tie-breaker</strong></li>
+                        </ul>
+                        <div class="special-case">
+                            <strong>1 tegen 1 eindfase:</strong> Als beide spelers 21 gooien, is dat een vastloper → fase 3
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Optionele Regels Section -->
+    <section class="optionele-regels">
+        <div class="container">
+            <h2>Optionele Huisregels</h2>
+            <p class="section-intro">
+                Deze regels moeten vooraf worden afgesproken tussen alle spelers:
+            </p>
+
+            <div class="rules-grid">
+                <div class="rule-card">
+                    <div class="rule-icon">💎</div>
+                    <h3>Winnaar van 6 = Dubbele Pot</h3>
+                    <p class="rule-description">
+                        Als iemand het spel wint terwijl hij nog op zijn <strong>startpunten (6) staat</strong>
+                        met zijn draaisteen, dan moet de pot <strong>verdubbeld worden</strong> door de andere spelers.
+                    </p>
+                    <div class="rule-example">
+                        <strong>Voorbeeld:</strong> Je wint zonder te draaien → pot van €20 wordt €40
+                    </div>
+                </div>
+
+                <div class="rule-card">
+                    <div class="rule-icon">🎲</div>
+                    <h3>Dobbelsteen van Tafel = Draaien</h3>
+                    <p class="rule-description">
+                        Een dobbelsteen van tafel laten vallen betekent <strong>het spel verhinderen</strong>.
+                        Voor straf moet je <strong>1× draaien</strong> (1 punt verliezen).
+                    </p>
+                    <div class="rule-example">
+                        <strong>Let op:</strong> Het spel gaat ondertussen gewoon door, dit betekent NIET het einde van de ronde.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waarom Leuk Section -->
+    <section class="waarom-leuk">
+        <div class="container">
+            <h2>Waarom dit spel zo leuk is</h2>
+            <div class="reason-content">
+                <p class="reason-text">
+                    Mexico is <strong>geen puur geluksspel</strong>. De voorgooier heeft macht: hij zet de lat,
+                    én bepaalt hoeveel kansen de rest krijgt.
+                </p>
+                <p class="reason-text">
+                    Daardoor ontstaat <strong>spanning</strong>: ga je door om te verbeteren, of stop je vroeg
+                    om anderen krap te houden? Elke ronde voelt als een mini-pokerhand met dobbelstenen.
+                </p>
+                <div class="strategy-points">
+                    <div class="strategy-item">
+                        <span class="icon">🎯</span>
+                        <strong>Strategie</strong> - Wanneer stop je, wanneer gooi je door?
+                    </div>
+                    <div class="strategy-item">
+                        <span class="icon">⚡</span>
+                        <strong>Macht</strong> - Als voorgooier bepaal jij het tempo
+                    </div>
+                    <div class="strategy-item">
+                        <span class="icon">🧠</span>
+                        <strong>Psychologie</strong> - Bluffen en risico's inschatten
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Klaar om te spelen?</h2>
+                <p class="cta-text">
+                    Kies een variant, pak een beker, en speel.<br>
+                    <strong>Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.</strong>
+                </p>
+                <a href="#home" class="cta-button secondary">Terug naar boven</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <img src="assets/logo.png" alt="Koning Mexico" class="footer-logo">
+                <p>&copy; 2025 Koning Mexico. Speel verantwoord, geniet maximaal.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
