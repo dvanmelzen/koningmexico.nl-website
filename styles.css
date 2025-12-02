@@ -758,6 +758,82 @@ section {
 }
 
 /* ========================================
+   Optionele Regels Section
+   ======================================== */
+.optionele-regels {
+    background-color: var(--color-white);
+}
+
+.optionele-regels h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.optionele-regels .section-intro {
+    text-align: center;
+    font-size: 1.2rem;
+    max-width: 800px;
+    margin: 0 auto var(--spacing-lg);
+    font-style: italic;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.rule-card {
+    background: var(--color-cream-light);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    border-left: 6px solid var(--color-gold);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.rule-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--color-green);
+}
+
+.rule-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.rule-card h3 {
+    color: var(--color-green);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.rule-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.rule-example {
+    background: var(--color-white);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid var(--color-gold-dark);
+    font-size: 0.95rem;
+    margin-top: var(--spacing-md);
+}
+
+.rule-example strong {
+    color: var(--color-gold-dark);
+}
+
+/* ========================================
    Waarom Leuk Section
    ======================================== */
 .waarom-leuk {
@@ -995,6 +1071,10 @@ section {
     }
 
     .inzet-options {
+        grid-template-columns: 1fr;
+    }
+
+    .rules-grid {
         grid-template-columns: 1fr;
     }
 
