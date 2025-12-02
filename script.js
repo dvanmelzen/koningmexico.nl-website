@@ -142,7 +142,9 @@
     // Header Shadow on Scroll
     // ========================================
     function initHeaderShadow() {
-        const header = document.querySelector('.site-header');
+        const header = document.querySelector('header');
+
+        if (!header) return;
 
         window.addEventListener('scroll', () => {
             if (window.scrollY > 50) {
@@ -187,7 +189,7 @@
     // ========================================
     function initMobileMenu() {
         const menuToggle = document.querySelector('.mobile-menu-toggle');
-        const nav = document.querySelector('.main-nav');
+        const nav = document.querySelector('#main-navigation');
 
         if (!menuToggle || !nav) return;
 
@@ -309,11 +311,12 @@
     // ========================================
     function initMexicoCelebration() {
         // If someone clicks on the hero logo 5 times quickly, show celebration
-        const heroLogo = document.querySelector('.hero-logo');
+        const heroLogo = document.querySelector('#home img[alt="Koning Mexico"]');
         let clickCount = 0;
         let clickTimer;
 
         if (heroLogo) {
+            heroLogo.style.cursor = 'pointer';
             heroLogo.addEventListener('click', () => {
                 clickCount++;
 
