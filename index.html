@@ -12,7 +12,7 @@
     <meta property="og:description" content="Leer het verslavende dobbelspel Mexico (Mexxen) spelen. Complete spelregels, rangorde en varianten.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://koningmexico.nl">
-    <meta property="og:image" content="https://koningmexico.nl/assets/og-image.jpg">
+    <meta property="og:image" content="https://koningmexico.nl/assets/logo-badge.png">
 
     <title>Koning Mexico | Het Dobbelspel Mexxen - Spelregels en Varianten</title>
 
@@ -20,6 +20,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,11 +95,14 @@
             <p class="text-lg md:text-xl max-w-2xl mx-auto mb-12 px-4 opacity-95">
                 Een spel van risico, lef en psychologie. Hoe ver durf je te gooien, en hoeveel kansen gun je de rest?
             </p>
-            <a href="#intro" class="inline-block bg-gradient-to-r from-gold to-gold-light text-brown-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">Leer het spel</a>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="spel.html" class="inline-block bg-white text-green px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold hover:-translate-y-1 hover:scale-105 transition-all">🎲 Speel Nu!</a>
+                <a href="#intro" class="inline-block bg-gradient-to-r from-gold to-gold-light text-brown-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">Leer de Regels</a>
+            </div>
         </div>
         <div class="flex justify-center gap-8 mt-12">
-            <div class="dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚁</div>
-            <div class="dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚀</div>
+            <div class="die dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚁</div>
+            <div class="die dice-float text-6xl md:text-7xl bg-white text-brown-dark w-20 h-20 flex items-center justify-center rounded-xl shadow-2xl">⚀</div>
         </div>
     </section>
 
@@ -122,27 +128,27 @@
         <div class="container mx-auto px-8 max-w-7xl">
             <h2 class="font-heading text-4xl md:text-5xl font-bold text-center text-gold-dark mb-12">Wat heb je nodig?</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                <div class="requirement-card bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
                     <div class="text-5xl mb-4">🥃</div>
                     <h3 class="font-heading text-xl font-bold text-green mb-2">1 Dobbelbeker</h3>
                     <p class="text-sm text-brown-medium">Voor het schudden en verbergen van je worp</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                <div class="requirement-card bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
                     <div class="text-5xl mb-4">🎲</div>
                     <h3 class="font-heading text-xl font-bold text-green mb-2">2 Dobbelstenen</h3>
                     <p class="text-sm text-brown-medium">Zeskantige dobbelstenen (standaard)</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                <div class="requirement-card bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
                     <div class="text-5xl mb-4">⚫</div>
                     <h3 class="font-heading text-xl font-bold text-green mb-2">Draaistenen</h3>
                     <p class="text-sm text-brown-medium">Per speler een draaisteen om de punten bij te houden</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                <div class="requirement-card bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
                     <div class="text-5xl mb-4">6️⃣</div>
                     <h3 class="font-heading text-xl font-bold text-green mb-2">Startpunten</h3>
                     <p class="text-sm text-brown-medium">Elke speler begint met 6 punten</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
+                <div class="requirement-card bg-white p-6 rounded-xl text-center shadow-md hover:shadow-xl hover:-translate-y-2 transition-all border-2 border-transparent hover:border-gold">
                     <div class="text-5xl mb-4">💰</div>
                     <h3 class="font-heading text-xl font-bold text-green mb-2">Inzet (optioneel)</h3>
                     <p class="text-sm text-brown-medium">Geld, tokens of rondje drinken als de pot</p>
@@ -205,66 +211,66 @@
             </p>
 
             <!-- Mexico -->
-            <div class="bg-gradient-to-r from-gold-light to-gold p-6 rounded-xl mb-6 flex items-center gap-6 shadow-xl border-3 border-gold-dark">
+            <div class="rangorde-item bg-gradient-to-r from-gold-light to-gold p-6 rounded-xl mb-6 flex items-center gap-6 shadow-xl border-3 border-gold-dark">
                 <div class="text-5xl">👑</div>
                 <div class="flex-1">
                     <h3 class="font-heading text-2xl font-bold text-brown-dark mb-2">Mexico (21)</h3>
                     <p class="text-brown-medium mb-2">De hoogste worp - één en twee</p>
                     <div class="flex gap-2">
-                        <span class="text-2xl bg-white px-2 py-1 rounded shadow">⚁</span>
-                        <span class="text-2xl bg-white px-2 py-1 rounded shadow">⚀</span>
+                        <span class="die-mini text-2xl bg-white px-2 py-1 rounded shadow">⚁</span>
+                        <span class="die-mini text-2xl bg-white px-2 py-1 rounded shadow">⚀</span>
                     </div>
                 </div>
             </div>
 
             <!-- Dubbels -->
-            <div class="bg-white/95 p-6 rounded-xl mb-6 shadow-lg">
+            <div class="rangorde-item bg-white/95 p-6 rounded-xl mb-6 shadow-lg">
                 <h4 class="font-heading text-xl font-bold text-green mb-4">Dubbels (als honderden)</h4>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚅⚅</span>
+                        <span class="die-mini text-2xl">⚅⚅</span>
                         <span class="font-bold text-gold-dark text-lg">600</span>
                     </div>
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚄⚄</span>
+                        <span class="die-mini text-2xl">⚄⚄</span>
                         <span class="font-bold text-gold-dark text-lg">500</span>
                     </div>
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚃⚃</span>
+                        <span class="die-mini text-2xl">⚃⚃</span>
                         <span class="font-bold text-gold-dark text-lg">400</span>
                     </div>
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚂⚂</span>
+                        <span class="die-mini text-2xl">⚂⚂</span>
                         <span class="font-bold text-gold-dark text-lg">300</span>
                     </div>
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚁⚁</span>
+                        <span class="die-mini text-2xl">⚁⚁</span>
                         <span class="font-bold text-gold-dark text-lg">200</span>
                     </div>
                     <div class="bg-cream-light p-3 rounded-lg text-center flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚀⚀</span>
+                        <span class="die-mini text-2xl">⚀⚀</span>
                         <span class="font-bold text-gold-dark text-lg">100</span>
                     </div>
                 </div>
             </div>
 
             <!-- Gewone worpen -->
-            <div class="bg-white/95 p-6 rounded-xl shadow-lg">
+            <div class="rangorde-item bg-white/95 p-6 rounded-xl shadow-lg">
                 <h4 class="font-heading text-xl font-bold text-green mb-4">Gewone worpen (hoogste vooraan)</h4>
                 <p class="italic text-brown-medium mb-4">Van hoog naar laag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31</p>
                 <div class="flex flex-wrap items-center justify-center gap-4">
                     <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚅⚄</span>
+                        <span class="die-mini text-2xl">⚅⚄</span>
                         <span class="font-bold text-gold-dark text-lg">65</span>
                     </div>
                     <span class="text-2xl text-gold-dark">→</span>
                     <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚅⚃</span>
+                        <span class="die-mini text-2xl">⚅⚃</span>
                         <span class="font-bold text-gold-dark text-lg">64</span>
                     </div>
                     <span class="text-2xl text-gold-dark">→</span>
                     <div class="bg-cream-light p-3 rounded-lg flex flex-col items-center gap-2">
-                        <span class="text-2xl">⚂⚀</span>
+                        <span class="die-mini text-2xl">⚂⚀</span>
                         <span class="font-bold text-gold-dark text-lg">31</span>
                     </div>
                 </div>
@@ -280,7 +286,7 @@
 
             <div class="space-y-8">
                 <!-- Fase 1 -->
-                <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
+                <div class="phase-card bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
                     <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">1</div>
                     <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Inzetten</h3>
                     <p class="mb-4"><strong>Elke ronde begint met inzetten in de pot.</strong></p>
@@ -293,7 +299,7 @@
                 </div>
 
                 <!-- Fase 2 -->
-                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
+                <div class="phase-card bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
                     <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">2</div>
                     <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Voorgooien</h3>
                     <ul class="space-y-2 ml-6 list-disc mb-4">
@@ -319,7 +325,7 @@
                 </div>
 
                 <!-- Fase 3 -->
-                <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
+                <div class="phase-card bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg relative">
                     <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">3</div>
                     <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">De Ronde Zelf</h3>
                     <ul class="space-y-2 ml-6 list-disc mb-6">
@@ -339,7 +345,7 @@
                 </div>
 
                 <!-- Fase 4 -->
-                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
+                <div class="phase-card bg-cream-light p-8 rounded-xl border-l-6 border-green shadow-lg relative">
                     <div class="absolute -top-4 left-8 w-12 h-12 bg-gradient-to-r from-gold to-gold-light rounded-full flex items-center justify-center font-heading text-xl font-bold text-brown-dark shadow-lg border-3 border-white">4</div>
                     <h3 class="font-heading text-2xl font-bold text-green mt-4 mb-4">Overgooien (bij vastloper)</h3>
                     <div class="bg-white p-4 rounded-lg border-l-3 border-gold mb-4">
@@ -367,7 +373,7 @@
             </p>
 
             <div class="grid md:grid-cols-2 gap-8">
-                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
+                <div class="variant-card bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
                     <div class="text-5xl text-center mb-6">💎</div>
                     <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">Winnaar van 6 = Dubbele Pot</h3>
                     <p class="text-lg text-center mb-6">
@@ -379,7 +385,7 @@
                     </div>
                 </div>
 
-                <div class="bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
+                <div class="variant-card bg-cream-light p-8 rounded-xl border-l-6 border-gold shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all">
                     <div class="text-5xl text-center mb-6">🎲</div>
                     <h3 class="font-heading text-2xl font-bold text-green text-center mb-4">Dobbelsteen van Tafel = Draaien</h3>
                     <p class="text-lg text-center mb-6">
@@ -407,17 +413,17 @@
                 om anderen krap te houden? Elke ronde voelt als een mini-pokerhand met dobbelstenen.
             </p>
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                <div class="strategy-item bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
                     <div class="text-5xl mb-4">🎯</div>
                     <div class="font-bold text-gold-dark text-xl mb-2">Strategie</div>
                     <p>Wanneer stop je, wanneer gooi je door?</p>
                 </div>
-                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                <div class="strategy-item bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
                     <div class="text-5xl mb-4">⚡</div>
                     <div class="font-bold text-gold-dark text-xl mb-2">Macht</div>
                     <p>Als voorgooier bepaal jij het tempo</p>
                 </div>
-                <div class="bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
+                <div class="strategy-item bg-white/95 text-brown-dark p-6 rounded-xl text-center shadow-lg">
                     <div class="text-5xl mb-4">🧠</div>
                     <div class="font-bold text-gold-dark text-xl mb-2">Psychologie</div>
                     <p>Bluffen en risico's inschatten</p>
@@ -431,10 +437,16 @@
         <div class="container mx-auto px-8 max-w-4xl">
             <h2 class="font-heading text-4xl md:text-5xl font-bold mb-6">Klaar om te spelen?</h2>
             <p class="text-xl mb-8">
-                Kies een variant, pak een beker, en speel.<br>
-                <strong class="text-2xl">Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.</strong>
+                Geen dobbelstenen bij de hand? Geen probleem!<br>
+                <strong class="text-2xl">Speel Mexico direct op je telefoon!</strong>
             </p>
-            <a href="#home" class="inline-block bg-white text-gold-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">Terug naar boven</a>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+                <a href="spel.html" class="inline-block bg-gradient-to-r from-green to-green-light text-white px-8 py-4 rounded-full font-bold text-xl shadow-xl border-3 border-green-light hover:-translate-y-1 hover:scale-105 transition-all">🎲 Speel Online</a>
+                <a href="#home" class="inline-block bg-white text-gold-dark px-8 py-3 rounded-full font-bold text-lg shadow-xl border-3 border-gold-dark hover:-translate-y-1 hover:scale-105 transition-all">↑ Terug naar boven</a>
+            </div>
+            <p class="text-sm opacity-80">
+                <em>Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.</em>
+            </p>
         </div>
     </section>
 

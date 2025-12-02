@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="nl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Speel Mexico digitaal op je telefoon. Oefen het dobbelspel zonder fysieke dobbelstenen.">
+    <meta name="theme-color" content="#0D5E3A">
+
+    <title>Speel Mexico | Koning Mexico</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+    <style>
+        /* Game-specific styles */
+        .draaisteen {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            border: 4px solid var(--color-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--color-gold-light);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            font-family: 'Cinzel', serif;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .dice.rolling {
+            animation: diceRoll 0.5s ease;
+        }
+
+        .dice-cup {
+            width: 200px;
+            height: 220px;
+            background: linear-gradient(180deg, #5D4037 0%, #3E2723 100%);
+            border-radius: 20px 20px 100px 100px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 3px solid var(--color-gold-dark);
+        }
+
+        .dice-cup::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+        }
+
+        .dice-container {
+            display: flex;
+            gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dice-cup.closed .dice-container {
+            opacity: 0.3;
+            filter: blur(8px);
+        }
+
+        .dice.hidden {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: transparent;
+            user-select: none;
+            position: relative;
+        }
+
+        .dice.hidden::after {
+            content: '?';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-gold);
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .btn-game {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.125rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .btn-game:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+            color: var(--color-brown-dark);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--color-red) 0%, var(--color-red-light) 100%);
+            color: white;
+        }
+
+        .throw-result {
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .throw-result.mexico {
+            color: var(--color-gold-light);
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        .shaking {
+            animation: shake 0.5s ease;
+        }
+
+        .game-info {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--color-gold);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Settings Panel Styles */
+        .worplimiet-btn {
+            background: white;
+            border-color: var(--color-brown-medium);
+            color: var(--color-brown-medium);
+        }
+
+        .worplimiet-btn.active {
+            background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+            border-color: var(--color-gold-dark);
+            color: var(--color-brown-dark);
+        }
+
+        .worplimiet-btn:hover:not(.active) {
+            background: var(--color-cream);
+        }
+
+        #voorgooierToggle.active,
+        #thirdThrowClosedToggle.active {
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%) !important;
+            border-color: var(--color-green) !important;
+            color: white !important;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .dice {
+                width: 70px;
+                height: 70px;
+                font-size: 2.5rem;
+            }
+
+            .dice-cup {
+                width: 180px;
+                height: 200px;
+            }
+
+            .draaisteen {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="font-body bg-gradient-to-br from-cream to-cream-light text-brown-dark min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2 text-white font-semibold">
+                <span>←</span>
+                <span>Terug naar Regels</span>
+            </a>
+            <h1 class="font-heading text-xl text-white">Speel Mexico</h1>
+            <button id="refreshBtn" class="text-white font-semibold flex items-center gap-1 hover:text-gold transition-colors" title="Nieuwe ronde starten">
+                🔄 <span class="hidden sm:inline">Reset</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Game Container -->
+    <main class="container mx-auto px-4 py-8 max-w-lg">
+
+        <!-- Game Settings Panel -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6 border-l-4 border-gold">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-green">⚙️ Spel Instellingen</h3>
+                <span id="firstRoundIndicator" class="text-xs font-bold px-3 py-1 rounded-full bg-gold text-brown-dark hidden">
+                    1e Ronde (Blind!)
+                </span>
+            </div>
+
+            <!-- Voorgooier Toggle -->
+            <div class="mb-3 pb-3 border-b border-cream">
+                <button id="voorgooierToggle" class="w-full py-2 px-4 rounded-lg font-semibold transition-all border-2" style="background: white; border-color: var(--color-brown-medium); color: var(--color-brown-medium);">
+                    👤 Ik ben de voorgooier
+                </button>
+                <p class="text-xs text-brown-medium mt-1">Je bepaalt het patroon (open/blind) voor alle spelers</p>
+
+                <!-- Voorgooier Pattern Display -->
+                <div id="patternDisplay" class="mt-2 p-2 bg-cream rounded-lg hidden">
+                    <div class="text-xs font-bold text-brown-dark mb-1">Voorgooier Patroon:</div>
+                    <div id="patternList" class="text-xs text-brown-medium flex gap-1 flex-wrap"></div>
+                </div>
+            </div>
+
+            <!-- Worplimiet Selector -->
+            <div class="mb-3 pb-3 border-b border-cream">
+                <div class="text-sm font-semibold text-brown-dark mb-2">Worplimiet:</div>
+                <div class="flex gap-2">
+                    <button class="worplimiet-btn flex-1 py-2 rounded-lg font-bold transition-all border-2" data-limit="1">1</button>
+                    <button class="worplimiet-btn flex-1 py-2 rounded-lg font-bold transition-all border-2" data-limit="2">2</button>
+                    <button class="worplimiet-btn flex-1 py-2 rounded-lg font-bold transition-all border-2 active" data-limit="3">3</button>
+                </div>
+                <p class="text-xs text-brown-medium mt-1">Max aantal worpen deze ronde</p>
+            </div>
+
+            <!-- Third Throw Closed Toggle -->
+            <div>
+                <button id="thirdThrowClosedToggle" class="w-full py-2 px-4 rounded-lg font-semibold transition-all border-2" style="background: white; border-color: var(--color-brown-medium); color: var(--color-brown-medium);">
+                    🙈 Derde worp dicht
+                </button>
+                <p class="text-xs text-brown-medium mt-1">3e worp altijd blind gooien</p>
+            </div>
+        </div>
+
+        <!-- Score Display -->
+        <div class="flex justify-center items-center gap-6 mb-8">
+            <div class="text-center">
+                <div class="text-sm font-semibold text-brown-medium mb-2">Jouw Levens</div>
+                <div class="draaisteen" id="livesDisplay">6</div>
+            </div>
+            <div class="text-center">
+                <div class="text-sm font-semibold text-brown-medium mb-2">Huidige Worp</div>
+                <div class="throw-result" id="currentThrow">--</div>
+            </div>
+        </div>
+
+        <!-- Dice Cup -->
+        <div class="flex justify-center mb-8">
+            <div class="dice-cup" id="diceCup">
+                <div class="dice-container" id="diceContainer">
+                    <div class="dice" id="dice1">⚀</div>
+                    <div class="dice" id="dice2">⚀</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Info -->
+        <div class="game-info mb-6" id="gameInfo">
+            <div class="text-lg font-bold text-green mb-2">👋 Welkom Speler!</div>
+            <p class="text-brown-medium">
+                Oefen je worpen voor het échte spel! Pas de instellingen hierboven aan om het spel te simuleren. <strong>1e ronde is altijd blind</strong> - daarna kies je zelf open of blind!
+            </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="initialButtons" class="space-y-4">
+            <button class="btn-game btn-primary w-full" id="throwOpenBtn">
+                🎲 Gooi Open
+            </button>
+            <button class="btn-game btn-secondary w-full" id="throwBlindBtn">
+                🙈 Gooi Blind
+            </button>
+        </div>
+
+        <!-- After Throw Buttons -->
+        <div id="afterThrowButtons" class="space-y-4 hidden">
+            <button class="btn-game btn-primary w-full" id="throwAgainOpenBtn">
+                👁️ Gooi Open
+            </button>
+            <button class="btn-game btn-secondary w-full" id="throwAgainBlindBtn">
+                🙈 Gooi Blind
+            </button>
+            <button class="btn-game btn-secondary w-full" id="keepBtn">
+                ✓ Laten Staan
+            </button>
+            <button class="btn-game btn-secondary w-full" id="vastBtn">
+                🎯 Vast
+            </button>
+            <button class="btn-game btn-danger w-full" id="lostBtn">
+                ❌ Verloren (-1)
+            </button>
+        </div>
+
+        <!-- After Blind Throw Buttons -->
+        <div id="blindRevealButtons" class="space-y-4 hidden">
+            <button class="btn-game btn-primary w-full" id="revealBtn">
+                👁️ Laten Zien (Onthul Worp)
+            </button>
+        </div>
+
+        <!-- Mexico Buttons (Special) -->
+        <div id="mexicoButtons" class="space-y-4 hidden">
+            <button class="btn-game btn-secondary w-full" id="keepMexicoBtn">
+                ✓ Laten Staan
+            </button>
+            <button class="btn-game btn-secondary w-full" id="vastMexicoBtn">
+                🎯 Vast (Opnieuw Gooien)
+            </button>
+            <button class="btn-game btn-primary w-full" id="wonBtn">
+                🎉 Ronde Gehaald!
+            </button>
+        </div>
+
+        <!-- Result Buttons (After "Laten Staan") -->
+        <div id="resultButtons" class="space-y-4 hidden">
+            <button class="btn-game btn-primary w-full" id="wonResultBtn">
+                🎉 Ronde Gehaald!
+            </button>
+            <button class="btn-game btn-secondary w-full" id="vastResultBtn">
+                🎯 Vast
+            </button>
+            <button class="btn-game btn-danger w-full" id="lostResultBtn">
+                ❌ Verloren (-1)
+            </button>
+        </div>
+
+        <!-- Throw Counter -->
+        <div class="text-center mt-6">
+            <div class="text-sm text-brown-medium">
+                Worpen deze ronde: <span class="font-bold text-green" id="throwCount">0</span>/<span id="maxThrowsDisplay">3</span>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="mt-8 p-4 bg-white rounded-lg border-l-4 border-gold">
+            <div class="font-bold text-green mb-2">💡 Hoe te Spelen</div>
+            <ul class="text-sm text-brown-medium space-y-1">
+                <li>• <strong>1e Ronde:</strong> Altijd blind gooien! (automatisch)</li>
+                <li>• <strong>Gooi Open:</strong> Je ziet je worp, mag opnieuw gooien</li>
+                <li>• <strong>Gooi Blind:</strong> Worp blijft verborgen, gelijk klaar!</li>
+                <li>• <strong>Laten Zien:</strong> Onthul je blinde worp</li>
+                <li>• <strong>Laten Staan:</strong> Bij open: tevreden met deze worp</li>
+                <li>• <strong>Ronde Gehaald:</strong> Je bent NIET de laagste! ✓</li>
+                <li>• <strong>Vast:</strong> Vastloper? Nog 1× extra worp</li>
+                <li>• <strong>Verloren:</strong> Jij bent de laagste (-1 leven)</li>
+                <li>• <strong>Mexico (21):</strong> De hoogste worp! 🎉</li>
+            </ul>
+            <div class="font-bold text-green mt-4 mb-2">⚙️ Instellingen</div>
+            <ul class="text-sm text-brown-medium space-y-1">
+                <li>• <strong>Voorgooier:</strong> Bepaal patroon (open/blind) per worp</li>
+                <li>• <strong>Voorbeeld:</strong> Voorgooier gooit 1e open, 2e blind → andere spelers volgen</li>
+                <li>• <strong>👑 Automatisch:</strong> Verliezer (-1) wordt voorgooier volgende ronde!</li>
+                <li>• <strong>Worplimiet:</strong> Max aantal worpen (alleen als geen voorgooier)</li>
+                <li>• <strong>Derde worp dicht:</strong> 3e worp altijd blind</li>
+                <li>• <strong>🔄 Reset knop:</strong> Start direct nieuwe ronde</li>
+            </ul>
+        </div>
+
+    </main>
+
+    <!-- Confetti Container -->
+    <div id="confettiContainer"></div>
+
+    <!-- Game Script -->
+    <script src="game.js"></script>
+</body>
+</html>

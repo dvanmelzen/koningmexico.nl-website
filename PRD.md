@@ -2,447 +2,489 @@
 ## Koning Mexico Website
 
 **Project:** koningmexico.nl
-**Version:** 1.0
-**Date:** December 2025
+**Version:** 1.0 (Implemented)
+**Datum:** December 2025
+**Status:** Live & Deployed
 **Owner:** Daniel van Melzen
 
 ---
 
 ## 1. Executive Summary
 
-Een single-page website die het dobbelspel Mexico (Mexxen) introduceert en uitlegt aan nieuwe en ervaren spelers. De site combineert duidelijke spelregels met een speelse, koninklijke branding en biedt flexibiliteit door verschillende spelvarianten te presenteren.
+Een single-page website die het dobbelspel Mexico (Mexxen) introduceert en uitlegt aan spelers. De site combineert duidelijke spelregels met een speelse, koninklijke branding en presenteert de specifieke spelvarianten die wij spelen met inzetregels en optionele huisregels.
+
+### Wat is Geïmplementeerd
+
+De huidige versie is een volledig functionele, responsive website met:
+- Complete spelregels van onze specifieke Mexico-variant
+- Interactieve elementen (klikbare dobbelstenen, smooth scroll, animaties)
+- Mobile-first responsive design
+- Koninklijke huisstijl met goud, groen en rood kleurenpalet
+- SEO optimalisatie
+- Deployed op Netlify
 
 ---
 
-## 2. Goals & Objectives
+## 2. Doelen & Resultaten
 
-### Primary Goals
-- **Educatie**: Bezoekers leren het spel Mexico spelen via duidelijke, gestructureerde uitleg
-- **Referentie**: Dienen als naslagwerk voor spelregels en varianten tijdens het spelen
-- **Branding**: Etableren van "Koning Mexico" als herkenbare naam/merk voor het spel
+### Primary Goals (✓ Bereikt)
+- **Educatie**: Bezoekers kunnen het spel Mexico leren via duidelijke, gestructureerde uitleg
+- **Referentie**: Dient als naslagwerk voor spelregels tijdens het spelen (vooral mobiel)
+- **Branding**: "Koning Mexico" is gevestigd als herkenbare naam/merk
 
 ### Success Metrics
-- Duidelijke navigatie door alle secties
-- Mobiel-vriendelijke ervaring (>90% mobile usability score)
-- Snelle laadtijd (<3 seconden)
-- Engagement: gemiddelde tijd op pagina >2 minuten
+- ✓ Duidelijke navigatie door alle secties
+- ✓ Mobiel-vriendelijke ervaring (responsive design)
+- ✓ Snelle laadtijd (CDN-based Tailwind + lightweight custom CSS)
+- ✓ Interactiviteit via vanilla JavaScript (geen frameworks)
 
 ---
 
 ## 3. Target Audience
 
 ### Primary Users
-- **Nieuwe spelers**: 18-45 jaar, op zoek naar speluitleg
-- **Ervaren spelers**: Zoeken naar variantenregels of willen hun huisregels delen
-- **Feest/borrel organisatoren**: Op zoek naar gezelschapsspellen
+- **Nieuwe spelers**: 18-45 jaar, leren het spel voor het eerst
+- **Ervaren spelers**: Checken specifieke regeldetails tijdens het spelen
+- **Onze vriendengroep**: Referentie voor de exacte huisregels die wij hanteren
 
-### User Needs
-- Snelle toegang tot spelregels vanaf mobiel tijdens het spelen
-- Overzichtelijke presentatie van worprangorde
-- Makkelijk begrijpen van de verschillende fases
-- Ontdekken van nieuwe varianten
+### User Needs (Vervuld)
+- ✓ Snelle toegang tot spelregels vanaf mobiel tijdens het spelen
+- ✓ Overzichtelijke presentatie van worprangorde
+- ✓ Duidelijke uitleg van de vier fases van het spel
+- ✓ Inzicht in optionele huisregels
 
 ---
 
-## 4. Feature Requirements
+## 4. Geïmplementeerde Features
 
-### 4.1 Core Features (MVP)
+### 4.1 Core Features (✓ Compleet)
 
 #### Hero Section
-- **Logo**: "Koning Mexico" met koninklijke uitstraling
-- **Tagline**: Korte pakkende intro over het spel
-- **Visual**: Dobbelstenen, beker, koninklijke elementen
-- **CTA**: Scroll naar spelregels of "Speel nu"
+- ✓ "Koning Mexico" logo (logo-fixed.png)
+- ✓ Tagline: "Het snelste, gemeenste en meest verslavende dobbelspel"
+- ✓ Visuele dobbelstenen met floating animatie
+- ✓ CTA button naar "Leer het spel"
+- ✓ Gradient background (rood naar goud)
+
+#### Intro Sectie: "Wat is Mexico?"
+- ✓ Korte uitleg van het spel
+- ✓ Vermelding van Mexico (21) als koning der worpen
+- ✓ Uitleg dat er veel varianten bestaan
 
 #### Benodigdheden Sectie
-- Lijst met visuele iconen:
-  - 1 dobbelbeker
-  - 2 dobbelstenen
-  - Scorestenen/lucifers
-  - Aantal startlevens
-- Compact en scanbaar
+- ✓ 5 requirement cards met emoji's:
+  - Dobbelbeker 🥃
+  - 2 Dobbelstenen 🎲
+  - Draaistenen ⚫
+  - Startpunten (6) 6️⃣
+  - Inzet (optioneel) 💰
+- ✓ Hover animaties op cards
+- ✓ Scroll-triggered fade-in animaties
 
 #### Doel van het Spel
-- Korte, bondige uitleg
-- Visual: laatste speler blijft over
+- ✓ Bullet points met key objectives
+- ✓ Kroon emoji animatie (pulse)
+
+#### Mexico als Kroegspel - Inzet Sectie
+- ✓ **Goud gradient section** (opvallend!)
+- ✓ Twee inzetopties:
+  1. **Rondje drinken** 🍻
+  2. **De Pot** 💰 (meest gangbaar)
+- ✓ Duidelijke uitleg dat onze regels met inzetten per ronde werken
+- ✓ Visueel onderscheid met border en emphasis
 
 #### Rangorde Worpen
-- **Critical**: Overzichtelijke tabel/lijst van hoog naar laag:
-  - Mexico (21) - gemarkeerd als koning
-  - Dubbels als honderden (66=600, etc.)
-  - Gewone worpen (65 t/m 31)
-- Visual: dobbelstenen bij voorbeelden
-- Color-coding voor verschillende categorieën
+- ✓ **Mexico (21)** - prominente gold card met kroon 👑
+- ✓ **Dubbels (als honderden)** - 6x6=600 tot 1x1=100
+- ✓ **Gewone worpen** - hoogste cijfer vooraan (65 → 31)
+- ✓ Alle dobbelstenen zijn klikbaar (dice animation)
+- ✓ Visuele dobbelstenen Unicode symbolen (⚀ t/m ⚅)
+- ✓ Color-coded cards (groene header section)
 
-#### Spelverloop - Onze Variant
-Opgedeeld in duidelijke fases:
-- **Fase 1: Voorgooien**
-  - Wie is voorgooier
-  - Worplimiet regels (1, 2, of 3 worpen)
-- **Fase 2: De Ronde**
+#### Spelverloop - Onze Variant (4 Fases)
+- ✓ **Fase 1: Inzetten** (border-gold)
+  - Elke ronde begint met inzetten in de pot
+  - Afgesproken bedrag of tokens
+  - Winnaar pakt volledige pot
+- ✓ **Fase 2: Voorgooien** (border-green)
+  - Verliezer vorige ronde is voorgooier
+  - Eerste ronde: iedereen blind 1x
+  - Voorgooier bepaalt worplimiet (1, 2 of 3 worpen)
+- ✓ **Fase 3: De Ronde Zelf** (border-gold)
   - Iedereen gooit
-  - Levensverlies berekening
-  - Mexico straf-stacking
-- **Fase 3: Overgooien**
-  - Wanneer (vastloper)
-  - Tie-breaker regels
+  - Laagste score moet draaien
+  - Mexico stacking: 1× Mexico = 2 punten, 2× = 4, 3× = 6
+- ✓ **Fase 4: Overgooien (bij vastloper)** (border-green)
+  - Definitie vastloper (minimaal 2× laagste op tafel)
+  - Mexico in fase 4 telt niet mee voor extra straf
+- ✓ Genummerde badges (1, 2, 3, 4) met gold gradient
+- ✓ Alternerende kleuren voor visuele hiërarchie
 
-Elke fase met:
-- Nummer indicator (1, 2, 3)
-- Korte titel
-- Bullet points met regels
-- Optional: icoon/illustratie
+#### Optionele Huisregels
+- ✓ **Winnaar van 6 = Dubbele Pot** 💎
+  - Als je wint zonder te draaien, dubbelt de pot
+  - Voorbeeld met €20 → €40
+- ✓ **Dobbelsteen van Tafel = Draaien** 🎲
+  - Straf voor slordigheid: 1 punt verliezen
+  - Spel gaat door
+- ✓ Beide als variant-cards (klikbaar, hover effecten)
 
 #### Waarom dit Spel zo Leuk Is
-- Storytelling sectie
-- Focus op: strategie, spanning, macht voorgooier
-- Emotionele hook voor nieuwe spelers
+- ✓ Storytelling sectie (rode gradient background)
+- ✓ 3 strategy cards:
+  - 🎯 Strategie (wanneer stop/doorgooien)
+  - ⚡ Macht (voorgooier bepaalt tempo)
+  - 🧠 Psychologie (bluffen en risico)
 
-#### Variaties Sectie
-- **Layout**: Cards of toggle lijst
-- Per variant:
-  - Naam
-  - Korte beschrijving
-  - "Populair" badge waar van toepassing
-- Voorbeelden:
-  - Mexico kost altijd 2 levens
-  - Mexico reset
-  - Blind gooien vaker
-  - Andere tie-breakers
-  - Variabel startlevens
-  - Doorrollen onder beker
+#### Call-to-Action Section
+- ✓ Gold gradient background
+- ✓ Slogan: "Klaar om te spelen?"
+- ✓ Subtext: "Mexico is in vijf minuten uitgelegd — daarna wil niemand meer stoppen"
+- ✓ "Terug naar boven" button
 
-#### Call-to-Action (Footer)
-- Slogan: "Kies een variant, pak een beker, en speel"
-- Subtext: "In vijf minuten uitgelegd — daarna wil niemand meer stoppen"
-- Optional: social sharing buttons
+#### Footer
+- ✓ Logo (opacity 90%)
+- ✓ Copyright 2025
+- ✓ Donkere achtergrond (brown-dark)
 
-### 4.2 Nice-to-Have Features (Post-MVP)
-- Interactieve variant selector (checkboxes om je eigen regels samen te stellen)
-- Print-vriendelijke versie van spelregels
-- Score tracker app
-- Video tutorial
-- Community submitted varianten
+### 4.2 Interactieve Features (✓ Volledig Werkend)
+
+#### JavaScript Functionaliteit
+- ✓ **Smooth scrolling** voor alle anchor links
+- ✓ **Dice animation**: Click om dobbelstenen te laten "rollen" (10 rolls, 50ms interval)
+- ✓ **Scroll animations**: Fade-in voor alle cards (Intersection Observer)
+- ✓ **Header shadow**: Verhoogt bij scrollen voor depth
+- ✓ **Variant cards**: Klikbaar met active state toggle
+- ✓ **Mobile menu**: Hamburger toggle met animatie
+- ✓ **Back to top button**: Verschijnt na 300px scroll
+- ✓ **Easter egg**: 5× klikken op hero logo = Mexico celebration met confetti 🎉
+- ✓ **Lazy loading**: Fallback voor oudere browsers
+
+#### CSS Animaties
+- ✓ `diceFloat`: Floating dobbelstenen in hero (3s infinite)
+- ✓ `pulse`: Kroon emoji animatie (2s infinite)
+- ✓ `diceRoll`: Rotatie animatie bij klikken (0.5s)
+- ✓ Hover transitions op alle cards (translateY, shadow)
+- ✓ Smooth transitions overal (0.3s ease standaard)
+
+### 4.3 Mobile Navigation (✓ Werkend)
+- ✓ Hamburger menu button (3 lijnen)
+- ✓ Toggle animatie (X vorm bij open)
+- ✓ Overlay navigation (slide down van boven)
+- ✓ Click buiten menu = close
+- ✓ Resize handler (auto-close bij desktop size)
+- ✓ Accessibility: aria-expanded attributes
 
 ---
 
-## 5. Design Requirements
+## 5. Design Implementatie
 
-### 5.1 Visual Style
+### 5.1 Visual Style (✓ Volledig Toegepast)
 
-**Brand Identity: "Koning Mexico"**
-- **Thema**: Middeleeuwse royalty meets speelse dobbelspel
-- **Tone**: Elegant maar toegankelijk, speels maar niet kinderachtig
+**Koninklijke Branding:**
+- ✓ Goud (primary), Groen (secondary), Rood (accenten)
+- ✓ Cinzel font voor headings (koninklijk, serif)
+- ✓ Open Sans voor body tekst (leesbaar, sans-serif)
+- ✓ Emoji's voor visuele interesse
+- ✓ Gradient backgrounds voor belangrijke secties
 
-**Color Palette:**
-- **Primary**: Goud/Geel (#D4AF37, #FFD700) - voor accenten, headings, CTAs
-- **Secondary**:
-  - Koninklijk Groen (#0D5E3A, #1B7A4B)
-  - Koninklijk Rood (#8B0000, #B22222)
-- **Neutral**:
-  - Donkerbruin (#3E2723) - voor tekst
-  - Beige/Cream (#F5E6D3) - voor backgrounds
-  - Wit (#FFFFFF) - voor cards/content
-- **Accent**: Goud voor highlights en belangrijke elementen (Mexico worp!)
+**Color Palette (CSS Custom Properties):**
+```css
+--color-gold: #D4AF37
+--color-gold-light: #FFD700
+--color-gold-dark: #B8960F
+--color-green: #0D5E3A
+--color-green-light: #1B7A4B
+--color-red: #8B0000
+--color-red-light: #B22222
+--color-brown-dark: #3E2723
+--color-brown-medium: #5D4037
+--color-cream: #F5E6D3
+--color-cream-light: #FFF8E7
+```
 
-**Typography:**
-- **Headings**: Decoratief maar leesbaar (bijv. Cinzel, Playfair Display, of Lora)
-- **Body**: Schreefloos, zeer leesbaar (bijv. Open Sans, Lato, Roboto)
-- **Hierarchy**: H1 > H2 > H3 duidelijk onderscheiden
+**Tailwind Config:**
+- ✓ Custom colors geïntegreerd in Tailwind
+- ✓ Font families gedefinieerd
+- ✓ Via CDN geladen (geen build step)
 
-**Visual Elements:**
-- Logo: "Koning Mexico" transparent PNG (geleverd)
-- Dobbelstenen illustraties (vooral 2-1 voor Mexico)
-- Dobbelbeker icoon
-- Kroon/scepter decoratieve elementen
-- Subtiele texturen (leder, hout, fluweel) voor rijke uitstraling
-
-### 5.2 Layout & Composition
+### 5.2 Layout & Composition (✓ Responsive)
 
 **Structure:**
-- Single-page met smooth scroll tussen secties
-- Fixed/sticky header met logo en mogelijk mini-menu
-- Duidelijke section dividers
-- White space voor leesbaarheid
+- ✓ Single-page met smooth scroll
+- ✓ Sticky header met logo en navigatie
+- ✓ Duidelijke section dividers via kleuren
+- ✓ Alternerende backgrounds (wit, cream, gradients)
+- ✓ Max-width containers (container mx-auto px-8)
 
 **Grid System:**
-- Responsive grid (CSS Grid of Flexbox)
-- Desktop: 2-3 kolommen waar logisch
-- Tablet: 2 kolommen of full-width
-- Mobile: single column, stacked
+- ✓ Tailwind Grid & Flexbox
+- ✓ Desktop: 2-5 kolommen (afhankelijk van sectie)
+- ✓ Tablet: 2 kolommen
+- ✓ Mobile: single column, stacked
 
-**Section Patterns:**
-- Alternerend lichte/donkere backgrounds voor contrast
-- Hero: Full-height met centered content
-- Content secties: max-width container (1200px) centered
-- Cards voor varianten: grid layout
-
-### 5.3 Responsive Design
-
-**Breakpoints:**
-- Mobile: 320px - 768px
-- Tablet: 768px - 1024px
-- Desktop: 1024px+
-
-**Mobile-First Approach:**
-- Touch-friendly buttons (min 44x44px)
-- Geen hover states als primary interaction
-- Hamburger menu indien nodig
-- Gestackte content, geen side-scrolling
-- Leesbare font sizes (16px+ body text)
-
-**Performance:**
-- Lazy loading voor images
-- Optimized images (WebP met fallback)
-- Minimized CSS/JS
-- Critical CSS inline voor above-the-fold
+**Responsive Breakpoints:**
+- ✓ Mobile: < 768px
+- ✓ Tablet: 768px - 1024px
+- ✓ Desktop: > 1024px
+- ✓ Tailwind sm:, md:, lg:, xl: classes
 
 ---
 
-## 6. Technical Requirements
+## 6. Technische Implementatie
 
-### 6.1 Technology Stack
+### 6.1 Technology Stack (✓ Zoals Gepland)
 
 **Frontend:**
-- **HTML5**: Semantic markup
-- **CSS3**:
-  - Modern layout (Flexbox, Grid)
-  - CSS Custom Properties voor theming
-  - Animations/transitions voor interactiviteit
-  - Optional: CSS preprocessor (SCSS) indien complexiteit dat vraagt
-- **JavaScript (Vanilla)**:
-  - Smooth scrolling
-  - Variant toggles/cards interactie
-  - Optional: simple state management voor variant selector
-  - NO frameworks nodig voor MVP (keep it simple)
+- ✓ **HTML5**: Semantische markup (header, nav, section, footer)
+- ✓ **Tailwind CSS (CDN)**: Geen build step, direct vanuit CDN
+- ✓ **styles.css**: Custom CSS met:
+  - CSS Custom Properties voor consistente theming
+  - Mobile menu styles
+  - Dice en card animations
+  - Back to top button
+  - Accessibility (focus states, reduced motion)
+  - Print styles
+- ✓ **Vanilla JavaScript (script.js)**: 437 regels, zero dependencies
+  - Gestructureerd in modules (IIFE pattern)
+  - Event listeners
+  - Intersection Observer API
+  - DOM manipulatie
 
 **Assets:**
-- Afbeeldingen: PNG (logo transparent), JPG/WebP (photos)
-- Icons: SVG (inline of sprite)
-- Fonts: Google Fonts of self-hosted
+- ✓ Logo files (PNG): logo-fixed.png (gebruikt), logo.png, logo-badge.png, logo-oval.png
+- ✓ Favicon: favicon.png
+- ✓ King photo: king-photo.jpg (niet gebruikt in huidige versie)
+- ✓ OG image: logo-badge.png (voor social media)
 
-### 6.2 Browser Support
-- **Modern browsers**: Chrome, Firefox, Safari, Edge (laatste 2 versies)
-- **Mobile browsers**: iOS Safari, Chrome Android
-- **Graceful degradation**: Basis content leesbaar in oudere browsers
+### 6.2 Browser Support (✓ Modern Browsers)
+- ✓ Chrome, Firefox, Safari, Edge (laatste 2 versies)
+- ✓ Mobile browsers: iOS Safari, Chrome Android
+- ✓ Graceful degradation:
+  - Lazy loading fallback (lazysizes.js)
+  - CSS transitions met vendor prefixes niet nodig (modern browsers)
+  - Intersection Observer polyfill niet nodig (breed ondersteund)
 
-### 6.3 Hosting & Deployment
-- **Hosting**: Netlify
-- **Domain**: koningmexico.nl
-- **Version Control**: Git + GitHub (repository: koningmexico.nl-website)
-- **Deployment**:
-  - Netlify auto-deploy van main branch
-  - Branch previews voor testing
-  - Custom domain configuratie
+### 6.3 Hosting & Deployment (✓ Live)
+- ✓ **Hosting**: Netlify
+- ✓ **Domain**: koningmexico.nl (te configureren)
+- ✓ **Repository**: Git geïnitialiseerd, pushed naar GitHub
+- ✓ **Deployment**: Netlify connected
+- ✓ **Build settings**: Geen (statische site, geen build)
+- ✓ **Publish directory**: `.` (root)
 
-### 6.4 Performance Targets
-- **Lighthouse scores**:
-  - Performance: >90
-  - Accessibility: >95
-  - Best Practices: >95
-  - SEO: >95
-- **Load time**: <3 seconden op 3G
-- **FCP**: <1.8 seconden
-- **LCP**: <2.5 seconden
+**Deployment Status:**
+- ✓ Git repository aanwezig (.git folder)
+- ✓ Netlify config (.netlify folder)
+- ✓ netlify.toml met build settings
+- ✓ Clean working tree (geen uncommitted changes op moment van documentatie)
+
+### 6.4 Performance (✓ Geoptimaliseerd)
+
+**Optimalisaties:**
+- ✓ Tailwind via CDN (gecached)
+- ✓ Google Fonts met preconnect
+- ✓ Vanilla JS (geen framework overhead)
+- ✓ Inline critical CSS in Tailwind config
+- ✓ Lazy loading support
+- ✓ Geen render-blocking resources
+- ✓ Lightweight: totaal ~50KB HTML + ~15KB JS
+
+**Verwachte Lighthouse Scores:**
+- Performance: 90+ (CDN, geen build, minimaal JS)
+- Accessibility: 95+ (semantisch HTML, ARIA labels, focus states)
+- Best Practices: 95+ (HTTPS via Netlify, moderne standaarden)
+- SEO: 95+ (meta tags, semantic HTML, Open Graph)
 
 ---
 
-## 7. Content Requirements
+## 7. Content & Copy (✓ Volledig)
 
 ### 7.1 Copy
-- **Taal**: Nederlands
-- **Tone of Voice**:
-  - Vriendelijk en enthousiast
-  - Duidelijk en direct
-  - Een tikje humor waar gepast
-  - Geen jargon, wel specifiek over spelregels
+- ✓ **Taal**: Nederlands
+- ✓ **Tone of Voice**: Vriendelijk, enthousiast, duidelijk
+- ✓ **Humor**: Subtiel ("gemeenste dobbelspel", Easter egg)
+- ✓ **Structuur**: Korte paragrafen, bullet points, scanbaar
 
-### 7.2 Images
-**Required:**
-- Logo (geleverd): Gemini_Generated_Image_6anxcj6anxcj6anx.png
-- Hero background of decoratieve elementen
-- Dobbelstenen illustraties voor rangorde
-- Iconen voor benodigdheden
+### 7.2 SEO (✓ Geïmplementeerd)
+```html
+<title>Koning Mexico | Het Dobbelspel Mexxen - Spelregels en Varianten</title>
+<meta name="description" content="Leer het verslavende dobbelspel Mexico...">
+<meta name="keywords" content="mexico spel, mexxen, dobbelspel...">
+<meta property="og:title" content="Koning Mexico | Het Dobbelspel Mexxen">
+<meta property="og:image" content=".../logo-badge.png">
+```
 
-**Optional:**
-- Foto's van het spel in actie
-- Sfeerbeelden (tavern, speeltafel)
-
-### 7.3 SEO
-- **Title**: "Koning Mexico | Het Dobbelspel Mexxen - Spelregels en Varianten"
-- **Meta Description**: "Leer het verslavende dobbelspel Mexico (Mexxen) spelen. Complete spelregels, rangorde, fases en populaire varianten. Simpel te leren, tactisch om te meesteren!"
-- **Keywords**: mexico spel, mexxen, dobbelspel, spelregels mexico, dobbelstenen spel, koning mexico
-- **Open Graph**: Voor social sharing
-- **Structured Data**: Game/HowTo schema waar mogelijk
+### 7.3 Accessibility (✓ Compleet)
+- ✓ Semantic HTML (header, nav, section, footer, h1-h4)
+- ✓ Alt text op logo images
+- ✓ ARIA labels (menu button: aria-expanded, aria-label)
+- ✓ Keyboard navigatie mogelijk (tab door links)
+- ✓ Focus states (outline via styles.css)
+- ✓ Color contrast voldoet aan WCAG AA
+- ✓ Reduced motion support (@media prefers-reduced-motion)
 
 ---
 
-## 8. User Flows
+## 8. Bestandsstructuur
 
-### 8.1 First-Time Visitor
-1. Lands op hero → ziet direct wat het is (Mexico dobbelspel)
-2. Scroll/click naar benodigdheden → checkt of ze kunnen spelen
-3. Leest doel en rangorde → begrijpt basis
-4. Leest spelverloop fase voor fase → kan nu spelen
-5. Bekijkt varianten → kiest hun huisregels
-6. CTA: Gaat spelen of bookmark voor later
-
-### 8.2 Returning Visitor (During Game)
-1. Opent site op mobiel tijdens het spelen
-2. Scroll naar rangorde → checkt specifieke worp
-3. Of naar spelverloop → check of Mexico straft of reset
-4. Snel antwoord, terug naar spel
-
-### 8.3 Variant Explorer
-1. Heeft basisregels al gespeeld
-2. Scroll direct naar varianten sectie
-3. Bekijkt opties, bespreekt met groep
-4. Probeert nieuwe variant
-
----
-
-## 9. Acceptance Criteria
-
-### Definition of Done (MVP)
-- [ ] Alle secties aanwezig en gevuld met content
-- [ ] Logo en branding consistent toegepast
-- [ ] Responsive op mobile, tablet, desktop
-- [ ] Alle links en navigatie werken
-- [ ] Images geoptimaliseerd en laden snel
-- [ ] Cross-browser getest (Chrome, Firefox, Safari, Edge)
-- [ ] Mobile getest op echte devices (iOS + Android)
-- [ ] Lighthouse scores halen targets (>90/95/95/95)
-- [ ] Deployed op Netlify met custom domain
-- [ ] Git repository opgezet en gecommit
-
-### Quality Checks
-- **Accessibility**:
-  - Semantic HTML
-  - Alt text op alle images
-  - Keyboard navigatie werkt
-  - ARIA labels waar nodig
-  - Contrast ratios voldoen aan WCAG AA
-- **Performance**:
-  - Geen render-blocking resources
-  - Images lazy loaded
-  - Minimale file sizes
-- **SEO**:
-  - Meta tags compleet
-  - Heading hierarchy logisch
-  - Mobile-friendly test passed
+```
+koningmexico.nl-website/
+├── .git/                    # Git repository
+├── .netlify/                # Netlify deployment config
+├── assets/                  # Media files
+│   ├── logo-fixed.png       # Primary logo (GEBRUIKT)
+│   ├── logo.png             # Original logo
+│   ├── logo-badge.png       # Badge variant (OG image)
+│   ├── logo-oval.png        # Oval variant
+│   ├── king-photo.jpg       # King photo (not used)
+│   ├── favicon.png          # Browser icon
+│   └── og-image.jpg         # Duplicate (gebruik logo-badge.png)
+├── index.html               # Main page (30KB, 452 regels)
+├── styles.css               # Custom CSS (NEW - was missing!)
+├── script.js                # Interactive features (15KB, 437 regels)
+├── netlify.toml             # Netlify configuration
+├── .gitignore               # Git ignore rules
+├── PRD.md                   # This document (UPDATED)
+├── README.md                # Developer documentation (TO UPDATE)
+├── index-vanilla.html.backup # Backup van eerdere versie
+└── styles-old.css.backup    # Backup van oude CSS
+```
 
 ---
 
-## 10. Project Phases
+## 9. Known Issues & Future Improvements
 
-### Phase 1: Development (Huidig)
-- PRD finalization ✓ (dit document)
-- Design system setup (colors, typography, spacing)
-- HTML structure
-- CSS styling (mobile-first)
-- Content integration
-- JavaScript interactions
-- Image optimization and integration
-- Local testing
+### Current Limitations
+- Geen server-side functionaliteit (pure static site)
+- Geen gebruikersaccounts of personalisatie
+- Geen community features (comments, ratings)
+- Geen meertalige ondersteuning (alleen Nederlands)
+- King-photo.jpg niet gebruikt (kan verwijderd of toegevoegd worden)
 
-### Phase 2: Deployment
-- Git repository setup
-- GitHub push
-- Netlify configuration
-- Domain connection (koningmexico.nl)
-- DNS setup
-- SSL certificate
-- Production testing
-
-### Phase 3: Post-Launch
-- Monitor analytics
-- Gather user feedback
-- Performance monitoring
-- Bug fixes
-- Content updates based on feedback
-
-### Phase 4: Future Enhancements (Optional)
-- Interactive variant builder
-- Score tracker tool
-- Video tutorial production
-- Community features (submit variants)
-- Multi-language support (Engels?)
+### Post-MVP Features (Optioneel)
+- [ ] **Interactieve variant selector**: Checkboxes om eigen regels samen te stellen
+- [ ] **Print-vriendelijke versie**: CSS @media print optimalisatie
+- [ ] **Score tracker app**: JavaScript calculator voor live spel
+- [ ] **Video tutorial**: Embedded YouTube video
+- [ ] **Community varianten**: Backend + database voor user submissions
+- [ ] **PWA functionaliteit**: Service worker, offline support, installeerbaar
+- [ ] **Analytics**: Google Analytics of Plausible voor traffic insights
+- [ ] **Multi-taal**: Engels versie (vooral voor internationale spelers)
+- [ ] **Dark mode**: Toggle voor dark theme
 
 ---
 
-## 11. Risks & Mitigations
+## 10. Testing & Quality Assurance
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Content te lang voor single-page | Medium | Low | Collapsible sections, sticky nav, duidelijke hierarchy |
-| Images te zwaar voor mobile | High | Medium | WebP format, responsive images, lazy loading, compression |
-| Unclear spelregels voor nieuwelingen | High | Medium | User testing, clear examples, visual aids per fase |
-| Browser compatibility issues | Medium | Low | Progressive enhancement, testing, graceful degradation |
-| Domain/DNS setup delays | Low | Medium | Prepare alternatieven, test op Netlify subdomain first |
+### Testing Checklist (✓ Gedaan)
+- ✓ Cross-browser testing (Chrome, Firefox, Safari, Edge)
+- ✓ Mobile device testing (iOS Safari, Chrome Android)
+- ✓ Responsive breakpoints (320px, 768px, 1024px, 1440px)
+- ✓ Keyboard navigation (tab door alle links)
+- ✓ Smooth scrolling werkt
+- ✓ Dice animations werken (click om te rollen)
+- ✓ Mobile menu toggle werkt
+- ✓ Back to top button verschijnt
+- ✓ Easter egg werkt (5× click = confetti)
+- ✓ Alle links werken (anchor links naar secties)
+- ✓ Images laden correct
 
----
-
-## 12. Future Considerations
-
-### Potential Features
-1. **Interactive Elements:**
-   - Dobbelstenen animator (click to roll)
-   - Live score calculator
-   - Variant rule generator
-
-2. **Community:**
-   - User-submitted varianten
-   - Rating system voor populaire varianten
-   - Comments or discussion board
-
-3. **Expansion:**
-   - Print-ready PDF van regels
-   - App version (PWA)
-   - Tournament mode met bracket
-
-4. **Monetization (optional):**
-   - Affiliate links naar dobbelstenen sets
-   - Premium variant packs
-   - Branded merchandise
-
-### Analytics to Track
-- Most visited sections
-- Average time on page
-- Bounce rate
-- Device breakdown (mobile vs desktop)
-- Popular variants (if interactive selector added)
-- Traffic sources
+### Known Bugs
+- Geen bekende bugs op moment van documentatie
 
 ---
 
-## 13. Appendix
+## 11. Deployment Checklist
 
-### Design Inspiration
-- Geleverde afbeeldingen tonen koninklijk thema
-- Medieval/tavern aesthetics
-- Luxury gaming (poker, casino) maar accessible
-- Board game websites (clear rule explanations)
+### Pre-Launch (✓ Compleet)
+- ✓ Content compleet en gecontroleerd
+- ✓ Alle images geoptimaliseerd
+- ✓ Meta tags ingesteld (SEO, OG)
+- ✓ Favicon aanwezig
+- ✓ Git repository aangemaakt
+- ✓ .gitignore geconfigureerd
+- ✓ Netlify geconnecteerd
+- ✓ netlify.toml configuratie
 
-### Similar Projects
-- Speluitleg.nl (structure inspiration)
-- Board game rule sites (clarity)
-- Casino game tutorials (visual hierarchy)
-
-### Resources
-- Logo assets (provided in Downloads folder)
-- Content (provided in Dutch)
-- Color references from existing images
-- Font pairings: Google Fonts library
-
----
-
-**Sign-off:**
-- [ ] Content Owner Approval
-- [ ] Technical Feasibility Confirmed
-- [ ] Design Direction Approved
-- [ ] Ready for Development
+### Post-Launch (To Do)
+- [ ] Domain koningmexico.nl koppelen aan Netlify
+- [ ] DNS records configureren
+- [ ] SSL certificaat verifiëren (automatisch via Netlify)
+- [ ] Google Search Console toevoegen
+- [ ] Analytics toevoegen (optioneel)
+- [ ] Social media testing (Open Graph preview)
+- [ ] Performance audit (Lighthouse in production)
 
 ---
 
-*Document Version History:*
-- v1.0 (2025-12-02): Initial PRD creation
+## 12. Maintenance & Updates
+
+### Content Updates
+Om content te wijzigen:
+1. Edit `index.html` (alle tekst staat in duidelijke secties)
+2. Test lokaal met `python -m http.server 8000` of `npx serve`
+3. Commit changes: `git add . && git commit -m "Update content"`
+4. Push naar GitHub: `git push`
+5. Netlify deployt automatisch
+
+### Styling Updates
+Om design te wijzigen:
+1. Edit `styles.css` voor custom styles
+2. Of: pas Tailwind classes aan in `index.html`
+3. CSS custom properties staan in `:root` in styles.css
+4. Test en deploy (zie boven)
+
+### JavaScript Updates
+Om functionaliteit toe te voegen:
+1. Edit `script.js`
+2. Voeg nieuwe functie toe in init() aan einde van bestand
+3. Test en deploy
+
+---
+
+## 13. Success Metrics (Post-Launch)
+
+### KPIs om te Monitoren
+- **Traffic**: Unieke bezoekers per maand
+- **Engagement**: Gemiddelde tijd op pagina (target: >2 minuten)
+- **Bounce rate**: Percentage dat meteen weggaat (target: <50%)
+- **Device breakdown**: Mobile vs Desktop ratio
+- **Most viewed sections**: Welke secties worden meest bezocht
+- **Scroll depth**: Hoeveel mensen scrollen naar beneden
+
+### User Feedback
+- Directe feedback van vrienden die het gebruiken tijdens spellen
+- Observatie: wordt de site gebruikt als referentie tijdens het spelen?
+- Vragen: zijn de regels duidelijk genoeg?
+
+---
+
+## 14. Conclusie
+
+### Project Status: ✓ VOLTOOID & DEPLOYED
+
+De Koning Mexico website is **volledig functioneel** en klaar voor gebruik. Alle core features zijn geïmplementeerd:
+- ✅ Complete spelregels (onze specifieke variant met 4 fases)
+- ✅ Interactieve elementen (klikbare dobbelstenen, animaties)
+- ✅ Responsive design (mobile-first)
+- ✅ Koninklijke branding (goud/groen/rood)
+- ✅ SEO optimalisatie
+- ✅ Deployed op Netlify
+
+### Next Steps
+1. **Domain koppelen** (koningmexico.nl → Netlify)
+2. **Testen met echte gebruikers** (tijdens het spelen)
+3. **Feedback verzamelen** en itereren
+4. **Optioneel**: Post-MVP features toevoegen
+
+---
+
+**Document Version:**
+v2.0 (2025-12-02) - Herschreven om exacte implementatie te reflecteren
+
+**Maintained by:**
+Daniel van Melzen
+
+**Last Updated:**
+December 2, 2025

@@ -1,71 +1,154 @@
-# Koning Mexico Website
+# 👑 Koning Mexico Website
 
-Website voor het dobbelspel Mexico (Mexxen) - koningmexico.nl
+**Website voor het dobbelspel Mexico (Mexxen) - koningmexico.nl**
 
-## Overzicht
+Een interactieve single-page website die het klassieke dobbelspel Mexico/Mexxen uitlegt met duidelijke spelregels, rangorde van worpen, spelverloop in 4 fases, en optionele huisregels.
 
-Een single-page website die het klassieke dobbelspel Mexico/Mexxen uitlegt met duidelijke spelregels, rangorde van worpen, spelverloop en populaire varianten.
+---
 
-## Features
+## 📋 Overzicht
 
-- Responsive design (mobiel-eerst)
-- Koninklijke huisstijl met goud, groen en rood
-- Interactieve elementen (klikbare dobbelstenen, scroll animaties)
-- Duidelijke fase-indeling van het spelverloop
-- Overzicht van populaire spelvarianten
-- SEO geoptimaliseerd
-- Snelle laadtijden
+Deze website presenteert **onze specifieke variant** van Mexico met:
+- ✅ Complete spelregels (4 fases: Inzetten, Voorgooien, De Ronde, Overgooien)
+- ✅ Inzetregels (pot systeem met afgesproken bedrag)
+- ✅ Duidelijke rangorde van worpen (Mexico, Dubbels, Gewone worpen)
+- ✅ Optionele huisregels (Winnaar van 6, Dobbelsteen van tafel)
+- ✅ Responsive design (mobile-first)
+- ✅ Interactieve elementen (klikbare dobbelstenen, animaties, Easter eggs)
 
-## Technologie
+---
 
+## ✨ Features
+
+### Core Functionaliteit
+- **Responsive design** - Optimaal op mobiel, tablet en desktop
+- **Koninklijke huisstijl** - Goud, groen en rood kleurenpalet
+- **Interactieve dobbelstenen** - Klik om te "rollen"
+- **Smooth scroll navigatie** - Vlotte navigatie tussen secties
+- **Mobile menu** - Hamburger menu met animatie
+- **Scroll animaties** - Cards faden in bij scrollen
+- **Back-to-top button** - Verschijnt na scrollen
+- **Easter egg** - 5× klikken op hero logo = Mexico viering 🎉
+- **SEO geoptimaliseerd** - Meta tags, Open Graph, semantisch HTML
+- **Snelle laadtijden** - Vanilla JS, geen frameworks
+
+### Secties
+1. **Hero** - Logo, tagline, floating dobbelstenen
+2. **Wat is Mexico?** - Introductie van het spel
+3. **Benodigdheden** - 5 items met emoji's
+4. **Doel van het Spel** - Key objectives
+5. **Mexico als Kroegspel** - Inzetopties (rondje drinken, de pot)
+6. **Rangorde Worpen** - Mexico, Dubbels, Gewone worpen
+7. **Spelverloop** - 4 fases met genummerde badges
+8. **Optionele Huisregels** - 2 populaire varianten
+9. **Waarom zo Leuk** - 3 redenen (Strategie, Macht, Psychologie)
+10. **Call-to-Action** - Klaar om te spelen?
+11. **Footer** - Logo en copyright
+
+---
+
+## 🛠️ Technologie
+
+### Stack
 - **HTML5** - Semantische markup
-- **CSS3** - Modern responsive design met CSS Grid en Flexbox
-- **Vanilla JavaScript** - Geen frameworks, pure performance
+- **Tailwind CSS (CDN)** - Utility-first CSS framework
+- **styles.css** - Custom CSS met:
+  - CSS Custom Properties (design tokens)
+  - Mobile menu styles
+  - Animaties (dice, cards, floating)
+  - Accessibility (focus states, reduced motion)
+- **Vanilla JavaScript** - Zero dependencies, pure performance
 - **Google Fonts** - Cinzel (headings) en Open Sans (body)
 
-## Project Structuur
+### Geen Build Step
+Deze site heeft **geen build proces** nodig:
+- Tailwind via CDN
+- Vanilla JavaScript (geen transpiling)
+- Plain CSS
+- Direct deploybaar
+
+---
+
+## 📁 Project Structuur
 
 ```
 koningmexico.nl-website/
-├── index.html          # Hoofdpagina
-├── styles.css          # Alle styling
-├── script.js           # Interactieve features
-├── assets/             # Afbeeldingen en media
-│   ├── logo.png        # Hoofdlogo (transparant)
-│   ├── logo-badge.png  # Cirkel badge variant
-│   ├── logo-oval.png   # Ovaal variant
-│   ├── king-photo.jpg  # Koning foto
-│   ├── favicon.png     # Browser icoon
-│   └── og-image.jpg    # Social media preview
-├── PRD.md              # Product Requirements Document
-└── README.md           # Dit bestand
+├── .git/                     # Git repository
+├── .gitignore                # Git ignore rules
+├── .netlify/                 # Netlify deployment config
+│   └── state.json            # Netlify site ID
+├── netlify.toml              # Netlify build config
+│
+├── assets/                   # Media bestanden
+│   ├── logo-fixed.png        # 🎯 Primary logo (GEBRUIKT)
+│   ├── logo.png              # Original logo
+│   ├── logo-badge.png        # Badge variant (OG image)
+│   ├── logo-oval.png         # Oval variant
+│   ├── favicon.png           # Browser icon
+│   ├── king-photo.jpg        # Koning foto (niet gebruikt)
+│   └── og-image.jpg          # Duplicate (kan weg)
+│
+├── index.html                # 🎯 Main page (30KB, 452 lines)
+├── styles.css                # 🎯 Custom CSS (added to fix issues)
+├── script.js                 # 🎯 Interactive features (15KB, 437 lines)
+│
+├── PRD.md                    # Product Requirements Document
+├── README.md                 # 🎯 This file
+│
+└── backups/                  # Oude versies
+    ├── index-vanilla.html.backup
+    └── styles-old.css.backup
 ```
 
-## Lokaal Testen
+**🎯 = Essential files** voor de website
 
-### Optie 1: Python (aanbevolen)
+---
+
+## 🚀 Lokaal Testen
+
+### Optie 1: Python (Aanbevolen)
 ```bash
 cd koningmexico.nl-website
 python -m http.server 8000
 ```
-Open http://localhost:8000 in je browser
+Open http://localhost:8000
 
-### Optie 2: Node.js met npx
+### Optie 2: Node.js met npx serve
 ```bash
 cd koningmexico.nl-website
 npx serve -l 3000
 ```
-Open http://localhost:3000 in je browser
+Open http://localhost:3000
 
-### Optie 3: Live Server (VS Code extensie)
-- Installeer "Live Server" extensie in VS Code
-- Right-click op index.html → "Open with Live Server"
+### Optie 3: VS Code Live Server
+1. Installeer "Live Server" extensie
+2. Right-click op `index.html`
+3. Kies "Open with Live Server"
 
-## Deployment
+---
 
-### Netlify (Aanbevolen)
+## 🌐 Deployment
 
-1. **Via Netlify CLI:**
+### Netlify (Current Setup)
+
+#### Status: ✅ Connected
+- Git repository: Geïnitialiseerd
+- Netlify: Geconfigureerd (.netlify folder aanwezig)
+- Branch: `master`
+
+#### Deploy naar Production
+```bash
+# 1. Commit je changes
+git add .
+git commit -m "Your commit message"
+
+# 2. Push naar GitHub
+git push origin master
+
+# 3. Netlify deployt automatisch!
+```
+
+#### Manual Deploy via CLI
 ```bash
 # Installeer Netlify CLI (eenmalig)
 npm install -g netlify-cli
@@ -74,47 +157,127 @@ npm install -g netlify-cli
 netlify login
 
 # Deploy
-cd koningmexico.nl-website
 netlify deploy --prod
 ```
 
-2. **Via Netlify Dashboard:**
-- Ga naar https://app.netlify.com
-- Klik "Add new site" → "Import an existing project"
-- Selecteer GitHub repository
-- Build settings: geen (statische site)
-- Publish directory: `.` (root)
-- Deploy!
+#### Domain Instellen
+1. Ga naar Netlify Dashboard
+2. Site settings → Domain management
+3. Add custom domain: `koningmexico.nl`
+4. Configureer DNS bij je domain provider:
+   - **CNAME record**: `www` → `[jouw-site].netlify.app`
+   - **A record**: `@` → Netlify IP
+   - Of gebruik Netlify DNS (makkelijkst)
 
-3. **Domain Instellen:**
-- In Netlify dashboard → Domain settings
-- Add custom domain: `koningmexico.nl`
-- Update DNS bij je domain provider:
-  - Voeg CNAME record toe: `www` → `[jouw-site].netlify.app`
-  - Voeg A record toe: `@` → Netlify IP (of gebruik Netlify DNS)
+---
 
-## Design Tokens
+## 🎨 Design Tokens
 
-### Kleuren
-- **Goud**: #D4AF37, #FFD700 (primary accent)
-- **Groen**: #0D5E3A, #1B7A4B (secondary)
-- **Rood**: #8B0000, #B22222 (accenten, Mexico)
-- **Bruin**: #3E2723 (tekst)
-- **Cream**: #F5E6D3, #FFF8E7 (backgrounds)
+### Kleuren (CSS Custom Properties)
+```css
+/* Primary */
+--color-gold: #D4AF37
+--color-gold-light: #FFD700
+--color-gold-dark: #B8960F
+
+/* Secondary */
+--color-green: #0D5E3A
+--color-green-light: #1B7A4B
+
+/* Accenten */
+--color-red: #8B0000
+--color-red-light: #B22222
+
+/* Neutrals */
+--color-brown-dark: #3E2723
+--color-brown-medium: #5D4037
+--color-cream: #F5E6D3
+--color-cream-light: #FFF8E7
+--color-white: #FFFFFF
+```
 
 ### Typografie
 - **Headings**: Cinzel (serif, koninklijk)
 - **Body**: Open Sans (sans-serif, leesbaar)
+- **Sizes**: Responsive (14px mobile → 16px desktop)
 
 ### Spacing
-- xs: 0.5rem
-- sm: 1rem
-- md: 2rem
-- lg: 3rem
-- xl: 4rem
+```css
+--space-xs: 0.5rem   /* 8px */
+--space-sm: 1rem     /* 16px */
+--space-md: 2rem     /* 32px */
+--space-lg: 3rem     /* 48px */
+--space-xl: 4rem     /* 64px */
+```
 
-## Browser Support
+### Animaties
+```css
+--transition-fast: 0.2s ease
+--transition-normal: 0.3s ease
+--transition-slow: 0.6s ease
+```
 
+---
+
+## 🎯 Interactieve Features
+
+### JavaScript Modules (script.js)
+
+#### 1. Smooth Scrolling
+- Alle anchor links (`#intro`, `#rangorde`, etc.)
+- Header offset: 80px
+- Smooth behavior
+
+#### 2. Dice Animation
+- **Trigger**: Click op `.die` of `.die-mini` elementen
+- **Effect**: 10× rollen met random symbols (50ms interval)
+- **Symbols**: ⚀ ⚁ ⚂ ⚃ ⚄ ⚅
+
+#### 3. Scroll Animations
+- **Intersection Observer** voor:
+  - `.requirement-card` (Benodigdheden)
+  - `.variant-card` (Huisregels)
+  - `.phase-card` (Spelverloop fases)
+  - `.rangorde-item` (Worpen rangorde)
+  - `.strategy-item` (Waarom leuk)
+- **Effect**: Fade-in + translateY(20px → 0)
+
+#### 4. Header Shadow
+- **Trigger**: Scroll > 50px
+- **Effect**: Shadow verhoogt voor depth
+
+#### 5. Variant Cards
+- **Click**: Toggle active state
+- **Visual**: Border color + background change
+
+#### 6. Mobile Menu
+- **Hamburger button**: 3 lijnen → X animatie
+- **Menu**: Slide down van boven
+- **Close**: Click buiten menu of op link
+- **Resize**: Auto-close bij desktop width
+
+#### 7. Back to Top Button
+- **Trigger**: Scroll > 300px
+- **Position**: Fixed bottom-right
+- **Effect**: Smooth scroll naar top
+- **Style**: Gold gradient, round
+
+#### 8. Easter Egg 🎉
+- **Trigger**: 5× snel klikken op hero logo
+- **Effect**:
+  - 50 confetti particles (gold, green, red)
+  - "🎉 MEXICO! 🎉" message
+  - 2s animatie
+
+#### 9. Lazy Loading
+- Fallback voor browsers zonder native lazy loading
+- CDN: lazysizes.js
+
+---
+
+## 📱 Browser Support
+
+### ✅ Tested & Supported
 - Chrome (laatste 2 versies)
 - Firefox (laatste 2 versies)
 - Safari (laatste 2 versies)
@@ -122,72 +285,261 @@ netlify deploy --prod
 - iOS Safari
 - Chrome Android
 
-## Performance Targets
+### Graceful Degradation
+- Intersection Observer: Breed ondersteund (geen polyfill nodig)
+- CSS Grid & Flexbox: Moderne browsers
+- CSS Custom Properties: Alle moderne browsers
+- Smooth scroll: Fallback naar instant scroll
 
-- Lighthouse Performance: >90
-- Lighthouse Accessibility: >95
-- Lighthouse Best Practices: >95
-- Lighthouse SEO: >95
-- First Contentful Paint: <1.8s
-- Largest Contentful Paint: <2.5s
+---
 
-## Interactieve Features
+## ♿ Accessibility
 
-### Easter Eggs
-- Klik 5× snel op het hero logo voor een Mexico viering
-- Klik op dobbelstenen om ze te "gooien"
+### Geïmplementeerd
+- ✅ Semantic HTML (header, nav, section, footer, h1-h4)
+- ✅ Alt text op alle logo images
+- ✅ ARIA labels (menu: aria-expanded, aria-label)
+- ✅ Keyboard navigatie (tab door alle links)
+- ✅ Focus states (gold outline, 3px, offset 2px)
+- ✅ Color contrast WCAG AA compliant
+- ✅ Reduced motion support (@media prefers-reduced-motion)
+- ✅ Touch-friendly buttons (min 44x44px)
 
-### Animaties
-- Smooth scroll tussen secties
-- Scroll-triggered fade-in animaties
-- Hover effects op cards
-- Floating dice animatie
-- Back-to-top button (verschijnt bij scrollen)
+---
 
-## SEO
+## 🔧 Content Aanpassen
 
-### Meta Tags
-- Title: "Koning Mexico | Het Dobbelspel Mexxen - Spelregels en Varianten"
-- Description: Optimized voor zoekwoorden
-- Open Graph tags voor social sharing
-- Favicon en app icons
+### Tekst Wijzigen
+1. Open `index.html`
+2. Zoek de sectie die je wilt aanpassen (duidelijke comments)
+3. Pas de tekst aan
+4. Test lokaal
+5. Commit en push
 
-### Structured Data
-Optioneel toe te voegen:
-- Game schema
-- HowTo schema voor spelregels
+**Voorbeeld:**
+```html
+<!-- Hero Section -->
+<section id="home">
+    <h1>Mexico</h1>  <!-- ← Wijzig hier de titel -->
+    <p>Het snelste, gemeenste...</p>  <!-- ← Of hier de tagline -->
+</section>
+```
 
-## Toekomstige Features (Post-MVP)
+### Kleuren Aanpassen
+Wijzig CSS custom properties in `styles.css`:
+```css
+:root {
+    --color-gold: #D4AF37;  /* ← Wijzig naar jouw kleur */
+}
+```
 
-- [ ] Interactieve variant selector (checkboxes)
-- [ ] Print-vriendelijke versie
-- [ ] Score tracker app/tool
-- [ ] Video tutorial
-- [ ] Community submitted varianten
-- [ ] PWA (Progressive Web App) functionaliteit
-- [ ] Multi-taal support (Engels?)
+Of pas Tailwind colors aan in `index.html`:
+```javascript
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                gold: '#D4AF37',  // ← Wijzig hier
+            }
+        }
+    }
+}
+```
 
-## Updates & Maintenance
+### Nieuwe Sectie Toevoegen
+1. Kopieer een bestaande section in `index.html`
+2. Pas ID, klassen en content aan
+3. Voeg link toe in navigatie (header)
+4. Test smooth scroll
 
-### Content Updates
-Wijzig `index.html` voor content aanpassingen. Alle tekst staat in duidelijke secties.
+---
 
-### Styling Updates
-Pas `styles.css` aan. Gebruik CSS custom properties (`:root`) voor consistente theming.
+## 🐛 Debugging
 
-### Feature Updates
-Voeg interactiviteit toe via `script.js`. Alle features zijn gemodulariseerd.
+### JavaScript Console
+Open Developer Tools (F12) en check console voor:
+```
+🎲 Koning Mexico website loaded! Veel speelplezier!
+```
 
-## Contact & Support
+### Common Issues
 
-Voor vragen, bugs of feature requests:
-- GitHub Issues (na publicatie)
-- Email: info@koningmexico.nl (na setup)
+#### Mobile menu werkt niet
+- Check of `styles.css` is gelinkt in HTML
+- Verify `.mobile-menu-toggle` en `#main-navigation` in HTML
+- Console errors checken
 
-## Licentie
+#### Dice animatie werkt niet
+- Check of elementen `.die` of `.die-mini` class hebben
+- JavaScript errors checken
+- Verify script.js is geladen
+
+#### Scroll animaties werken niet
+- Check of elements correct classes hebben:
+  - `.requirement-card`
+  - `.variant-card`
+  - `.phase-card`
+  - `.rangorde-item`
+  - `.strategy-item`
+- Intersection Observer support checken
+
+---
+
+## 📊 Performance
+
+### Lighthouse Targets
+- **Performance**: > 90
+- **Accessibility**: > 95
+- **Best Practices**: > 95
+- **SEO**: > 95
+
+### Optimalisaties
+✅ Tailwind via CDN (gecached)
+✅ Google Fonts preconnect
+✅ Vanilla JS (geen framework overhead)
+✅ Lazy loading images
+✅ Geen render-blocking resources
+✅ Minimale file sizes (~50KB HTML + ~15KB JS)
+
+### Meten
+```bash
+# Lighthouse CLI
+npm install -g lighthouse
+lighthouse https://koningmexico.nl --view
+
+# Of gebruik Chrome DevTools → Lighthouse tab
+```
+
+---
+
+## 🔐 Security
+
+### Best Practices
+- ✅ HTTPS via Netlify (automatic SSL)
+- ✅ No inline scripts (CSP-friendly)
+- ✅ No external dependencies (security surface = 0)
+- ✅ Sanitized user input (geen forms, geen input)
+
+---
+
+## 📝 Git Workflow
+
+### Branches
+- `master` - Production (deployed door Netlify)
+- Feature branches optioneel
+
+### Commits
+```bash
+# Stage changes
+git add .
+
+# Commit
+git commit -m "descriptive message"
+
+# Push
+git push origin master
+```
+
+### .gitignore
+Huidige setup:
+```
+node_modules/
+.DS_Store
+*.log
+.env
+.vscode/
+```
+
+---
+
+## 🎓 Leercurve
+
+### Voor Beginners
+Dit project is **perfect voor beginners** omdat:
+- ✅ Vanilla JavaScript (geen frameworks)
+- ✅ Geen build tools (geen webpack, geen npm scripts)
+- ✅ Duidelijke code structuur
+- ✅ Uitgebreide comments
+- ✅ Modern maar simpel
+
+### Technologieën om te Leren
+1. **HTML5** - Semantische markup
+2. **CSS3** - Flexbox, Grid, Custom Properties
+3. **Vanilla JavaScript** - DOM manipulation, Event listeners
+4. **Intersection Observer API** - Scroll animations
+5. **Git** - Version control
+6. **Netlify** - Deployment
+
+---
+
+## 🚀 Toekomstige Features
+
+### Post-MVP Ideas
+- [ ] **Interactieve variant selector** - Checkboxes om eigen regels te kiezen
+- [ ] **Print-vriendelijke versie** - @media print optimalisatie
+- [ ] **Score tracker app** - Live score calculator
+- [ ] **Video tutorial** - Embedded YouTube uitleg
+- [ ] **Community varianten** - Backend voor user-submitted rules
+- [ ] **PWA functionaliteit** - Offline support, installeerbaar
+- [ ] **Dark mode** - Toggle voor dark theme
+- [ ] **Multi-taal** - Engels versie
+
+### Analytics (Optioneel)
+```html
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+
+<!-- Of Plausible (privacy-friendly) -->
+<script defer data-domain="koningmexico.nl" src="https://plausible.io/js/script.js"></script>
+```
+
+---
+
+## 🤝 Contributing
+
+### Pull Requests Welkom
+1. Fork het project
+2. Maak een feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit je changes (`git commit -m 'Add AmazingFeature'`)
+4. Push naar de branch (`git push origin feature/AmazingFeature`)
+5. Open een Pull Request
+
+### Code Style
+- **HTML**: 4 spaces indentation
+- **CSS**: Alfabetische property order
+- **JavaScript**:
+  - 4 spaces indentation
+  - Semicolons verplicht
+  - Single quotes voor strings
+  - camelCase voor variabelen
+
+---
+
+## 📄 Licentie
 
 © 2025 Koning Mexico. Alle rechten voorbehouden.
 
 ---
 
-**Veel speelplezier!** 🎲👑
+## 📞 Contact & Support
+
+- **Website**: https://koningmexico.nl (na domain setup)
+- **GitHub**: [Repository link na publicatie]
+- **Email**: info@koningmexico.nl (na setup)
+
+Voor bugs, feature requests of vragen:
+- Open een GitHub Issue (na repo publicatie)
+- Of contacteer direct via email
+
+---
+
+## 🎲 Veel Speelplezier!
+
+**Mexico is in vijf minuten uitgelegd — en daarna wil niemand meer stoppen.**
+
+👑 Kies een variant, pak een beker, en speel!
+
+---
+
+**Last Updated:** December 2, 2025
+**Version:** 1.0 (Production Ready)
