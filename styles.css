@@ -334,9 +334,10 @@ section {
 
 .requirements-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
+    max-width: 100%;
 }
 
 .requirement-card {
@@ -1067,7 +1068,7 @@ section {
     }
 
     .requirements-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
 
     .inzet-options {
