@@ -334,7 +334,7 @@ section {
 
 .requirements-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
 }
@@ -347,6 +347,11 @@ section {
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 200px;
 }
 
 .requirement-card:hover {
@@ -900,9 +905,8 @@ section {
         font-size: 4rem;
     }
 
-    .requirements-grid,
-    .variants-grid {
-        grid-template-columns: 1fr;
+    .requirements-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .doubles-grid {
@@ -933,6 +937,10 @@ section {
 
     section {
         padding: var(--spacing-lg) 0;
+    }
+
+    .requirements-grid {
+        grid-template-columns: 1fr;
     }
 
     .phase-number {
