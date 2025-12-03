@@ -447,9 +447,24 @@
 
     <!-- Theme Toggle Script -->
     <script>
-        // Load saved theme
+        // Auto-detect dark mode preference
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Priority: 1. User's saved preference, 2. System preference, 3. Light mode (default)
+        let shouldUseDarkMode = false;
+
+        if (savedTheme) {
+            // User has explicitly chosen a theme - respect their choice
+            shouldUseDarkMode = savedTheme === 'dark';
+        } else if (prefersDark) {
+            // No saved preference, but system prefers dark mode
+            shouldUseDarkMode = true;
+            console.log('🌙 Dark mode auto-detected from system preferences');
+        }
+
+        // Apply theme
+        if (shouldUseDarkMode) {
             document.body.classList.add('dark-mode');
             document.getElementById('themeIcon').textContent = '☀️';
         }
