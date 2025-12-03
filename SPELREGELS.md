@@ -597,7 +597,7 @@ Als jij NIET de voorgooier bent, maar er is wel een patroon actief:
            ↓
     ┌──────────────┐
     │ Jouw Worp 2  │
-    └──────────────┘
+    └──────────────┐
            ↓
    [FORCE open] 👁️
    [Geen keuze!]
@@ -612,12 +612,27 @@ Als jij NIET de voorgooier bent, maar er is wel een patroon actief:
    [Resultaat kiezen]
 ```
 
+**CRUCIALE REGEL - Exact Positie Matching:**
+Als de voorgooier ervoor kiest om worp **N** blind te doen, moet de achterligger **ook worp N** blind doen (als ze zo ver gaan). Het patroon moet **per worp positie** gevolgd worden:
+
+**Voorbeeld 1:**
+- Voorgooier: Worp 1 OPEN → Worp 2 BLIND → Worp 3 OPEN
+- Achterligger: **MOET** Worp 1 OPEN, Worp 2 BLIND, Worp 3 OPEN (als ze tot worp 3 gaan)
+- Achterligger **MAG** wel vroeg stoppen (bijv. na worp 2)
+
+**Voorbeeld 2:**
+- Voorgooier: Worp 1 OPEN → Stopt (2 worpen niet gemaakt)
+- Achterligger: **MOET** Worp 1 OPEN, daarna vrije keuze (voorgooier bereikte worp 2/3 niet)
+
 **Belangrijke regels:**
-- ✅ Patroon is **verplicht** voor deze ronde
-- ❌ Geen afwijking mogelijk
-- 🎯 Worplimiet knoppen zijn **uitgeschakeld**
-- 📊 Patroon wordt getoond boven het spel
+- ✅ Patroon is **verplicht per positie** voor deze ronde
+- ✅ Je **mag wel vroeg stoppen** (minder worpen dan voorgooier)
+- ❌ Je **mag niet** afwijken van het patroon op een positie die voorgooier WEL bereikte
+- ❌ Geen afwijking mogelijk op verplichte posities
+- 🎯 Knoppen worden **automatisch disabled** (alleen de juiste knop werkt)
+- 📊 Patroon wordt gelogd in debug console
 - 🔄 Patroon geldt alleen voor **deze ronde**, niet het hele spel
+- ⚠️ Validatie blokkeert foute worpen met error message
 
 ---
 

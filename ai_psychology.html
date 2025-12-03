@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="nl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Psychology Implementation voor Koning Mexico - Wetenschappelijk onderbouwde AI met menselijk gedrag">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0D5E3A">
+    <title>AI Psychology - Koning Mexico | Technical Documentation</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                        'mono': ['Roboto Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <style>
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+        code {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .research-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .research-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: var(--color-gold);
+            color: var(--color-brown-dark);
+            font-weight: bold;
+        }
+        tbody tr:hover {
+            background: var(--color-cream-light);
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="font-body bg-cream-light text-brown-dark leading-relaxed">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-brown-dark to-brown-medium py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-8 flex justify-between items-center max-w-7xl">
+            <a href="index.html" class="flex-shrink-0">
+                <img src="assets/logo-fixed.png" alt="Koning Mexico Logo" class="h-16 w-auto">
+            </a>
+            <nav class="flex gap-8 items-center">
+                <a href="index.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all">← Home</a>
+                <a href="spelregels.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all">Spelregels</a>
+                <a href="spel_vs_computer.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all">Speel vs AI</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-br from-brown-dark via-brown-medium to-gold-dark text-white py-12 text-center">
+        <div class="relative z-10">
+            <div class="text-6xl mb-4">🧠</div>
+            <h1 class="font-heading text-5xl md:text-6xl font-bold mb-4">AI Psychology Implementation</h1>
+            <p class="text-xl md:text-2xl font-semibold mb-2">Mexico Spel - Wetenschappelijk Onderbouwde AI</p>
+            <p class="text-lg opacity-90">Versie 1.0 | 4 December 2025</p>
+        </div>
+    </section>
+
+    <!-- Executive Summary -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-8 max-w-5xl">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎯 Executive Summary</h2>
+
+            <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-4 border-gold shadow-lg mb-8">
+                <p class="text-xl mb-6">
+                    Deze documentatie beschrijft de psychologische AI voor ons Mexico dobbelspel (1v1 tegen computer).
+                    De AI is ontworpen om <strong>menselijk gedrag</strong> te simuleren op basis van wetenschappelijk onderzoek.
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-lg">
+                        <h3 class="font-bold text-green mb-3">Gebaseerd op:</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Prospect Theory</strong> (Kahneman & Tversky)</li>
+                            <li>• <strong>Loss Aversion</strong> - sterkste psychologisch effect</li>
+                            <li>• <strong>Cognitive Biases</strong> (Gambler's Fallacy, Hot Hand)</li>
+                            <li>• <strong>Bluffing Behavior</strong> - strategische misleiding</li>
+                            <li>• <strong>Emotional States</strong> (Tilt, frustratie)</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-gold/20 to-gold-light/20 p-4 rounded-lg border-2 border-gold">
+                        <h3 class="font-bold text-gold-dark mb-3">🎪 Kernfilosofie:</h3>
+                        <p class="italic text-lg">
+                            "Een perfecte AI is saai. Een menselijke AI maakt <strong>'intelligente fouten'</strong> -
+                            psychologische biases, niet computational errors."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Research Basis -->
+    <section class="py-12 bg-gradient-to-br from-cream to-cream-light">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">📚 Research Basis</h2>
+            <p class="text-xl mb-8 max-w-3xl">
+                Belangrijkste wetenschappelijke bevindingen die de AI vormgeven:
+            </p>
+
+            <div class="space-y-6">
+                <!-- Loss Aversion -->
+                <div class="research-card bg-white p-8 rounded-xl shadow-lg border-l-4 border-red">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="font-heading text-2xl font-bold text-red mb-2">1. Loss Aversion (Verliesaversie)</h3>
+                            <p class="text-sm text-brown-medium">Kahneman & Tversky (1979), Prospect Theory</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-red/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-red mb-3">🔑 Kernbevinding:</h4>
+                        <ul class="space-y-2">
+                            <li>• Verliezen voelen <strong class="text-xl">2-2.5x erger</strong> dan equivalent winnen goed voelt</li>
+                            <li>• Dit is HET meest robuuste effect in behavioral economics</li>
+                            <li>• fMRI studies tonen verschillende hersendelen actief bij verlies vs. winst</li>
+                        </ul>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green/10 p-4 rounded-lg border-l-4 border-green">
+                            <h4 class="font-bold text-green mb-2">Achter in score:</h4>
+                            <p class="text-sm">Spelers worden <strong>RISICOVOLLER</strong> (loss-seeking)</p>
+                        </div>
+                        <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                            <h4 class="font-bold text-gold-dark mb-2">Voor in score:</h4>
+                            <p class="text-sm">Spelers worden <strong>VOORZICHTIGER</strong> (risk-averse)</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 bg-cream-light p-4 rounded-lg">
+                        <strong>Relevantie voor Mexico:</strong>
+                        <pre class="mt-2 text-xs">Speler achter met 2 levens → neemt grotere risico's
+Speler voor met 2 levens → speelt veiliger, beschermt lead</pre>
+                    </div>
+
+                    <div class="mt-4 priority-badge bg-green text-white">
+                        ✅ PRIORITEIT 1 - Implementatie Gepland
+                    </div>
+                </div>
+
+                <!-- Tilt Mechanics -->
+                <div class="research-card bg-white p-8 rounded-xl shadow-lg border-l-4 border-red-light">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="font-heading text-2xl font-bold text-red-light mb-2">2. Tilt Mechanics (Emotionele Ontregeling)</h3>
+                            <p class="text-sm text-brown-medium">PLOS One (2022), "Conceptualising Tilt in Sports Betting"</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-light/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-red-light mb-3">🔑 Kernbevinding:</h4>
+                        <ul class="space-y-2">
+                            <li>• "Tilt" = emotionele staat waar frustratie rationeel denken overschrijft</li>
+                            <li>• Getriggerd door: herhaalde verliezen (3+), grote verliezen, gepakt op bluf</li>
+                            <li>• Duurt: 2-4 rondes, dan geleidelijk herstel</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-cream-light p-4 rounded-lg mb-4">
+                        <h4 class="font-bold text-gold-dark mb-3">Gedragspatronen tijdens Tilt:</h4>
+                        <div class="grid md:grid-cols-2 gap-3 text-sm">
+                            <div>• Verhoogde agressie (+50% bluff rate)</div>
+                            <div>• Verminderde strategische diepgang</div>
+                            <div>• Meer re-rolls, hogere risico's</div>
+                            <div>• Snellere, impulsieve beslissingen</div>
+                        </div>
+                    </div>
+
+                    <pre>Computer verliest 3 rondes achter elkaar
+→ TILT mode: threshold -10, bluffChance × 1.5
+→ Speelt slechter, meer risico, minder rationeel
+→ Na 2-3 rondes: herstel naar normale state</pre>
+
+                    <div class="mt-4 priority-badge bg-green text-white">
+                        ✅ PRIORITEIT 2 - Implementatie Gepland
+                    </div>
+                </div>
+
+                <!-- Gambler's Fallacy & Hot Hand -->
+                <div class="research-card bg-white p-8 rounded-xl shadow-lg border-l-4 border-gold">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="font-heading text-2xl font-bold text-gold-dark mb-2">3. Gambler's Fallacy vs. Hot Hand</h3>
+                            <p class="text-sm text-brown-medium">Nature (2024), Tversky & Kahneman</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div class="bg-brown-dark/10 p-4 rounded-lg">
+                            <h4 class="font-bold text-brown-dark mb-3">Gambler's Fallacy:</h4>
+                            <p class="text-sm mb-2 italic">"Ik heb 5x slecht gegooid, nu moet ik wel goed gooien"</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• Treedt op na <strong>korte streaks</strong> (3-5 events)</li>
+                                <li>• 85% van bets na 6+ streaks consistent met deze bias</li>
+                                <li>• Komt voort uit "representativeness heuristic"</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gold/10 p-4 rounded-lg">
+                            <h4 class="font-bold text-gold-dark mb-3">Hot Hand Fallacy:</h4>
+                            <p class="text-sm mb-2 italic">"Ik ben on fire, dit gaat gewoon door"</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• Treedt op na <strong>lange streaks</strong> (6+ successes)</li>
+                                <li>• In pure chance games: blijft een bias</li>
+                                <li>• Transition point: rond 5-6 outcomes</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <strong>Belangrijk:</strong> BEIDE kunnen tegelijk optreden!
+                    </div>
+
+                    <div class="mt-4 priority-badge bg-green text-white">
+                        ✅ PRIORITEIT 3 - Implementatie Gepland
+                    </div>
+                </div>
+
+                <!-- Bluffing -->
+                <div class="research-card bg-white p-8 rounded-xl shadow-lg border-l-4 border-green">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="font-heading text-2xl font-bold text-green mb-2">4. Bluffing Strategieën</h3>
+                            <p class="text-sm text-brown-medium">PLOS One (2016), "To Bluff like a Man"</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="text-gold text-2xl">⭐</span>
+                            <span class="text-gold text-2xl">⭐</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-green/10 p-6 rounded-lg">
+                        <h4 class="font-bold text-green mb-3">Context-afhankelijk:</h4>
+                        <div class="grid md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white p-3 rounded">Achter in score: <strong>+40% bluff rate</strong></div>
+                            <div class="bg-white p-3 rounded">Voor in score: <strong>-30% bluff rate</strong></div>
+                            <div class="bg-white p-3 rounded">Na succesvolle bluff: <strong>+20%</strong> (2 rondes)</div>
+                            <div class="bg-white p-3 rounded">Na caught bluff: <strong>-50%</strong> (2 rondes)</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 priority-badge bg-green text-white">
+                        ✅ GEÏMPLEMENTEERD v1.0
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Geïmplementeerde Features -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">✅ Geïmplementeerde Features</h2>
+
+            <div class="space-y-8">
+                <!-- AI Personality System -->
+                <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">1. AI Personality System (v1.0)</h3>
+                    <p class="mb-4"><strong>Code Locatie:</strong> <code>game_vs_computer.js</code>, regels 9-31</p>
+
+                    <table class="text-sm">
+                        <thead>
+                            <tr>
+                                <th>Personality</th>
+                                <th>Worp 1</th>
+                                <th>Worp 2</th>
+                                <th>Worp 3</th>
+                                <th>Bluff%</th>
+                                <th>Psychologie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Voorzichtig</strong> (30%)</td>
+                                <td>≥61</td>
+                                <td>≥61</td>
+                                <td>≥31</td>
+                                <td class="text-green">5%</td>
+                                <td class="text-brown-medium">Geen</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Rationeel</strong> (50%)</td>
+                                <td>≥61</td>
+                                <td>≥65</td>
+                                <td>≥22</td>
+                                <td class="text-gold-dark">10%</td>
+                                <td>-3 pts</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Agressief</strong> (20%)</td>
+                                <td>≥54</td>
+                                <td>≥54</td>
+                                <td>≥31</td>
+                                <td class="text-red">20%</td>
+                                <td>-5 pts</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-6 bg-white p-4 rounded-lg border-l-4 border-green">
+                        <strong class="text-green">Basis volgens PDF Kansberekening:</strong>
+                        <ul class="mt-2 space-y-1 text-sm">
+                            <li>• Worp 1: 61 = 50% kans (grens)</li>
+                            <li>• Worp 2: 65 = 48% kans (veilig)</li>
+                            <li>• Worp 3: 22 = 48% kans (veilig)</li>
+                        </ul>
+                    </div>
+
+                    <pre class="mt-4">const AI_PERSONALITIES = {
+    SCARED: {
+        name: 'Voorzichtig',
+        thresholds: { 1: 61, 2: 61, 3: 31 },
+        bluffChance: 0.05,
+        psychologyFactor: 0,
+        description: 'Speelt veilig, wil niet verliezen'
+    },
+    RATIONAL: {
+        name: 'Rationeel',
+        thresholds: { 1: 61, 2: 65, 3: 22 },
+        bluffChance: 0.10,
+        psychologyFactor: 3,
+        description: 'Speelt volgens kansberekening'
+    },
+    AGGRESSIVE: {
+        name: 'Agressief',
+        thresholds: { 1: 54, 2: 54, 3: 31 },
+        bluffChance: 0.20,
+        psychologyFactor: 5,
+        description: 'Speelt riskant, neemt risico'
+    }
+};</pre>
+                </div>
+
+                <!-- Pattern Enforcement -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-gold">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">2. Pattern Enforcement (Exact Sequence Matching)</h3>
+                    <p class="mb-4"><strong>Code Locatie:</strong> <code>game_vs_computer.js</code>, regels 35-60</p>
+
+                    <div class="bg-cream-light p-4 rounded-lg mb-4">
+                        <h4 class="font-bold text-gold-dark mb-3">Regels:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Voorgooier bepaalt patroon door eigen worpen</li>
+                            <li>• Achterligger MOET exact pattern volgen per positie</li>
+                            <li>• Vroeg stoppen toegestaan (minder worpen dan voorgooier)</li>
+                            <li>• Knoppen worden automatisch disabled/enabled</li>
+                        </ul>
+                    </div>
+
+                    <pre>gameState.voorgooierPattern = []; // [false, true, false] = [open, blind, open]
+
+// Recording pattern
+if (gameState.playerToGoFirst === 'player' && !gameState.isFirstRound) {
+    gameState.voorgooierPattern.push(isBlind);
+}
+
+// Enforcing pattern
+const throwIndex = computer.throwCount;
+if (throwIndex < gameState.voorgooierPattern.length) {
+    const mustBeBlind = gameState.voorgooierPattern[throwIndex];
+    isBlind = mustBeBlind;
+    logToConsole(\`[REGEL] Computer MOET \${mustBeBlind ? 'BLIND' : 'OPEN'} gooien\`);
+}</pre>
+                </div>
+
+                <!-- Psychologische Lees -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-green-light">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">3. Psychologische Lees van Speler</h3>
+                    <p class="mb-4"><strong>Code Locatie:</strong> <code>game_vs_computer.js</code>, regels 539-550</p>
+
+                    <div class="bg-green/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-green mb-3">Logica:</h4>
+                        <p class="mb-3">Speler gooit 2+ keer open, dan blind → Psychologisch signaal: <strong>waarschijnlijk lage score</strong></p>
+                        <ul class="space-y-2 text-sm">
+                            <li>• RATIONAL AI: -3 punten threshold (iets agressiever)</li>
+                            <li>• AGGRESSIVE AI: -5 punten threshold (veel agressiever)</li>
+                            <li>• SCARED AI: geen aanpassing (blijft bij plan)</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold mb-4">
+                        <p class="italic">"Waarom zou je blind gooien na meerdere open worpen? Meestal omdat je score laag is en je geen betere optie hebt."</p>
+                    </div>
+
+                    <pre>// PSYCHOLOGY: Analyze player behavior
+if (player.currentThrow !== null && player.isBlind && player.throwCount >= 2) {
+    const adjustment = personality.psychologyFactor;
+    if (adjustment > 0) {
+        const oldThreshold = threshold;
+        threshold = Math.max(threshold - adjustment, 43);
+        logToConsole(\`[AI Psychologie] Speler gooide \${player.throwCount}× en toen blind\`);
+        logToConsole(\`[AI Psychologie] Threshold aangepast: \${oldThreshold} → \${threshold}\`);
+    }
+}</pre>
+                </div>
+
+                <!-- Bluffing Mechanisme -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-red">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">4. Bluffing Mechanisme</h3>
+                    <p class="mb-4"><strong>Code Locatie:</strong> <code>game_vs_computer.js</code>, regels 526-532</p>
+
+                    <div class="grid md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green mb-2">5%</div>
+                            <div class="text-sm">SCARED - bijna nooit</div>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-gold-dark mb-2">10%</div>
+                            <div class="text-sm">RATIONAL - soms strategisch</div>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-red mb-2">20%</div>
+                            <div class="text-sm">AGGRESSIVE - vaak intimidatie</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-red/10 p-4 rounded-lg border-l-4 border-red mb-4">
+                        <strong>Bluff Range:</strong> 43-62
+                        <p class="text-sm mt-2">• Niet té laag (ongeloofwaardig) en niet rationeel hoog</p>
+                        <p class="text-sm">• 52 op worp 2 = 67% kans om te verliezen (normaal: gooi door)</p>
+                    </div>
+
+                    <pre>// BLUFF OPTION
+if (Math.random() < personality.bluffChance) {
+    if (computer.currentThrow >= 43 && computer.currentThrow <= 62) {
+        logToConsole(\`[AI BLUF] Stop bij \${computer.displayThrow}\`);
+        return false;
+    }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Geplande Verbeteringen -->
+    <section class="py-12 bg-gradient-to-br from-green/10 to-green-light/10">
+        <div class="container mx-auto px-8 max-w-6xl">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🚀 Geplande Verbeteringen</h2>
+
+            <div class="space-y-6">
+                <!-- Priority 1 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-green">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-green">Priority 1: Loss Aversion Implementation</h3>
+                        <span class="priority-badge bg-green text-white">HIGH PRIORITY</span>
+                    </div>
+
+                    <div class="bg-green/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-green mb-3">Implementatie Plan:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Track score differential: <code>livesDiff = player.lives - computer.lives</code></li>
+                            <li>• Computer achter: decrease threshold (meer agressief)</li>
+                            <li>• Computer voor: increase threshold (meer conservatief)</li>
+                            <li>• Asymmetrische multipliers: 3x voor behind, 2x voor ahead</li>
+                            <li>• Cap adjustments om extreme waarden te voorkomen</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <strong>Geschatte Effort:</strong> 5 minuten
+                    </div>
+                </div>
+
+                <!-- Priority 2 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-gold">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-gold-dark">Priority 2: Tilt Mechanics</h3>
+                        <span class="priority-badge bg-gold text-brown-dark">MEDIUM PRIORITY</span>
+                    </div>
+
+                    <div class="bg-gold/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-gold-dark mb-3">Implementatie Plan:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Track consecutive losses: <code>consecutiveLosses</code></li>
+                            <li>• Activate tilt mode after 3+ losses</li>
+                            <li>• Increase bluff rate, decrease threshold</li>
+                            <li>• Recovery after 2-4 rounds</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <strong>Geschatte Effort:</strong> 10 minuten
+                    </div>
+                </div>
+
+                <!-- Priority 3 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-brown-dark">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-brown-dark">Priority 3: Recency Bias (Gambler's Fallacy/Hot Hand)</h3>
+                        <span class="priority-badge bg-brown-dark text-white">MEDIUM PRIORITY</span>
+                    </div>
+
+                    <div class="bg-brown-dark/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-brown-dark mb-3">Implementatie Plan:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Track recent roll quality (good/bad)</li>
+                            <li>• Gambler's Fallacy after 3-5 bad rolls</li>
+                            <li>• Hot Hand after 6+ good rolls</li>
+                            <li>• Small threshold adjustments (±5)</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <strong>Geschatte Effort:</strong> 15 minuten
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-brown-dark text-white py-12 text-center">
+        <div class="container mx-auto px-8">
+            <img src="assets/logo-fixed.png" alt="Koning Mexico" class="w-32 h-auto mx-auto mb-4 opacity-90">
+            <p class="opacity-80 mb-4">&copy; 2025 Koning Mexico - AI Psychology Documentation</p>
+            <p class="text-sm opacity-70">
+                Gebaseerd op wetenschappelijk onderzoek • Versie 1.0
+            </p>
+            <div class="mt-6 flex justify-center gap-8">
+                <a href="index.html" class="text-gold hover:text-gold-light transition-colors">Home</a>
+                <a href="spelregels.html" class="text-gold hover:text-gold-light transition-colors">Spelregels</a>
+                <a href="spel_vs_computer.html" class="text-gold hover:text-gold-light transition-colors">Speel vs AI</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Terug naar boven">
+        ↑
+    </button>
+
+    <script>
+        // Back to top button visibility
+        window.addEventListener('scroll', function() {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        // Research card click effects
+        document.querySelectorAll('.research-card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.toggle('shadow-2xl');
+            });
+        });
+    </script>
+</body>
+</html>

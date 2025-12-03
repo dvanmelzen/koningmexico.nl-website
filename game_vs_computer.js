@@ -5,6 +5,31 @@
 (function() {
     'use strict';
 
+    // AI Personalities for human-like behavior
+    const AI_PERSONALITIES = {
+        SCARED: {
+            name: 'Voorzichtig',
+            thresholds: { 1: 61, 2: 61, 3: 31 },  // Safe: 50% grens
+            bluffChance: 0.05,  // Blufft bijna nooit (5%)
+            psychologyFactor: 0,  // Geen psychologische aanpassing
+            description: 'Speelt veilig, wil niet verliezen'
+        },
+        RATIONAL: {
+            name: 'Rationeel',
+            thresholds: { 1: 61, 2: 65, 3: 22 },  // Exact volgens PDF tabel
+            bluffChance: 0.10,  // Blufft soms (10%)
+            psychologyFactor: 3,  // Kleine aanpassing bij speler blind
+            description: 'Speelt volgens kansberekening'
+        },
+        AGGRESSIVE: {
+            name: 'Agressief',
+            thresholds: { 1: 54, 2: 54, 3: 31 },  // Riskant: veel lager
+            bluffChance: 0.20,  // Blufft vaak (20%)
+            psychologyFactor: 5,  // Grote aanpassing bij speler blind
+            description: 'Speelt riskant, neemt risico'
+        }
+    };
+
     // Game State
     let gameState = {
         player: {
@@ -32,7 +57,8 @@
         gameOver: false,
         mexicoCount: 0, // Number of Mexico's thrown this round
         maxThrows: 3, // Maximum throws this round (set by voorgooier)
-        voorgooierThrewBlind: false // Whether voorgooier threw ANY blind throws (determines if achterligger can throw blind)
+        voorgooierPattern: [], // Array tracking blind/open for each throw: [false, true, false] = [open, blind, open]
+        aiPersonality: null // Current AI personality for this round
     };
 
     // DOM Elements
@@ -89,6 +115,24 @@
             return;
         }
 
+        // RULE CHECK: If player is achterligger, must follow voorgooier pattern
+        if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
+            // Player is achterligger - check if pattern dictates this throw
+            const throwIndex = player.throwCount; // About to throw this number (0-indexed in array)
+            if (throwIndex < gameState.voorgooierPattern.length) {
+                // Voorgooier made this throw - must match pattern
+                const mustBeBlind = gameState.voorgooierPattern[throwIndex];
+                if (isBlind !== mustBeBlind) {
+                    const expectedType = mustBeBlind ? 'BLIND' : 'OPEN';
+                    const attemptedType = isBlind ? 'blind' : 'open';
+                    showMessage(`⚠️ Je moet ${expectedType} gooien op worp ${throwIndex + 1} (voorgooier patroon)!`, 'warning');
+                    logToConsole(`[FOUT] Speler probeerde ${attemptedType} te gooien, maar moet ${expectedType} (voorgooier patroon)`);
+                    return;
+                }
+                logToConsole(`[REGEL] Speler gooit ${isBlind ? 'BLIND' : 'OPEN'} op worp ${throwIndex + 1} (volgt voorgooier patroon)`);
+            }
+        }
+
         // Check if max throws reached (set by voorgooier)
         if (player.throwCount >= gameState.maxThrows) {
             showMessage('⚠️ Maximum worpen bereikt (voorgooier limiet)!', 'warning');
@@ -106,9 +150,14 @@
         // Track if player threw any blind throws this round
         if (isBlind) {
             player.threwBlindThisRound = true;
-            logToConsole(`[Speler] Worp ${player.throwCount} - BLIND (blind vlag gezet)`);
+        }
+
+        // If player is voorgooier, record pattern
+        if (gameState.playerToGoFirst === 'player' && !gameState.isFirstRound) {
+            gameState.voorgooierPattern.push(isBlind);
+            logToConsole(`[Speler] Worp ${player.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'} (voorgooier patroon: ${gameState.voorgooierPattern.length} worpen)`);
         } else {
-            logToConsole(`[Speler] Worp ${player.throwCount} - OPEN`);
+            logToConsole(`[Speler] Worp ${player.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'}`);
         }
 
         throwDice('player', isBlind);
@@ -123,11 +172,13 @@
         // If player is voorgooier, set the max throws for this round
         if (gameState.playerToGoFirst === 'player' && !gameState.isFirstRound) {
             gameState.maxThrows = player.throwCount;
-            // Track if player threw any blind throws (if so, computer can also throw blind)
-            gameState.voorgooierThrewBlind = player.threwBlindThisRound;
-            const throwType = player.threwBlindThisRound ? 'Met blind' : 'Alleen open';
-            logToConsole(`[Speler] VOORGOOIER - Worplimiet: ${gameState.maxThrows}, ${throwType} gegooid`);
-            logToConsole(`[REGEL] Computer ${player.threwBlindThisRound ? 'MAG' : 'MAG NIET'} blind gooien`);
+            // Voorgooier pattern is now complete - log it
+            const patternStr = gameState.voorgooierPattern.map((isBlind, i) =>
+                `Worp ${i+1}: ${isBlind ? '🙈 Blind' : '👁️ Open'}`
+            ).join(', ');
+            logToConsole(`[Speler] VOORGOOIER - Worplimiet: ${gameState.maxThrows}`);
+            logToConsole(`[VOORGOOIER PATROON] ${patternStr}`);
+            logToConsole(`[REGEL] Computer moet dit patroon volgen`);
         }
 
         logToConsole(`[Speler] LATEN STAAN - Eindworp: ${displayValue} (na ${player.throwCount} worpen)`);
@@ -305,12 +356,26 @@
         // Decide if next throw should be blind
         let isBlind = false;
 
-        // RULE CHECK: If voorgooier threw all open, achterligger MUST throw all open
-        if (!gameState.isFirstRound && !gameState.voorgooierThrewBlind) {
-            isBlind = false; // Force open throws
-            logToConsole(`[REGEL] Computer MAG NIET blind gooien (voorgooier gooide alleen open)`);
-        } else {
-            // Strategy: On 2nd throw with low value (<54), go blind on 3rd throw (1vs1 strategy)
+        // RULE CHECK: If computer is achterligger, must follow voorgooier pattern
+        if (!gameState.isFirstRound && gameState.playerToGoFirst === 'player') {
+            // Computer is achterligger - check if pattern dictates this throw
+            const throwIndex = computer.throwCount; // About to throw this number (0-indexed in array)
+            if (throwIndex < gameState.voorgooierPattern.length) {
+                // Voorgooier made this throw - must match pattern
+                const mustBeBlind = gameState.voorgooierPattern[throwIndex];
+                isBlind = mustBeBlind;
+                logToConsole(`[REGEL] Computer MOET ${mustBeBlind ? 'BLIND' : 'OPEN'} gooien op worp ${throwIndex + 1} (voorgooier patroon)`);
+            } else {
+                // Voorgooier didn't reach this throw - computer can choose
+                // Strategy: On 2nd throw with low value (<54), go blind on 3rd throw
+                if (computer.throwCount === 2 && computer.currentThrow < 54 && gameState.maxThrows >= 3) {
+                    isBlind = true;
+                    logToConsole(`[Computer] Besluit: LAATSTE WORP BLIND GOOIEN (huidige worp te laag: ${computer.displayThrow || computer.currentThrow})`);
+                }
+            }
+        } else if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
+            // Computer is voorgooier - free to choose
+            // Strategy: On 2nd throw with low value (<54), go blind on 3rd throw
             if (computer.throwCount === 2 && computer.currentThrow < 54 && gameState.maxThrows >= 3) {
                 isBlind = true;
                 logToConsole(`[Computer] Besluit: LAATSTE WORP BLIND GOOIEN (huidige worp te laag: ${computer.displayThrow || computer.currentThrow})`);
@@ -328,11 +393,13 @@
                 // If computer is voorgooier, set the max throws
                 if (gameState.playerToGoFirst === 'computer' && !gameState.isFirstRound) {
                     gameState.maxThrows = computer.throwCount;
-                    // Track if computer threw any blind throws (if so, player can also throw blind)
-                    gameState.voorgooierThrewBlind = computer.threwBlindThisRound;
-                    const throwType = computer.threwBlindThisRound ? 'Met blind' : 'Alleen open';
-                    logToConsole(`[Computer] VOORGOOIER - Worplimiet: ${gameState.maxThrows}, ${throwType} gegooid`);
-                    logToConsole(`[REGEL] Speler ${computer.threwBlindThisRound ? 'MAG' : 'MAG NIET'} blind gooien`);
+                    // Voorgooier pattern is now complete - log it
+                    const patternStr = gameState.voorgooierPattern.map((isBlind, i) =>
+                        `Worp ${i+1}: ${isBlind ? '🙈 Blind' : '👁️ Open'}`
+                    ).join(', ');
+                    logToConsole(`[Computer] VOORGOOIER - Worplimiet: ${gameState.maxThrows}`);
+                    logToConsole(`[VOORGOOIER PATROON] ${patternStr}`);
+                    logToConsole(`[REGEL] Speler moet dit patroon volgen`);
                 }
 
                 logToConsole(`[Computer] LATEN STAAN - Eindworp: ${displayValue} (na ${computer.throwCount} worpen)`);
@@ -361,9 +428,14 @@
         // Track if computer threw any blind throws this round
         if (isBlind) {
             computer.threwBlindThisRound = true;
-            logToConsole(`[Computer] Worp ${computer.throwCount} - BLIND (blind vlag gezet)`);
+        }
+
+        // If computer is voorgooier, record pattern
+        if (gameState.playerToGoFirst === 'computer' && !gameState.isFirstRound) {
+            gameState.voorgooierPattern.push(isBlind);
+            logToConsole(`[Computer] Worp ${computer.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'} (voorgooier patroon: ${gameState.voorgooierPattern.length} worpen)`);
         } else {
-            logToConsole(`[Computer] Worp ${computer.throwCount} - OPEN`);
+            logToConsole(`[Computer] Worp ${computer.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'}`);
         }
 
         throwDice('computer', isBlind);
@@ -402,6 +474,22 @@
         }, 1500);
     }
 
+    // ========================================
+    // AI Personality System
+    // ========================================
+    function selectAIPersonality() {
+        const rand = Math.random();
+
+        // 30% Scared, 50% Rational, 20% Aggressive
+        if (rand < 0.30) {
+            return AI_PERSONALITIES.SCARED;
+        } else if (rand < 0.80) {
+            return AI_PERSONALITIES.RATIONAL;
+        } else {
+            return AI_PERSONALITIES.AGGRESSIVE;
+        }
+    }
+
     function computerShouldThrowAgain() {
         const computer = gameState.computer;
         const player = gameState.player;
@@ -416,49 +504,76 @@
             return true;
         }
 
-        // 1vs1 Strategy: Don't keep very low throws in early throws
-        // After 1st throw: never keep anything below 52
-        if (computer.throwCount === 1 && computer.currentThrow < 52) {
-            logToConsole(`[Computer AI] Worp te laag (${computer.displayThrow || computer.currentThrow} < 52), gooi opnieuw`);
-            return true;
+        // Select or keep personality for this round
+        if (!gameState.aiPersonality) {
+            gameState.aiPersonality = selectAIPersonality();
+            logToConsole(`[AI Personality] Computer speelt deze ronde: ${gameState.aiPersonality.name}`);
+            logToConsole(`[AI Info] ${gameState.aiPersonality.description}`);
         }
 
-        // After 2nd throw: if still below 54, we'll go blind (handled in sequence)
-        // So here we check if current throw is worth keeping
-        if (computer.throwCount === 2) {
-            // If we have 54 or higher, consider keeping it
-            if (computer.currentThrow >= 54) {
-                // Good throw, keep it
-                logToConsole(`[Computer AI] Goede worp (${computer.displayThrow || computer.currentThrow}), laten staan`);
-                return false;
-            } else {
-                // Low throw, will go blind on 3rd
-                return true;
+        const personality = gameState.aiPersonality;
+
+        // RISK ANALYSIS: Check if next throw would be blind (forced by pattern)
+        const nextThrowIndex = computer.throwCount; // Next throw (0-indexed)
+        let nextThrowMustBeBlind = false;
+        if (!gameState.isFirstRound && gameState.playerToGoFirst === 'player') {
+            // Computer is achterligger - check if next throw must be blind
+            if (nextThrowIndex < gameState.voorgooierPattern.length) {
+                nextThrowMustBeBlind = gameState.voorgooierPattern[nextThrowIndex];
             }
         }
 
-        // If player has higher throw and computer can still throw, try again
-        if (player.currentThrow !== null && computer.currentThrow < player.currentThrow) {
-            if (computer.throwCount < gameState.maxThrows) {
-                logToConsole(`[Computer AI] Speler heeft hoger (${player.displayThrow || player.currentThrow}), probeer opnieuw`);
-                return true;
-            }
-        }
-
-        // If computer has decent throw (>= 54) and equals or beats player, keep it
-        if (computer.currentThrow >= 54) {
-            if (player.currentThrow === null || computer.currentThrow >= player.currentThrow) {
+        // BLUFF OPTION: Sometimes stop at mediocre scores to bluff
+        if (Math.random() < personality.bluffChance) {
+            if (computer.currentThrow >= 43 && computer.currentThrow <= 62) {
+                logToConsole(`[AI BLUF] Stop bij ${computer.displayThrow || computer.currentThrow} - probeer te bluffen (${Math.round(personality.bluffChance * 100)}% kans)`);
                 return false;
             }
         }
 
-        // If can still throw and current throw is not great, throw again
-        if (computer.throwCount < gameState.maxThrows) {
-            return true;
+        // Get base threshold from personality for current throw count
+        let threshold = personality.thresholds[computer.throwCount] || 61;
+
+        logToConsole(`[AI ${personality.name}] Basis threshold voor worp ${computer.throwCount}: ${threshold}`);
+
+        // PSYCHOLOGY: Analyze player behavior
+        if (player.currentThrow !== null && player.isBlind && player.throwCount >= 2) {
+            // Player threw multiple times then blind = probably low
+            // Computer can be more aggressive (lower threshold)
+            const adjustment = personality.psychologyFactor;
+            if (adjustment > 0) {
+                const oldThreshold = threshold;
+                threshold = Math.max(threshold - adjustment, 43);
+                logToConsole(`[AI Psychologie] Speler gooide ${player.throwCount}× en toen blind - waarschijnlijk LAAG`);
+                logToConsole(`[AI Psychologie] Threshold aangepast: ${oldThreshold} → ${threshold} (${adjustment} punten agressiever)`);
+            }
         }
 
-        // Default: keep current throw
-        return false;
+        // EXTRA CAUTION: If next throw MUST be blind, be more careful
+        if (nextThrowMustBeBlind && computer.currentThrow >= 200) {
+            // High doubles + forced blind next = ALWAYS stop
+            logToConsole(`[AI Voorzichtig] Hoge score (${computer.displayThrow}) + volgende worp MOET blind = STOPPEN`);
+            return false;
+        }
+
+        if (nextThrowMustBeBlind) {
+            // Add ~10 points to threshold (be more careful)
+            const oldThreshold = threshold;
+            threshold = Math.min(threshold + 10, 65);
+            logToConsole(`[AI Voorzichtig] Volgende worp MOET blind - threshold verhoogd: ${oldThreshold} → ${threshold}`);
+        }
+
+        // DECISION: Compare current score with threshold
+        const currentScore = computer.currentThrow;
+        const displayValue = computer.displayThrow || currentScore;
+
+        if (currentScore >= threshold) {
+            logToConsole(`[AI ${personality.name}] Score ${displayValue} >= threshold ${threshold} → STOP`);
+            return false;
+        } else {
+            logToConsole(`[AI ${personality.name}] Score ${displayValue} < threshold ${threshold} → GOOI DOOR`);
+            return true;
+        }
     }
 
     // ========================================
@@ -690,6 +805,8 @@
 
             // VASTGOOIER RULE: Only 1 throw allowed when rethrowing!
             gameState.maxThrows = 1;
+            gameState.voorgooierPattern = []; // Reset pattern for rethrow
+            gameState.aiPersonality = null; // Reset AI personality for rethrow
             logToConsole(`[VASTGOOIER] Worplimiet voor overgooien: 1 worp`);
 
             // Reset throws for both players
@@ -828,6 +945,8 @@
 
             // VASTGOOIER RULE: Only 1 throw allowed when rethrowing!
             gameState.maxThrows = 1;
+            gameState.voorgooierPattern = []; // Reset pattern for rethrow
+            gameState.aiPersonality = null; // Reset AI personality for rethrow
             logToConsole(`[VASTGOOIER] Worplimiet voor overgooien: 1 worp`);
 
             // Reset throws for both players
@@ -898,7 +1017,8 @@
 
         // Reset max throws to 3 (will be set by voorgooier during the round)
         gameState.maxThrows = 3;
-        gameState.voorgooierThrewBlind = false;
+        gameState.voorgooierPattern = []; // Reset pattern array for new round
+        gameState.aiPersonality = null; // Reset AI personality for new round
 
         // Reset Mexico count for new round
         gameState.mexicoCount = 0;
@@ -964,7 +1084,8 @@
         gameState.gameOver = false;
         gameState.mexicoCount = 0;
         gameState.maxThrows = 3;
-        gameState.voorgooierThrewBlind = false;
+        gameState.voorgooierPattern = []; // Reset pattern array for new game
+        gameState.aiPersonality = null; // Reset AI personality for new game
 
         gameState.player.currentThrow = null;
         gameState.player.displayThrow = null;
@@ -1155,18 +1276,32 @@
             elements.throwOpenBtn.disabled = false;
             elements.throwOpenBtn.style.opacity = '1';
             elements.throwOpenBtn.style.cursor = 'pointer';
+            elements.throwBlindBtn.disabled = false;
+            elements.throwBlindBtn.style.opacity = '1';
+            elements.throwBlindBtn.style.cursor = 'pointer';
 
-            // RULE CHECK: If voorgooier threw all open, achterligger MUST throw all open
-            if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer' && !gameState.voorgooierThrewBlind) {
-                // Voorgooier (computer) threw all open, so player must also throw open
-                elements.throwBlindBtn.disabled = true;
-                elements.throwBlindBtn.style.opacity = '0.5';
-                elements.throwBlindBtn.style.cursor = 'not-allowed';
-                logToConsole('[REGEL] Speler MAG NIET blind gooien (voorgooier gooide alleen open)');
-            } else {
-                elements.throwBlindBtn.disabled = false;
-                elements.throwBlindBtn.style.opacity = '1';
-                elements.throwBlindBtn.style.cursor = 'pointer';
+            // RULE CHECK: If player is achterligger, check voorgooier pattern for current throw
+            if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
+                // Player is achterligger - check if pattern dictates this throw
+                const throwIndex = gameState.player.throwCount; // About to throw this number (0-indexed)
+                if (throwIndex < gameState.voorgooierPattern.length) {
+                    // Voorgooier made this throw - must match pattern
+                    const mustBeBlind = gameState.voorgooierPattern[throwIndex];
+                    if (mustBeBlind) {
+                        // Must throw blind - disable open button
+                        elements.throwOpenBtn.disabled = true;
+                        elements.throwOpenBtn.style.opacity = '0.5';
+                        elements.throwOpenBtn.style.cursor = 'not-allowed';
+                        logToConsole(`[REGEL] Speler MOET blind gooien op worp ${throwIndex + 1} (voorgooier patroon)`);
+                    } else {
+                        // Must throw open - disable blind button
+                        elements.throwBlindBtn.disabled = true;
+                        elements.throwBlindBtn.style.opacity = '0.5';
+                        elements.throwBlindBtn.style.cursor = 'not-allowed';
+                        logToConsole(`[REGEL] Speler MOET open gooien op worp ${throwIndex + 1} (voorgooier patroon)`);
+                    }
+                }
+                // If throwIndex >= pattern length, voorgooier didn't reach this throw, so both buttons are enabled (already done above)
             }
         }
     }

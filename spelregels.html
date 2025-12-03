@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="nl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete spelregels van Koning Mexico - Een gedetailleerd handboek met alle regels, beslisbomen en strategische tips">
+    <meta name="theme-color" content="#0D5E3A">
+    <title>Spelregels - Koning Mexico | Complete Handboek</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <style>
+        .toc-item {
+            transition: all 0.2s ease;
+        }
+        .toc-item:hover {
+            transform: translateX(8px);
+            color: var(--color-gold-dark);
+        }
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        code {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .decision-tree {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: var(--color-gold);
+            color: var(--color-brown-dark);
+            font-weight: bold;
+        }
+        tbody tr:hover {
+            background: var(--color-cream-light);
+        }
+    </style>
+</head>
+<body class="font-body bg-cream-light text-brown-dark leading-relaxed">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-8 flex justify-between items-center max-w-7xl">
+            <a href="index.html" class="flex-shrink-0">
+                <img src="assets/logo-fixed.png" alt="Koning Mexico Logo" class="h-16 w-auto">
+            </a>
+            <nav class="flex gap-8 items-center">
+                <a href="index.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">← Terug naar Home</a>
+                <a href="spel_vs_computer.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">Speel nu</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-br from-gold-dark via-gold to-gold-light text-brown-dark py-12 text-center">
+        <div class="relative z-10">
+            <h1 class="font-heading text-5xl md:text-6xl font-bold mb-4">Complete Spelregels</h1>
+            <p class="text-xl md:text-2xl font-semibold mb-2">Koning Mexico - Digitale Variant</p>
+            <p class="text-lg opacity-90">Reverse-engineered vanuit de game logica</p>
+        </div>
+    </section>
+
+    <!-- Table of Contents -->
+    <section class="py-12 bg-white sticky top-24 z-40 shadow-md">
+        <div class="container mx-auto px-8 max-w-7xl">
+            <h2 class="font-heading text-3xl font-bold text-gold-dark mb-6 text-center">Inhoudsopgave</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+                <a href="#overzicht" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">1.</span> Overzicht
+                </a>
+                <a href="#terminologie" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">2.</span> Terminologie
+                </a>
+                <a href="#spel-setup" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">3.</span> Spel Setup
+                </a>
+                <a href="#basis-concepten" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">4.</span> Basis Concepten
+                </a>
+                <a href="#worp-waardes" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">5.</span> Worp Waardes
+                </a>
+                <a href="#game-flow" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">6.</span> Complete Game Flow
+                </a>
+                <a href="#voorgooier" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">7.</span> Voorgooier Systeem
+                </a>
+                <a href="#beslisbomen" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">8.</span> Beslisbomen
+                </a>
+                <a href="#speciale-regels" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">9.</span> Speciale Regels
+                </a>
+                <a href="#instellingen" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">10.</span> Instellingen
+                </a>
+                <a href="#tips" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">11.</span> Strategische Tips
+                </a>
+                <a href="#samenvatting" class="toc-item bg-cream-light p-4 rounded-lg hover:bg-cream transition-all border-l-4 border-gold">
+                    <span class="font-bold text-green">12.</span> Samenvatting
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-8 max-w-5xl py-12">
+
+        <!-- 1. Overzicht -->
+        <section id="overzicht" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎯 Overzicht</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <p class="text-xl mb-6">
+                    <strong>Koning Mexico</strong> is een digitaal dobbelspel waarbij je probeert te overleven door strategisch te gooien met twee dobbelstenen. Je start met <strong class="text-green">6 levens</strong> en het doel is om de laatste overlevende te zijn.
+                </p>
+
+                <h3 class="font-heading text-2xl font-bold text-green mb-4">Kern Mechanica</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start gap-3">
+                        <span class="text-2xl">🎲</span>
+                        <span><strong>2 dobbelstenen</strong> in een beker</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-2xl">👁️</span>
+                        <span><strong>Open</strong> of <strong>blind</strong> gooien</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-2xl">🔢</span>
+                        <span><strong>Worplimiet</strong> bepaalt maximum aantal worpen per ronde (1-3)</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-2xl">👑</span>
+                        <span><strong>Voorgooier</strong> bepaalt het patroon voor anderen</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-2xl">✅</span>
+                        <span><strong>Resultaat keuze</strong> na elke ronde: Gewonnen, Vast, of Verloren</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 2. Terminologie -->
+        <section id="terminologie" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">📚 Terminologie</h2>
+            <div class="bg-gradient-to-r from-cream to-cream-light p-8 rounded-xl border-l-4 border-gold shadow-lg mb-6">
+                <p class="text-xl font-bold text-red mb-4">BELANGRIJK: Duidelijk onderscheid tussen drie niveaus:</p>
+
+                <pre class="bg-brown-dark text-cream-light rounded-lg p-6 text-sm">
+🎮 SPEL (Game)
+   │
+   ├─ 🔄 RONDE (Round) ← Een speler aan de beurt
+   │  │
+   │  ├─ 🎲 WORP (Throw) ← Eén dobbelstenen actie
+   │  ├─ 🎲 WORP
+   │  └─ 🎲 WORP (max 3)
+   │
+   ├─ 🔄 RONDE (volgende speler/beurt)
+   │  └─ ...
+   │
+   └─ ... (tot 1 persoon over is)</pre>
+            </div>
+
+            <div class="space-y-6">
+                <!-- SPEL -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4 flex items-center gap-3">
+                        <span class="text-3xl">🎮</span> SPEL (Game)
+                    </h3>
+                    <p class="text-lg mb-3"><strong>Het complete spel van start tot finish</strong></p>
+
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Start:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Alle spelers hebben 6 levens</li>
+                                <li>• Niemand is voorgooier (eerste ronde = blind)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Tijdens:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Bestaat uit meerdere rondes</li>
+                                <li>• Elke ronde heeft een voorgooier</li>
+                                <li>• Spelers verliezen levens bij verlies</li>
+                            </ul>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Einde:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Als nog maar 1 persoon levens heeft</li>
+                                <li>• Die persoon is de winnaar 🏆</li>
+                                <li>• Daarna start een nieuw spel</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RONDE -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4 flex items-center gap-3">
+                        <span class="text-3xl">🔄</span> RONDE (Round)
+                    </h3>
+                    <p class="text-lg mb-3"><strong>Eén speler aan de beurt (één beurt)</strong></p>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Structuur:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• Maximum 3 worpen (afhankelijk van voorgooier)</li>
+                                <li>• Speler kiest: open of blind</li>
+                                <li>• Eindigt met resultaat: Won/Vast/Lost</li>
+                            </ul>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Resultaat:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>Gewonnen:</strong> Levens blijven, niet voorgooier</li>
+                                <li>• <strong>Vast:</strong> Tie-breaker, +1 extra worp</li>
+                                <li>• <strong>Verloren:</strong> -1 leven, wordt voorgooier</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WORP -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4 flex items-center gap-3">
+                        <span class="text-3xl">🎲</span> WORP (Throw)
+                    </h3>
+                    <p class="text-lg mb-3"><strong>Eén actie: dobbelstenen gooien</strong></p>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-cream-light p-4 rounded-lg">
+                            <div class="font-bold text-gold-dark mb-2">Types:</div>
+                            <ul class="text-sm space-y-1">
+                                <li>• <strong>Open</strong> 👁️ = Dobbelstenen direct zichtbaar</li>
+                                <li>• <strong>Blind</strong> 🙈 = Dobbelstenen verborgen (moet onthullen)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg border-l-4 border-red">
+                            <div class="font-bold text-red mb-2">Speciale regel:</div>
+                            <p class="text-sm">Eerste worp van een ronde + blind = <strong>Geen hergooien</strong> na onthullen!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Spel Setup -->
+        <section id="spel-setup" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎮 Spel Setup</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Startpositie (Nieuw Spel)</h3>
+                    <pre class="text-sm">🎮 SPEL START
+   │
+Levens: 6 ● ● ● ● ● ●
+Rondes gespeeld: 0
+Voorgooier: NIEMAND
+Status: Eerste ronde van nieuw spel
+   │
+   └─→ Eerste ronde = ALTIJD BLIND</pre>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Tijdens Spel</h3>
+                    <pre class="text-sm">🔄 RONDE [nummer]
+   │
+Levens: X ● ● ●
+Worpen deze ronde: 0/3
+Voorgooier: [Ja/Nee]
+Patroon: [Open/Blind] of [Geen]
+   │
+   └─→ Speler gooit (max 3 worpen)</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Basis Concepten -->
+        <section id="basis-concepten" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🧩 Basis Concepten</h2>
+
+            <div class="space-y-8">
+                <!-- Open vs Blind -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">1. Open vs Blind Gooien</h3>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-green/10 to-green-light/10 p-6 rounded-lg border-l-4 border-green">
+                            <h4 class="font-bold text-lg text-green mb-3 flex items-center gap-2">
+                                <span class="text-2xl">👁️</span> Open Gooien
+                            </h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>• Dobbelstenen zijn <strong>direct zichtbaar</strong> na de worp</li>
+                                <li>• Je ziet meteen wat je hebt gegooid</li>
+                                <li>• Je kunt beslissen: nog een worp of stoppen</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-brown-dark/10 to-brown-medium/10 p-6 rounded-lg border-l-4 border-brown-dark">
+                            <h4 class="font-bold text-lg text-brown-dark mb-3 flex items-center gap-2">
+                                <span class="text-2xl">🙈</span> Blind Gooien
+                            </h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>• Dobbelstenen blijven <strong>verborgen</strong> na de worp</li>
+                                <li>• Je ziet alleen "🙈" als resultaat</li>
+                                <li>• Acties na blind gooien:
+                                    <ul class="ml-4 mt-2 space-y-1">
+                                        <li>→ <strong>"Laten Zien":</strong> Onthul de dobbelstenen</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-red/10 p-6 rounded-lg border-l-4 border-red">
+                        <h4 class="font-bold text-red mb-3">⚠️ Speciale regel - Eerste worp blind:</h4>
+                        <pre class="text-sm bg-brown-dark text-cream-light p-4 rounded">IF (eerste worp van deze ronde) AND (was blind)
+THEN
+    Na "Laten Zien" → DIRECT naar resultaat
+    GEEN mogelijkheid om nog een worp te doen!
+END</pre>
+                        <p class="mt-3 text-sm"><strong>Latere worpen blind (worp 2 of 3):</strong> Na "Laten Zien" → WEL mogelijkheid om nog een worp te doen (als binnen limiet)</p>
+                    </div>
+                </div>
+
+                <!-- Worplimiet -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">2. Worplimiet</h3>
+                    <p class="mb-4">Het maximum aantal <strong>worpen</strong> dat je mag doen in één <strong>ronde</strong>:</p>
+
+                    <div class="grid md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-gold-dark mb-2">1</div>
+                            <div class="text-sm">Eén kans, daarna resultaat kiezen</div>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-gold-dark mb-2">2</div>
+                            <div class="text-sm">Twee kansen, dan stoppen</div>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg text-center border-2 border-green">
+                            <div class="text-3xl font-bold text-green mb-2">3</div>
+                            <div class="text-sm"><strong>Standaard:</strong> Drie kansen</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <strong>Voorgooier override:</strong> Als een voorgooier een patroon instelt, vervangt dat de worplimiet.
+                    </div>
+                </div>
+
+                <!-- Voorgooier Rol -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">3. Voorgooier Rol</h3>
+                    <p class="mb-4">De <strong>voorgooier</strong> heeft speciale macht binnen een <strong>ronde</strong>:</p>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green/10 p-4 rounded-lg">
+                            <h4 class="font-bold text-green mb-3">✅ De voorgooier kan:</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>• Bepaalt het <strong>patroon</strong> van worpen (open/blind) voor anderen</li>
+                                <li>• Stelt dit patroon in door zelf worpen te doen</li>
+                                <li>• Anderen moeten dit patroon exact volgen</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red/10 p-4 rounded-lg">
+                            <h4 class="font-bold text-red mb-3">Wanneer word/raak je het?</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>• ❌ Je wordt NOOIT voorgooier als je een ronde wint</li>
+                                <li>• ✅ Je wordt ALTIJD voorgooier als je een ronde verliest</li>
+                                <li>• De voorgooier blijft actief tot:
+                                    <ul class="ml-4 mt-2">
+                                        <li>→ Je een ronde wint (dan ben je het niet meer)</li>
+                                        <li>→ Iemand anders verliest (die wordt het)</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Worp Waardes -->
+        <section id="worp-waardes" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎲 Worp Waardes</h2>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg mb-6">
+                <h3 class="font-heading text-2xl font-bold text-green mb-4">Berekening Logica</h3>
+                <pre>// Pseudo-code van worp berekening
+if (beide dobbelstenen gelijk) {
+    waarde = dobbelsteen × 100
+    // 6-6 = 600, 5-5 = 500, ..., 1-1 = 100
+}
+else if ((hoog=2 EN laag=1) OF (hoog=1 EN laag=2)) {
+    waarde = 21  // MEXICO! 👑
+}
+else {
+    waarde = hoogste×10 + laagste
+    // 6-5 = 65, 5-4 = 54, 4-1 = 41, etc.
+}</pre>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="font-heading text-2xl font-bold text-green mb-6">Rangorde (Hoog → Laag)</h3>
+
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Worp</th>
+                            <th>Waarde</th>
+                            <th>Type</th>
+                            <th>Omschrijving</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-gold/20 font-bold">
+                            <td>1</td>
+                            <td>2-1 of 1-2</td>
+                            <td class="text-red text-xl">21</td>
+                            <td>MEXICO 👑</td>
+                            <td>De koning der worpen!</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>6-6</td>
+                            <td>600</td>
+                            <td>Dubbel</td>
+                            <td>Hoogste dubbel</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>5-5</td>
+                            <td>500</td>
+                            <td>Dubbel</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>4-4</td>
+                            <td>400</td>
+                            <td>Dubbel</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>3-3</td>
+                            <td>300</td>
+                            <td>Dubbel</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>2-2</td>
+                            <td>200</td>
+                            <td>Dubbel</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>1-1</td>
+                            <td>100</td>
+                            <td>Dubbel</td>
+                            <td>Laagste dubbel</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>6-5</td>
+                            <td>65</td>
+                            <td>Normaal</td>
+                            <td>Hoogste normale worp</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>6-4</td>
+                            <td>64</td>
+                            <td>Normaal</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text-center text-brown-medium italic">... (63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32) ...</td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td>3-1</td>
+                            <td>31</td>
+                            <td>Normaal</td>
+                            <td>Laagste normale worp</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="mt-6 bg-gradient-to-r from-red/20 to-gold/20 p-6 rounded-lg border-l-4 border-red">
+                    <h4 class="font-bold text-red text-xl mb-3">🎉 Mexico Speciale Regel</h4>
+                    <p><strong>Mexico (21) is ALTIJD direct zichtbaar</strong>, zelfs als je blind gooit!</p>
+                    <ul class="mt-3 space-y-2">
+                        <li>• Automatische onthulling</li>
+                        <li>• Confetti celebratie</li>
+                        <li>• Speciale Mexico knoppen verschijnen</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Complete Game Flow -->
+        <section id="game-flow" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🔄 Complete Game Flow</h2>
+
+            <div class="space-y-8">
+                <!-- Level 1: SPEL Flow -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">Level 1: SPEL Flow</h3>
+                    <pre class="decision-tree">┌─────────────────────┐
+│  🎮 NIEUW SPEL      │
+│  Alle: 6 levens     │
+└─────────────────────┘
+         ↓
+┌─────────────────────┐
+│  🔄 RONDE 1         │
+│  (Altijd blind)     │
+└─────────────────────┘
+         ↓
+    [Speler gooit]
+         ↓
+    [Resultaat]
+         ↓
+┌─────────────────────┐
+│  🔄 RONDE 2         │
+│  (Verliezer = voor) │
+└─────────────────────┘
+         ↓
+    [Speler gooit]
+         ↓
+    [Resultaat]
+         ↓
+    ... (meer rondes)
+         ↓
+┌─────────────────────┐
+│  Nog > 1 persoon?   │
+└─────────────────────┘
+    ↓              ↓
+   JA             NEE
+    ↓              ↓
+[Volgende      ┌─────────────┐
+ ronde]        │ SPEL EINDE  │
+               │ Winnaar: X  │
+               └─────────────┘
+                     ↓
+               [NIEUW SPEL]</pre>
+                </div>
+
+                <!-- Level 2: RONDE Flow -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">Level 2: RONDE Flow</h3>
+                    <pre class="decision-tree">┌─────────────────────────┐
+│  START NIEUWE RONDE     │
+└─────────────────────────┘
+           ↓
+    ┌──────────────────┐
+    │ Eerste ronde van │
+    │  nieuw spel?     │
+    └──────────────────┘
+         ↓           ↓
+       JA           NEE
+         ↓           ↓
+  ┌──────────────┐  │
+  │ Voorgooier?  │  │
+  └──────────────┘  │
+    ↓          ↓    │
+   JA         NEE   │
+    ↓          ↓    │
+    │    [FORCE BLIND] ←─────┘
+    │          ↓
+    └─→ [Toon "Gooi Open" / "Gooi Blind"]
+              ↓
+       [Speler kiest]
+              ↓
+       ┌──────────────┐
+       │  WORP FASE   │
+       └──────────────┘
+              ↓
+       [Max 3 worpen]
+              ↓
+       ┌──────────────┐
+       │  RESULTAAT   │
+       │  Won/Vast/   │
+       │  Verloren    │
+       └──────────────┘</pre>
+                </div>
+
+                <!-- Level 3: WORP Flow -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">Level 3: WORP Flow</h3>
+                    <pre class="decision-tree">     ┌───────────────┐
+     │  GOOI DICE    │
+     │  (Worp X/3)   │
+     └───────────────┘
+            ↓
+     [Animatie: beker schudt]
+            ↓
+     [Dobbelstenen rollen]
+            ↓
+     ┌───────────────┐
+     │ Bereken waarde│
+     └───────────────┘
+            ↓
+    ┌───────────────────┐
+    │ Check: Mexico?    │
+    └───────────────────┘
+      ↓              ↓
+     JA             NEE
+      ↓              ↓
+[ONTHUL ALTIJD]   ┌────────┐
+      ↓           │ Blind? │
+[MEXICO PARTY!]   └────────┘
+      ↓              ↓         ↓
+[Mexico knoppen]  JA        NEE
+                   ↓         ↓
+         [Verberg dice]  [Toon dice]
+                   ↓         ↓
+         [Toon "Laten Zien"]  [Toon opties]
+                   ↓              ↓
+            [Gebruiker klikt]  [Keuze menu]
+                   ↓              ↓
+            ┌──────────────┐    │
+            │ Worp == 1?   │    │
+            └──────────────┘    │
+               ↓         ↓      │
+              JA        NEE     │
+               ↓         ↓      │
+           [Direct   [Normaal] │
+            Result]     │       │
+               ↓         ↓      │
+               └─────────┴──────┘
+                       ↓
+               ┌───────────────┐
+               │ Nog worp over?│
+               │ + Wil gooien? │
+               └───────────────┘
+                  ↓          ↓
+                 JA         NEE
+                  ↓          ↓
+              [Nieuwe    [Kies
+               worp]     Resultaat]</pre>
+                </div>
+
+                <!-- Resultaat Fase -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">Resultaat Fase</h3>
+
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Won -->
+                        <div class="bg-green/10 p-6 rounded-lg border-l-4 border-green">
+                            <h4 class="font-bold text-green text-xl mb-3">✅ Ronde Gehaald</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>✅ Levens blijven intact</li>
+                                <li>❌ Je bent NIET de voorgooier (reset)</li>
+                                <li>🎉 Kleine viering</li>
+                                <li>♻️ Volgende ronde begint</li>
+                            </ul>
+                        </div>
+
+                        <!-- Vast -->
+                        <div class="bg-gold/10 p-6 rounded-lg border-l-4 border-gold">
+                            <h4 class="font-bold text-gold-dark text-xl mb-3">⚔️ Vast</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>⚡ Je krijgt <strong>exact 1 extra worp</strong></li>
+                                <li>🎲 Keuze: open of blind</li>
+                                <li>🔄 Na die worp: direct weer resultaat kiezen</li>
+                                <li>⚠️ Voorgooier status blijft onveranderd</li>
+                            </ul>
+                        </div>
+
+                        <!-- Lost -->
+                        <div class="bg-red/10 p-6 rounded-lg border-l-4 border-red">
+                            <h4 class="font-bold text-red text-xl mb-3">❌ Verloren</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>❌ Verlies <strong>1 leven</strong></li>
+                                <li>👑 Je wordt <strong>automatisch voorgooier</strong></li>
+                                <li>💀 Bij 0 levens: UIT HET SPEL</li>
+                                <li>♻️ Anders: volgende ronde als voorgooier</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Voorgooier Systeem -->
+        <section id="voorgooier" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">👑 Voorgooier Systeem</h2>
+
+            <div class="space-y-6">
+                <!-- Wat is een Voorgooier -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">Wat is een Voorgooier?</h3>
+                    <p class="mb-4">De voorgooier heeft <strong>controle</strong> over hoe de huidige <strong>ronde</strong> verloopt voor alle spelers:</p>
+                    <ul class="space-y-2">
+                        <li>• Bepaalt of worpen <strong>open</strong> of <strong>blind</strong> moeten zijn</li>
+                        <li>• Stelt een <strong>patroon</strong> in door zelf worpen te doen</li>
+                        <li>• Dit patroon wordt <strong>verplicht</strong> voor andere spelers in deze ronde</li>
+                    </ul>
+                </div>
+
+                <!-- Hoe word je Voorgooier -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-6">Hoe word je Voorgooier?</h3>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-red/10 p-6 rounded-lg border-l-4 border-red">
+                            <h4 class="font-bold text-red mb-3">Automatisch (meest voorkomend)</h4>
+                            <pre class="text-sm">[Je verliest een ronde]
+     ↓
+[lives - 1]
+     ↓
+[Voorgooier = AUTO ON] 👑
+     ↓
+[Volgende ronde: jij bepaalt patroon]</pre>
+                        </div>
+
+                        <div class="bg-gold/10 p-6 rounded-lg border-l-4 border-gold">
+                            <h4 class="font-bold text-gold-dark mb-3">Handmatig (voor testen)</h4>
+                            <pre class="text-sm">[Klik "Ben jij de Voorgooier?" toggle]
+     ↓
+[Voorgooier = ON] 👑
+     ↓
+[Pattern setting mode actief]</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hoe raak je het kwijt -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">Hoe raak je het kwijt?</h3>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-green/10 p-4 rounded-lg">
+                            <pre class="text-sm">[Je wint een ronde]
+     ↓
+[Voorgooier = AUTO OFF]
+     ↓
+[Volgende ronde: gewone speler]</pre>
+                        </div>
+                        <div class="bg-brown-medium/10 p-4 rounded-lg">
+                            <pre class="text-sm">[Iemand anders verliest]
+     ↓
+[Die persoon = nieuwe voorgooier]
+     ↓
+[Jij = gewone speler]</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patroon Instellen -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-2xl font-bold text-green mb-4">Patroon Instellen</h3>
+                    <p class="mb-4">Als je voorgooier bent van een ronde:</p>
+
+                    <pre class="decision-tree mb-6">┌────────────────────────────────┐
+│ VOORGOOIER PATROON INSTELLEN   │
+│ (Deze ronde)                   │
+└────────────────────────────────┘
+           ↓
+    [Jij gooit worp 1]
+           ↓
+   ┌────────────────┐
+   │ Kies: Open/Blind│
+   └────────────────┘
+           ↓
+   [Keuze opgeslagen in patroon]
+           ↓
+    ┌──────────────┐
+    │ Nog een worp?│
+    └──────────────┘
+         ↓       ↓
+    [Gooi weer]  [Laten Staan]
+         ↓            ↓
+   [Voeg toe aan    [Patroon
+    patroon]         compleet!]</pre>
+
+                    <h4 class="font-bold text-gold-dark mb-3">Voorbeeld Patronen:</h4>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th>Patroon</th>
+                                <th>Betekenis</th>
+                                <th>Voorbeeld Ronde</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>[blind]</code></td>
+                                <td>1× blind</td>
+                                <td>Iedereen moet 1× blind gooien</td>
+                            </tr>
+                            <tr>
+                                <td><code>[open, open]</code></td>
+                                <td>2× open</td>
+                                <td>Iedereen moet 2× open gooien</td>
+                            </tr>
+                            <tr>
+                                <td><code>[blind, open, blind]</code></td>
+                                <td>3× afwisselend</td>
+                                <td>Worp 1 blind, 2 open, 3 blind</td>
+                            </tr>
+                            <tr>
+                                <td><code>[open]</code></td>
+                                <td>1× open</td>
+                                <td>Iedereen moet 1× open gooien</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Patroon Volgen -->
+                <div class="bg-gradient-to-r from-red/20 to-gold/20 p-8 rounded-xl shadow-lg border-l-4 border-red">
+                    <h3 class="font-heading text-2xl font-bold text-red mb-4">⚠️ CRUCIALE REGEL - Exact Positie Matching</h3>
+                    <p class="mb-4">Als de voorgooier ervoor kiest om worp <strong>N</strong> blind te doen, moet de achterligger <strong>ook worp N</strong> blind doen (als ze zo ver gaan). Het patroon moet <strong>per worp positie</strong> gevolgd worden:</p>
+
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-bold text-gold-dark mb-2">Voorbeeld 1:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• Voorgooier: Worp 1 OPEN → Worp 2 BLIND → Worp 3 OPEN</li>
+                                <li>• Achterligger: <strong>MOET</strong> Worp 1 OPEN, Worp 2 BLIND, Worp 3 OPEN (als ze tot worp 3 gaan)</li>
+                                <li>• Achterligger <strong>MAG</strong> wel vroeg stoppen (bijv. na worp 2)</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-bold text-gold-dark mb-2">Voorbeeld 2:</h4>
+                            <ul class="text-sm space-y-1">
+                                <li>• Voorgooier: Worp 1 OPEN → Stopt (2 worpen niet gemaakt)</li>
+                                <li>• Achterligger: <strong>MOET</strong> Worp 1 OPEN, daarna vrije keuze (voorgooier bereikte worp 2/3 niet)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 bg-brown-dark/80 text-cream-light p-4 rounded-lg">
+                        <h4 class="font-bold mb-3">Belangrijke regels:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>✅ Patroon is <strong>verplicht per positie</strong> voor deze ronde</li>
+                            <li>✅ Je <strong>mag wel vroeg stoppen</strong> (minder worpen dan voorgooier)</li>
+                            <li>❌ Je <strong>mag niet</strong> afwijken van het patroon op een positie die voorgooier WEL bereikte</li>
+                            <li>🎯 Knoppen worden <strong>automatisch disabled</strong> (alleen de juiste knop werkt)</li>
+                            <li>📊 Patroon wordt gelogd in debug console</li>
+                            <li>🔄 Patroon geldt alleen voor <strong>deze ronde</strong>, niet het hele spel</li>
+                            <li>⚠️ Validatie blokkeert foute worpen met error message</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. Beslisbomen -->
+        <section id="beslisbomen" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🌳 Beslisbomen</h2>
+
+            <div class="space-y-6">
+                <!-- Beslisboom 1 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Beslisboom 1: Start van Ronde - Blind of Keuze?</h3>
+                    <pre class="decision-tree">START VAN NIEUWE RONDE
+    ↓
+┌────────────────────────┐
+│ Eerste ronde van       │
+│ NIEUW SPEL?            │
+│ (isFirstRound = true)  │
+└────────────────────────┘
+    ↓               ↓
+   JA              NEE
+    ↓               ↓
+┌──────────────┐   │
+│ Voorgooier?  │   │
+└──────────────┘   │
+  ↓         ↓      │
+ JA        NEE     │
+  ↓         ↓      │
+  │   [FORCE      │
+  │    BLIND]     │
+  │    "🔒 Eerste │
+  │    ronde van  │
+  │    nieuw spel │
+  │    = blind!"  │
+  │         ↓      │
+  └─────────┴──────┘
+            ↓
+    ┌──────────────────┐
+    │ Voorgooier       │
+    │ patroon actief?  │
+    └──────────────────┘
+        ↓           ↓
+       JA          NEE
+        ↓           ↓
+   [VOLG        [KEUZE]
+    PATROON]    [Open/Blind]</pre>
+                </div>
+
+                <!-- Beslisboom 2 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Beslisboom 2: Na Worp - Welke Opties?</h3>
+                    <pre class="decision-tree">WORP COMPLEET
+    ↓
+┌───────────────────┐
+│ Mexico gegooid?   │
+└───────────────────┘
+    ↓           ↓
+   JA          NEE
+    ↓           ↓
+[Mexico      ┌──────────┐
+ knoppen]    │ Blind?   │
+ [Laten      └──────────┘
+  Staan/        ↓       ↓
+  Vast]        JA      NEE
+               ↓       ↓
+           [Laten   ┌────────────────┐
+            Zien]   │ Max worpen     │
+               ↓    │ bereikt?       │
+        ┌──────────┐└────────────────┘
+        │Worp == 1?│   ↓           ↓
+        └──────────┘  JA          NEE
+           ↓      ↓    ↓           ↓
+          JA     NEE [Direct   [Gooi weer
+           ↓      ↓   Result]   OF
+       [Direct [Normaal        Laten staan]
+        Result] knoppen]</pre>
+                </div>
+
+                <!-- Beslisboom 3 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Beslisboom 3: Wie is Voorgooier van Volgende Ronde?</h3>
+                    <pre class="decision-tree">EINDE VAN RONDE
+    ↓
+┌──────────────┐
+│ Resultaat?   │
+└──────────────┘
+    ↓
+┌────┬────┬────┐
+│    │    │    │
+WON  VAST LOST
+│    │    │
+↓    ↓    ↓
+
+WON:
+Voorgooier = OFF
+(Je bent het niet meer)
+
+VAST:
+Voorgooier = ONGEWIJZIGD
+(Blijft zoals het was)
+
+LOST:
+Voorgooier = ON
+(Jij wordt het voor volgende ronde)</pre>
+                </div>
+
+                <!-- Beslisboom 4 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-heading text-xl font-bold text-green mb-4">Beslisboom 4: Wanneer Eindigt het Spel?</h3>
+                    <pre class="decision-tree">NA ELKE RONDE
+    ↓
+┌─────────────────────┐
+│ Tel spelers met     │
+│ levens > 0          │
+└─────────────────────┘
+    ↓
+┌──────────┐
+│ Aantal?  │
+└──────────┘
+    ↓
+┌───┼────┬─────┐
+│   │    │     │
+0   1   >1    ?
+│   │    │
+↓   ↓    ↓
+
+0: [Iedereen af]
+   [SPEL EINDE]
+   [Niemand wint]
+   [Confirm restart?]
+
+1: [ÉÉN WINNAAR! 🏆]
+   [SPEL EINDE]
+   [Toon winnaar]
+   [Start NIEUW SPEL]
+
+>1: [Spel gaat door]
+    [Volgende ronde]
+    [Verliezer = voorgooier]</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. Speciale Regels -->
+        <section id="speciale-regels" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">⚙️ Speciale Regels</h2>
+
+            <div class="space-y-6">
+                <!-- Regel 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 1: Eerste Ronde van Nieuw Spel = Blind</h3>
+                    <pre class="mb-3">IF (eerste ronde van nieuw spel) AND (geen voorgooier)
+THEN
+    FORCE blind = true
+    Bericht: "🔒 Eerste ronde van nieuw spel is altijd blind!"
+    Geen keuze mogelijk
+END</pre>
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <p class="mb-2"><strong>Waarom?</strong> Om elk nieuw spel eerlijk te beginnen zonder voordeel voor wie dan ook.</p>
+                        <p><strong>Wanneer reset?</strong> Na eerste ronde van nieuw spel: <code>isFirstRound = false</code></p>
+                    </div>
+                </div>
+
+                <!-- Regel 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 2: Eerste Worp Blind = Geen Hergooien</h3>
+                    <pre class="mb-3">IF (worp 1 van deze ronde) AND (was blind) AND (gebruiker klikt "Laten Zien")
+THEN
+    Toon alleen: [Ronde Gehaald] [Vast] [Verloren]
+    Verberg: [Gooi Open/Blind opnieuw]
+    Bericht: "Eerste blinde worp - kies het resultaat"
+    Geen extra worpen toegestaan
+END
+ELSE IF (worp 2 of 3) AND (was blind)
+THEN
+    Normale opties: [Gooi weer] [Laten Staan]
+    Extra worpen WEL toegestaan (binnen limiet)
+END</pre>
+                    <div class="bg-red/10 p-4 rounded-lg border-l-4 border-red">
+                        <strong>Waarom?</strong> Dit is een kernregel: de eerste blinde worp van een ronde is definitief en kan niet hergooid worden.
+                    </div>
+                </div>
+
+                <!-- Regel 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 3: Mexico Altijd Zichtbaar</h3>
+                    <pre class="mb-3">IF (worp waarde == 21)
+THEN
+    isBlind = false (override!)
+    Toon dobbelstenen ALTIJD
+    Trigger celebratie
+    Toon Mexico knoppen (Laten Staan / Vast)
+    Geen "Laten Zien" knop (al zichtbaar)
+END</pre>
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <strong>Waarom?</strong> Mexico is zo speciaal dat het altijd gevierd moet worden, zelfs bij blinde worp.
+                    </div>
+                </div>
+
+                <!-- Regel 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 4: Derde Worp Dicht (Optioneel)</h3>
+                    <pre class="mb-3">IF (derde worp dicht setting == ON)
+   AND (worp 3 van deze ronde)
+   AND (NIET voorgooier patroon actief)
+THEN
+    FORCE blind = true
+    Bericht: "🙈 Derde worp is dicht!"
+    Geen keuze mogelijk
+END</pre>
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <p class="mb-2"><strong>Waarom?</strong> Dit is een optionele variant om spanning toe te voegen aan de laatste worp.</p>
+                        <p><strong>Let op:</strong> Voorgooier patroon overschrijft deze regel!</p>
+                    </div>
+                </div>
+
+                <!-- Regel 5 -->
+                <div class="bg-gradient-to-r from-gold/20 to-gold-light/20 p-6 rounded-xl shadow-lg border-l-4 border-gold">
+                    <h3 class="font-bold text-gold-dark text-xl mb-3">Regel 5: Voorgooier Patroon Override Alles</h3>
+                    <pre class="mb-3">IF (voorgooier patroon bestaat voor deze ronde)
+   AND (jij bent niet voorgooier)
+THEN
+    worp_index = huidige_worp_nummer - 1
+    IF (worp_index < patroon.length)
+    THEN
+        FORCE type = patroon[worp_index]
+        Worplimiet knoppen = DISABLED
+        Geen keuze open/blind mogelijk
+    END
+END</pre>
+                    <div class="bg-white p-4 rounded-lg">
+                        <p class="mb-3"><strong>Waarom?</strong> Het voorgooier patroon is de hoogste autoriteit binnen een ronde.</p>
+                        <p class="font-bold text-gold-dark mb-2">Prioriteit:</p>
+                        <ol class="list-decimal ml-6 space-y-1 text-sm">
+                            <li>Voorgooier patroon (hoogste)</li>
+                            <li>Eerste ronde blind regel</li>
+                            <li>Derde worp dicht regel</li>
+                            <li>Speler keuze (laagste)</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Regel 6 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 6: Vast = +1 Worp</h3>
+                    <pre class="mb-3">IF (gebruiker kiest "Vast")
+THEN
+    worplimiet = huidige_worpen + 1
+    Reset worp opties
+    Toon: [Gooi Open] [Gooi Blind]
+    Na die ene extra worp: Direct naar [Resultaat Keuze]
+    Geen extra worpen meer mogelijk
+END</pre>
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <p class="mb-2"><strong>Waarom?</strong> Bij een tie krijg je exact 1 extra kans om het verschil te maken.</p>
+                        <p><strong>Let op:</strong> Na die ene worp ga je DIRECT naar resultaat, niet via "Laten Staan".</p>
+                    </div>
+                </div>
+
+                <!-- Regel 7 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 7: Verliezer = Voorgooier van Volgende Ronde</h3>
+                    <pre class="mb-3">IF (gebruiker kiest "Verloren")
+THEN
+    lives = lives - 1
+
+    IF (lives > 0)
+    THEN
+        isVoorgooier = true (automatisch!)
+        Bericht: "👑 Jij bent nu de voorgooier van de volgende ronde!"
+
+        IF (nog >1 speler met levens)
+        THEN
+            Start volgende ronde
+            Jij bepaalt patroon
+        ELSE
+            SPEL EINDE - jij verliest
+        END
+    ELSE
+        Speler UIT HET SPEL
+        IF (nog >1 speler over)
+        THEN
+            Spel gaat door zonder jou
+        ELSE
+            SPEL EINDE - laatste speler wint
+        END
+    END
+END</pre>
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <strong>Waarom?</strong> De verliezer krijgt macht over de volgende ronde als compensatie.
+                    </div>
+                </div>
+
+                <!-- Regel 8 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 8: Winnaar ≠ Voorgooier</h3>
+                    <pre class="mb-3">IF (gebruiker kiest "Ronde Gehaald")
+THEN
+    isVoorgooier = false (reset!)
+    Levens blijven gelijk
+    Bericht: "🎉 Ronde gehaald!"
+
+    IF (nog >1 speler met levens)
+    THEN
+        Start volgende ronde
+        Jij bent gewone speler
+    ELSE
+        SPEL EINDE - jij wint! 🏆
+    END
+END</pre>
+                    <div class="bg-green/10 p-4 rounded-lg border-l-4 border-green">
+                        <strong>Waarom?</strong> Winnaar heeft geen macht nodig voor de volgende ronde - verliezer wel.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. Instellingen -->
+        <section id="instellingen" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">⚙️ Instellingen</h2>
+
+            <div class="space-y-6">
+                <!-- Instelling 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Instelling 1: Worplimiet</h3>
+                    <div class="grid md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-gold-dark mb-2">1</div>
+                            <div class="text-sm">Eén worp per ronde</div>
+                        </div>
+                        <div class="bg-cream-light p-4 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-gold-dark mb-2">2</div>
+                            <div class="text-sm">Twee worpen per ronde</div>
+                        </div>
+                        <div class="bg-green/10 p-4 rounded-lg text-center border-2 border-green">
+                            <div class="text-3xl font-bold text-green mb-2">3</div>
+                            <div class="text-sm"><strong>Standaard:</strong> Drie worpen</div>
+                        </div>
+                    </div>
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <p class="mb-2"><strong>Wanneer actief?</strong></p>
+                        <ul class="text-sm space-y-1">
+                            <li>✅ Als GEEN voorgooier patroon actief is voor deze ronde</li>
+                            <li>❌ Disabled als voorgooier patroon bestaat</li>
+                        </ul>
+                        <p class="mt-3 text-sm"><strong>Scope:</strong> Geldt voor ALLE rondes waar geen voorgooier patroon actief is</p>
+                    </div>
+                </div>
+
+                <!-- Instelling 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Instelling 2: Ben jij de Voorgooier?</h3>
+                    <div class="bg-cream-light p-4 rounded-lg mb-4">
+                        <p class="mb-3">Handmatige toggle om voorgooier status aan/uit te zetten (voor testen/single player)</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-white p-3 rounded border-l-4 border-green">
+                                <strong class="text-green">Effect AAN:</strong>
+                                <ul class="text-sm mt-2 space-y-1">
+                                    <li>• Start patroon instellen mode</li>
+                                    <li>• Worplimiet disabled</li>
+                                    <li>• Jouw worpen bepalen het patroon</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-3 rounded border-l-4 border-red">
+                                <strong class="text-red">Effect UIT:</strong>
+                                <ul class="text-sm mt-2 space-y-1">
+                                    <li>• Patroon gewist</li>
+                                    <li>• Worplimiet enabled</li>
+                                    <li>• Normale speler modus</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold text-sm">
+                        <strong>Let op:</strong> Dit is een handmatige override. Normaal word je automatisch voorgooier na verlies, en automatisch uit gezet na winst.
+                    </div>
+                </div>
+
+                <!-- Instelling 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Instelling 3: Derde Worp Dicht</h3>
+                    <div class="bg-cream-light p-4 rounded-lg mb-4">
+                        <p class="mb-3">Optionele variant: de derde worp van elke ronde is ALTIJD blind (tenzij voorgooier patroon anders zegt)</p>
+                        <pre class="text-sm">IF (AAN) AND (worp 3 van ronde) AND (geen voorgooier patroon)
+THEN
+    FORCE blind op worp 3
+END</pre>
+                    </div>
+                    <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
+                        <p class="mb-2"><strong>Prioriteit:</strong></p>
+                        <p class="text-sm">Voorgooier patroon > Derde worp dicht > Speler keuze</p>
+                        <p class="mt-3 text-sm"><strong>Scope:</strong> Geldt voor alle rondes gedurende het spel</p>
+                    </div>
+                </div>
+
+                <!-- Instelling 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Instelling 4: Eerste Ronde Indicator</h3>
+                    <div class="bg-cream-light p-4 rounded-lg">
+                        <p class="mb-3">Visuele reminder dat speciale "eerste ronde blind" regel van toepassing is</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <strong class="text-gold-dark">Wanneer zichtbaar:</strong>
+                                <ul class="text-sm mt-2 space-y-1">
+                                    <li>• Bij start van nieuw spel</li>
+                                    <li>• Alleen tijdens eerste ronde</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gold-dark">Wanneer verdwijnt:</strong>
+                                <ul class="text-sm mt-2 space-y-1">
+                                    <li>• Na eerste ronde voltooid</li>
+                                    <li>• Reset bij nieuw spel</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 11. Strategische Tips -->
+        <section id="tips" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎯 Strategische Tips</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Tip 1 -->
+                <div class="bg-gradient-to-br from-green/10 to-green-light/10 p-6 rounded-xl shadow-lg border-l-4 border-green">
+                    <h3 class="font-bold text-green text-xl mb-3">💡 Tip 1: Eerste Ronde Strategie</h3>
+                    <p class="mb-3"><strong>Als je MOET blind gooien (eerste ronde van nieuw spel):</strong></p>
+                    <ul class="space-y-2 text-sm">
+                        <li>• Bedenk vooraf: wat is acceptabel?</li>
+                        <li>• Weet dat je niet kan hergooien na onthullen</li>
+                        <li>• Kies resultaat strategisch</li>
+                        <li>• Overweeg "Vast" als je twijfelt</li>
+                    </ul>
+                </div>
+
+                <!-- Tip 2 -->
+                <div class="bg-gradient-to-br from-gold/10 to-gold-light/10 p-6 rounded-xl shadow-lg border-l-4 border-gold">
+                    <h3 class="font-bold text-gold-dark text-xl mb-3">👑 Tip 2: Voorgooier Tactiek</h3>
+                    <p class="mb-3"><strong>Als je voorgooier bent van een ronde:</strong></p>
+                    <ul class="space-y-2 text-sm">
+                        <li>• <code>[blind]</code> = Makkelijk, maar weinig controle</li>
+                        <li>• <code>[open, open]</code> = Veel info voor iedereen</li>
+                        <li>• <code>[blind, open, blind]</code> = Complexe psychologische warfare</li>
+                        <li>• <code>[open]</code> = Snelle ronde, weinig spanning</li>
+                    </ul>
+                    <p class="mt-3 text-sm italic">Onthoud: Je patroon geldt voor deze ene ronde, niet het hele spel!</p>
+                </div>
+
+                <!-- Tip 3 -->
+                <div class="bg-gradient-to-br from-brown-dark/10 to-brown-medium/10 p-6 rounded-xl shadow-lg border-l-4 border-brown-dark">
+                    <h3 class="font-bold text-brown-dark text-xl mb-3">⚔️ Tip 3: Vast Gebruiken</h3>
+                    <p class="mb-3"><strong>Wanneer "Vast" kiezen?</strong></p>
+                    <ul class="space-y-2 text-sm">
+                        <li>✅ Als je niet zeker bent wie gewonnen heeft</li>
+                        <li>✅ Om tie-breaker worp te forceren</li>
+                        <li>✅ Voor extra spanning</li>
+                        <li>⚠️ Risico: je krijgt maar 1 extra worp</li>
+                    </ul>
+                </div>
+
+                <!-- Tip 4 -->
+                <div class="bg-gradient-to-br from-red/10 to-red-light/10 p-6 rounded-xl shadow-lg border-l-4 border-red">
+                    <h3 class="font-bold text-red text-xl mb-3">🎉 Tip 4: Mexico Timing</h3>
+                    <p class="mb-3"><strong>Als je Mexico gooit:</strong></p>
+                    <ul class="space-y-2 text-sm">
+                        <li>• Altijd sterk resultaat</li>
+                        <li>• Kies "Laten Staan" als je zeker wilt winnen</li>
+                        <li>• Kies "Vast" voor extra drama (maar risico!)</li>
+                        <li>• Geniet van de confetti 🎉</li>
+                    </ul>
+                </div>
+
+                <!-- Tip 5 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-gold col-span-full">
+                    <h3 class="font-bold text-gold-dark text-xl mb-3">❤️ Tip 5: Levens Beheer</h3>
+                    <p class="mb-3"><strong>Levens strategisch inzetten:</strong></p>
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <div class="bg-green/10 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green mb-1">6 levens</div>
+                            <div class="text-sm">Kan je riskant spelen</div>
+                        </div>
+                        <div class="bg-gold/10 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-gold-dark mb-1">3-4 levens</div>
+                            <div class="text-sm">Wees voorzichtig</div>
+                        </div>
+                        <div class="bg-red/10 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-red mb-1">1-2 levens</div>
+                            <div class="text-sm">Maximale focus</div>
+                        </div>
+                        <div class="bg-red/20 p-3 rounded-lg text-center border-2 border-red">
+                            <div class="text-2xl font-bold text-red mb-1">1 leven</div>
+                            <div class="text-sm"><strong>Alles of niets!</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 12. Samenvatting -->
+        <section id="samenvatting" class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">📖 Samenvatting: Kern Regels</h2>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th class="w-12">#</th>
+                            <th>Regel</th>
+                            <th class="w-24">Scope</th>
+                            <th>Uitleg</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-bold">1</td>
+                            <td><strong>Start met 6 levens</strong></td>
+                            <td><span class="bg-green/20 px-2 py-1 rounded text-sm">SPEL</span></td>
+                            <td>Begin van elk nieuw spel</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">2</td>
+                            <td><strong>Worplimiet 1-3</strong></td>
+                            <td><span class="bg-gold/20 px-2 py-1 rounded text-sm">RONDE</span></td>
+                            <td>Max worpen per ronde</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">3</td>
+                            <td><strong>Open of Blind</strong></td>
+                            <td><span class="bg-brown-dark/20 px-2 py-1 rounded text-sm">WORP</span></td>
+                            <td>Elke worp kies je type</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">4</td>
+                            <td><strong>Eerste ronde nieuw spel = blind</strong></td>
+                            <td><span class="bg-green/20 px-2 py-1 rounded text-sm">SPEL</span></td>
+                            <td>Altijd als geen voorgooier</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">5</td>
+                            <td><strong>Eerste worp blind = definitief</strong></td>
+                            <td><span class="bg-gold/20 px-2 py-1 rounded text-sm">RONDE</span></td>
+                            <td>Na onthullen geen hergooien</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">6</td>
+                            <td><strong>Mexico = altijd zichtbaar</strong></td>
+                            <td><span class="bg-brown-dark/20 px-2 py-1 rounded text-sm">WORP</span></td>
+                            <td>21 breekt blind regel</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">7</td>
+                            <td><strong>3 resultaat opties</strong></td>
+                            <td><span class="bg-gold/20 px-2 py-1 rounded text-sm">RONDE</span></td>
+                            <td>Won, Vast, of Lost</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">8</td>
+                            <td><strong>Verliezer = voorgooier</strong></td>
+                            <td><span class="bg-green/20 px-2 py-1 rounded text-sm">SPEL</span></td>
+                            <td>Van volgende ronde</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">9</td>
+                            <td><strong>Winnaar ≠ voorgooier</strong></td>
+                            <td><span class="bg-gold/20 px-2 py-1 rounded text-sm">RONDE</span></td>
+                            <td>Reset na winst</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">10</td>
+                            <td><strong>Voorgooier bepaalt patroon</strong></td>
+                            <td><span class="bg-gold/20 px-2 py-1 rounded text-sm">RONDE</span></td>
+                            <td>Anderen moeten volgen</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">11</td>
+                            <td><strong>Spel eindigt bij 1 over</strong></td>
+                            <td><span class="bg-green/20 px-2 py-1 rounded text-sm">SPEL</span></td>
+                            <td>Laatste = winnaar 🏆</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="mb-16">
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎮 Quick Reference</h2>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Hiërarchie -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Hiërarchie</h3>
+                    <pre class="text-sm">🎮 SPEL
+   └─ Van start tot 1 over
+   └─ Eindigt: winnaar bekend
+   └─ Dan: NIEUW SPEL
+
+🔄 RONDE
+   └─ Eén speler aan de beurt
+   └─ Max 3 worpen (of patroon)
+   └─ Eindigt: Won/Vast/Lost
+
+🎲 WORP
+   └─ Eén dobbelstenen actie
+   └─ Open of Blind
+   └─ Max 3 per ronde</pre>
+                </div>
+
+                <!-- Worp Waardes -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Worp Waardes</h3>
+                    <pre class="text-sm">MEXICO: 21 (2-1 of 1-2) 👑
+
+DUBBELS (als honderden):
+6-6 = 600   5-5 = 500
+4-4 = 400   3-3 = 300
+2-2 = 200   1-1 = 100
+
+NORMAAL (hoogste eerst):
+6-5 = 65   6-4 = 64
+6-3 = 63   ...
+5-4 = 54   5-3 = 53
+...
+4-3 = 43   4-2 = 42
+4-1 = 41   3-2 = 32
+3-1 = 31 (laagste)</pre>
+                </div>
+
+                <!-- Voorgooier -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-green text-xl mb-4">Voorgooier</h3>
+                    <pre class="text-sm">Hoe word je het?
+→ Verlies een ronde
+→ Of: handmatig toggle
+
+Wat kun je?
+→ Bepaal patroon voor ronde
+→ Anderen moeten volgen
+
+Hoe raak je het kwijt?
+→ Win een ronde
+→ Of: iemand anders verliest</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="bg-gradient-to-r from-gold-dark via-gold to-gold-light p-12 rounded-2xl shadow-2xl text-center">
+            <h2 class="font-heading text-4xl font-bold text-brown-dark mb-6">Klaar om te spelen?</h2>
+            <p class="text-xl mb-8">Nu je alle regels kent, probeer ze uit in de praktijk!</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="spel_vs_computer.html" class="inline-block bg-gradient-to-r from-green to-green-light text-white px-8 py-4 rounded-full font-bold text-xl shadow-xl border-3 border-green-light hover:-translate-y-1 hover:scale-105 transition-all">🤖 Speel vs Computer</a>
+                <a href="spel.html" class="inline-block bg-white text-green px-8 py-4 rounded-full font-bold text-xl shadow-xl border-3 border-gold hover:-translate-y-1 hover:scale-105 transition-all">🎲 Speel Solo</a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-brown-dark text-white py-12 text-center">
+        <div class="container mx-auto px-8">
+            <img src="assets/logo-fixed.png" alt="Koning Mexico" class="w-32 h-auto mx-auto mb-4 opacity-90">
+            <p class="opacity-80 mb-4">&copy; 2025 Koning Mexico. Speel verantwoord, geniet maximaal.</p>
+            <p class="text-sm opacity-70">
+                <strong>SPEL</strong> > <strong>RONDE</strong> > <strong>WORP</strong> - Nu glashelder! 🎯
+            </p>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Terug naar boven">
+        ↑
+    </button>
+
+    <script>
+        // Back to top button visibility
+        window.addEventListener('scroll', function() {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
