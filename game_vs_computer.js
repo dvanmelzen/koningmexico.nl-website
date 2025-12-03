@@ -1016,6 +1016,32 @@
         }
 
         disablePlayerButtons();
+        showNewGameButton();
+    }
+
+    function showNewGameButton() {
+        // Create new game button
+        const actionButtons = document.getElementById('actionButtons');
+
+        // Remove existing new game button if any
+        const existingBtn = document.getElementById('gameOverNewGameBtn');
+        if (existingBtn) {
+            existingBtn.remove();
+        }
+
+        // Create and add the button
+        const newGameBtn = document.createElement('button');
+        newGameBtn.id = 'gameOverNewGameBtn';
+        newGameBtn.type = 'button';
+        newGameBtn.className = 'btn-game w-full';
+        newGameBtn.style.cssText = 'background: linear-gradient(135deg, #1e90ff 0%, #4169e1 100%); color: white;';
+        newGameBtn.innerHTML = '🎮 Nieuw Spel Starten';
+        newGameBtn.onclick = () => {
+            newGameBtn.remove();
+            startNewGame();
+        };
+
+        actionButtons.appendChild(newGameBtn);
     }
 
     // ========================================
