@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="nl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Speel Mexico tegen de computer. Het klassieke dobbelspel in een 1-op-1 versie.">
+    <meta name="theme-color" content="#0D5E3A">
+
+    <title>Mexico vs Computer | Koning Mexico</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+    <style>
+        /* Theme variables */
+        :root {
+            --bg-primary: #F5E6D3;
+            --bg-secondary: #FFF8E7;
+            --bg-card: #ffffff;
+            --text-primary: #3E2723;
+            --text-secondary: #5D4037;
+            --border-color: #D4AF37;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-card: #333333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #FFD700;
+        }
+
+        body {
+            background: linear-gradient(to bottom right, var(--bg-primary), var(--bg-secondary));
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* Game-specific styles */
+        .draaisteen {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            border: 4px solid var(--color-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--color-gold-light);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            font-family: 'Cinzel', serif;
+        }
+
+        .draaisteen.computer {
+            border-color: var(--color-red);
+            background: linear-gradient(135deg, #8B0000 0%, #B22222 100%);
+        }
+
+        .player-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .player-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .player-card.active {
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+            border: 3px solid var(--color-gold);
+        }
+
+        .player-card.computer {
+            border-left: 6px solid var(--color-red);
+        }
+
+        .player-card.player {
+            border-left: 6px solid var(--color-green);
+        }
+
+        .dice {
+            width: 70px;
+            height: 70px;
+            background: white !important;
+            color: #000 !important;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        body.dark-mode .dice {
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .dice.rolling {
+            animation: diceRoll 0.5s ease;
+        }
+
+        @keyframes diceRoll {
+            0%, 100% { transform: rotateX(0) rotateY(0); }
+            25% { transform: rotateX(180deg) rotateY(0); }
+            50% { transform: rotateX(180deg) rotateY(180deg); }
+            75% { transform: rotateX(0) rotateY(180deg); }
+        }
+
+        .dice-cup {
+            width: 180px;
+            height: 200px;
+            background: linear-gradient(180deg, #5D4037 0%, #3E2723 100%);
+            border-radius: 20px 20px 100px 100px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 3px solid var(--color-gold-dark);
+        }
+
+        .dice-cup::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+        }
+
+        .dice-container {
+            display: flex;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dice.hidden {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: transparent;
+            user-select: none;
+            position: relative;
+        }
+
+        .dice.hidden::after {
+            content: '?';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-gold);
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .btn-game {
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .btn-game:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-game:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #666 !important;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+            color: var(--color-brown-dark);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--color-red) 0%, var(--color-red-light) 100%);
+            color: white;
+        }
+
+        .throw-result {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .throw-result.mexico {
+            color: var(--color-gold-light);
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        .shaking {
+            animation: shake 0.5s ease;
+        }
+
+        .game-info {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--color-gold);
+            color: var(--text-primary);
+        }
+
+        .game-info .text-brown-medium {
+            color: var(--text-secondary) !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .dice {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .dice-cup {
+                width: 160px;
+                height: 180px;
+            }
+
+            .draaisteen {
+                width: 60px;
+                height: 60px;
+                font-size: 1.75rem;
+            }
+
+            .throw-result {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="font-body min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2 text-white font-semibold">
+                <span>←</span>
+                <span>Terug</span>
+            </a>
+            <h1 class="font-heading text-xl text-white">🤖 Mexico vs Computer</h1>
+            <div class="flex gap-3">
+                <button id="themeToggle" class="text-white font-semibold flex items-center gap-1 hover:text-gold transition-colors" title="Toggle dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <button id="newGameBtn" class="text-white font-semibold flex items-center gap-1 hover:text-gold transition-colors" title="Nieuw spel">
+                    🔄 <span class="hidden sm:inline">Nieuw</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game Container -->
+    <main class="container mx-auto px-4 py-6 max-w-lg">
+
+        <!-- Scores -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <!-- Player -->
+            <div class="player-card player" id="playerCard">
+                <div class="text-center">
+                    <div class="text-xs font-semibold text-green mb-2">👤 JIJ</div>
+                    <div class="draaisteen mx-auto" id="playerLives">6</div>
+                    <div class="text-xs text-brown-medium mt-2">Levens</div>
+                </div>
+            </div>
+
+            <!-- Computer -->
+            <div class="player-card computer" id="computerCard">
+                <div class="text-center">
+                    <div class="text-xs font-semibold text-red mb-2">🤖 COMPUTER</div>
+                    <div class="draaisteen computer mx-auto" id="computerLives">6</div>
+                    <div class="text-xs text-brown-medium mt-2">Levens</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Round Info -->
+        <div class="rounded-lg shadow-lg p-4 mb-6 border-l-4 border-gold" style="background: var(--bg-card);">
+            <div class="text-center">
+                <div class="text-sm font-semibold mb-2" style="color: var(--text-secondary);">Ronde <span id="roundNumber">1</span></div>
+                <div class="text-xs" id="turnIndicator" style="color: var(--text-secondary);">
+                    <span id="currentPlayer">Jouw beurt!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dice Cup -->
+        <div class="flex justify-center mb-6">
+            <div class="dice-cup" id="diceCup">
+                <div class="dice-container" id="diceContainer">
+                    <div class="dice" id="dice1">⚀</div>
+                    <div class="dice" id="dice2">⚀</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Info -->
+        <div class="game-info mb-6" id="gameInfo">
+            <div class="text-lg font-bold text-green mb-2">🎮 Speel tegen de Computer!</div>
+            <p class="text-brown-medium text-sm">
+                Beide spelers starten met 6 levens. De eerste ronde is altijd blind! Wie als laatste over blijft wint het spel.
+            </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="actionButtons" class="space-y-3">
+            <button type="button" class="btn-game btn-primary w-full hidden" id="throwOpenBtn">
+                🎲 Gooi Open
+            </button>
+            <button type="button" class="btn-game btn-secondary w-full" id="throwBlindBtn">
+                🙈 Gooi Blind
+            </button>
+            <button type="button" class="btn-game btn-secondary w-full hidden" id="keepBtn">
+                ✓ Laten Staan
+            </button>
+            <button type="button" class="btn-game btn-primary w-full hidden" id="revealBtn">
+                👁️ Laten Zien
+            </button>
+        </div>
+
+        <!-- Debug Console -->
+        <div class="mt-8 bg-brown-dark rounded-lg p-4 border-2 border-gold">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-gold font-bold text-sm">📊 Debug Console</h3>
+                <div class="flex gap-2">
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('debugConsole').textContent).then(() => alert('Console gekopieerd!'))" class="text-xs text-white bg-green px-2 py-1 rounded hover:bg-green-light">
+                        Copy
+                    </button>
+                    <button onclick="document.getElementById('debugConsole').textContent=''" class="text-xs text-white bg-red px-2 py-1 rounded hover:bg-red-light">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <pre id="debugConsole" class="bg-black text-green-light text-xs font-mono p-3 rounded max-h-40 overflow-y-auto whitespace-pre-wrap" style="color: #00ff00;">Wachten op spel start...</pre>
+        </div>
+
+    </main>
+
+    <!-- Confetti Container -->
+    <div id="confettiContainer"></div>
+
+    <!-- Game Script -->
+    <script src="game_vs_computer.js"></script>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeIcon').textContent = '☀️';
+        }
+
+        // Toggle theme
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+    </script>
+</body>
+</html>
