@@ -21,7 +21,7 @@ De huidige versie is een volledig functionele, responsive website met:
 - Mobile-first responsive design
 - Koninklijke huisstijl met goud, groen en rood kleurenpalet
 - SEO optimalisatie
-- Deployed op Netlify
+- Klaar voor deployment op elk statisch hosting platform
 
 ---
 
@@ -265,19 +265,18 @@ De huidige versie is een volledig functionele, responsive website met:
   - CSS transitions met vendor prefixes niet nodig (modern browsers)
   - Intersection Observer polyfill niet nodig (breed ondersteund)
 
-### 6.3 Hosting & Deployment (✓ Live)
-- ✓ **Hosting**: Netlify
-- ✓ **Domain**: koningmexico.nl (te configureren)
+### 6.3 Hosting & Deployment (✓ Ready)
+- ✓ **Hosting**: Flexibel - elk platform dat statische HTML ondersteunt
+- ✓ **Domain**: koningmexico.nl (te configureren bij gekozen host)
 - ✓ **Repository**: Git geïnitialiseerd, pushed naar GitHub
-- ✓ **Deployment**: Netlify connected
+- ✓ **Deployment**: Handmatig of via GitHub Pages/Vercel/Cloudflare Pages
 - ✓ **Build settings**: Geen (statische site, geen build)
 - ✓ **Publish directory**: `.` (root)
 
 **Deployment Status:**
 - ✓ Git repository aanwezig (.git folder)
-- ✓ Netlify config (.netlify folder)
-- ✓ netlify.toml met build settings
-- ✓ Clean working tree (geen uncommitted changes op moment van documentatie)
+- ✓ Clean working tree
+- ✓ Alle bestanden klaar voor deployment
 
 ### 6.4 Performance (✓ Geoptimaliseerd)
 
@@ -293,7 +292,7 @@ De huidige versie is een volledig functionele, responsive website met:
 **Verwachte Lighthouse Scores:**
 - Performance: 90+ (CDN, geen build, minimaal JS)
 - Accessibility: 95+ (semantisch HTML, ARIA labels, focus states)
-- Best Practices: 95+ (HTTPS via Netlify, moderne standaarden)
+- Best Practices: 95+ (HTTPS via hosting provider, moderne standaarden)
 - SEO: 95+ (meta tags, semantic HTML, Open Graph)
 
 ---
@@ -331,7 +330,6 @@ De huidige versie is een volledig functionele, responsive website met:
 ```
 koningmexico.nl-website/
 ├── .git/                    # Git repository
-├── .netlify/                # Netlify deployment config
 ├── assets/                  # Media files
 │   ├── logo-fixed.png       # Primary logo (GEBRUIKT)
 │   ├── logo.png             # Original logo
@@ -343,7 +341,6 @@ koningmexico.nl-website/
 ├── index.html               # Main page (30KB, 452 regels)
 ├── styles.css               # Custom CSS (NEW - was missing!)
 ├── script.js                # Interactive features (15KB, 437 regels)
-├── netlify.toml             # Netlify configuration
 ├── .gitignore               # Git ignore rules
 ├── PRD.md                   # This document (UPDATED)
 ├── README.md                # Developer documentation (TO UPDATE)
@@ -404,13 +401,13 @@ koningmexico.nl-website/
 - ✓ Favicon aanwezig
 - ✓ Git repository aangemaakt
 - ✓ .gitignore geconfigureerd
-- ✓ Netlify geconnecteerd
-- ✓ netlify.toml configuratie
+- ✓ Alle bestanden klaar voor deployment
 
 ### Post-Launch (To Do)
-- [ ] Domain koningmexico.nl koppelen aan Netlify
+- [ ] Hosting provider kiezen (GitHub Pages, Vercel, Cloudflare Pages, etc.)
+- [ ] Domain koningmexico.nl koppelen aan hosting
 - [ ] DNS records configureren
-- [ ] SSL certificaat verifiëren (automatisch via Netlify)
+- [ ] SSL certificaat verifiëren (via hosting provider)
 - [ ] Google Search Console toevoegen
 - [ ] Analytics toevoegen (optioneel)
 - [ ] Social media testing (Open Graph preview)
@@ -426,7 +423,7 @@ Om content te wijzigen:
 2. Test lokaal met `python -m http.server 8000` of `npx serve`
 3. Commit changes: `git add . && git commit -m "Update content"`
 4. Push naar GitHub: `git push`
-5. Netlify deployt automatisch
+5. Deploy handmatig of via gekozen hosting platform (afhankelijk van setup)
 
 ### Styling Updates
 Om design te wijzigen:
@@ -462,7 +459,7 @@ Om functionaliteit toe te voegen:
 
 ## 14. Conclusie
 
-### Project Status: ✓ VOLTOOID & DEPLOYED
+### Project Status: ✓ VOLTOOID & KLAAR VOOR DEPLOYMENT
 
 De Koning Mexico website is **volledig functioneel** en klaar voor gebruik. Alle core features zijn geïmplementeerd:
 - ✅ Complete spelregels (onze specifieke variant met 4 fases)
@@ -470,13 +467,14 @@ De Koning Mexico website is **volledig functioneel** en klaar voor gebruik. Alle
 - ✅ Responsive design (mobile-first)
 - ✅ Koninklijke branding (goud/groen/rood)
 - ✅ SEO optimalisatie
-- ✅ Deployed op Netlify
+- ✅ Klaar voor deployment op elk statisch hosting platform
 
 ### Next Steps
-1. **Domain koppelen** (koningmexico.nl → Netlify)
-2. **Testen met echte gebruikers** (tijdens het spelen)
-3. **Feedback verzamelen** en itereren
-4. **Optioneel**: Post-MVP features toevoegen
+1. **Hosting provider kiezen** (GitHub Pages, Vercel, Cloudflare Pages, etc.)
+2. **Domain koppelen** (koningmexico.nl → gekozen host)
+3. **Testen met echte gebruikers** (tijdens het spelen)
+4. **Feedback verzamelen** en itereren
+5. **Optioneel**: Post-MVP features toevoegen
 
 ---
 

@@ -75,9 +75,6 @@ Deze site heeft **geen build proces** nodig:
 koningmexico.nl-website/
 ├── .git/                     # Git repository
 ├── .gitignore                # Git ignore rules
-├── .netlify/                 # Netlify deployment config
-│   └── state.json            # Netlify site ID
-├── netlify.toml              # Netlify build config
 │
 ├── assets/                   # Media bestanden
 │   ├── logo-fixed.png        # 🎯 Primary logo (GEBRUIKT)
@@ -129,45 +126,29 @@ Open http://localhost:3000
 
 ## 🌐 Deployment
 
-### Netlify (Current Setup)
+Deze website is een statische site die eenvoudig gehost kan worden op elk platform dat statische HTML ondersteunt.
 
-#### Status: ✅ Connected
-- Git repository: Geïnitialiseerd
-- Netlify: Geconfigureerd (.netlify folder aanwezig)
-- Branch: `master`
+### Deployment Opties
+- **GitHub Pages**: Gratis hosting voor statische sites
+- **Vercel**: Gratis tier met automatische deploys
+- **Cloudflare Pages**: Snelle CDN met gratis tier
+- **Eigen server**: Upload naar je eigen webserver via FTP/SFTP
 
-#### Deploy naar Production
+### Handmatige Deployment
+1. Commit je changes:
 ```bash
-# 1. Commit je changes
 git add .
 git commit -m "Your commit message"
-
-# 2. Push naar GitHub
 git push origin master
-
-# 3. Netlify deployt automatisch!
 ```
 
-#### Manual Deploy via CLI
-```bash
-# Installeer Netlify CLI (eenmalig)
-npm install -g netlify-cli
-
-# Login
-netlify login
-
-# Deploy
-netlify deploy --prod
-```
-
-#### Domain Instellen
-1. Ga naar Netlify Dashboard
-2. Site settings → Domain management
-3. Add custom domain: `koningmexico.nl`
-4. Configureer DNS bij je domain provider:
-   - **CNAME record**: `www` → `[jouw-site].netlify.app`
-   - **A record**: `@` → Netlify IP
-   - Of gebruik Netlify DNS (makkelijkst)
+2. Upload de volgende bestanden naar je hosting:
+   - `index.html`
+   - `spel.html`
+   - `script.js`
+   - `game.js`
+   - `styles.css`
+   - `assets/` directory
 
 ---
 
@@ -415,7 +396,7 @@ lighthouse https://koningmexico.nl --view
 ## 🔐 Security
 
 ### Best Practices
-- ✅ HTTPS via Netlify (automatic SSL)
+- ✅ HTTPS (configureer SSL bij je hosting provider)
 - ✅ No inline scripts (CSP-friendly)
 - ✅ No external dependencies (security surface = 0)
 - ✅ Sanitized user input (geen forms, geen input)
@@ -425,7 +406,7 @@ lighthouse https://koningmexico.nl --view
 ## 📝 Git Workflow
 
 ### Branches
-- `master` - Production (deployed door Netlify)
+- `master` - Production branch
 - Feature branches optioneel
 
 ### Commits
@@ -468,7 +449,7 @@ Dit project is **perfect voor beginners** omdat:
 3. **Vanilla JavaScript** - DOM manipulation, Event listeners
 4. **Intersection Observer API** - Scroll animations
 5. **Git** - Version control
-6. **Netlify** - Deployment
+6. **Static Site Hosting** - Deployment (GitHub Pages, Vercel, etc.)
 
 ---
 
