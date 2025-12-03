@@ -399,8 +399,13 @@
         <!-- Debug Console -->
         <div class="mt-8 bg-brown-dark rounded-lg p-4 border-2 border-gold">
             <div class="flex justify-between items-center mb-2">
-                <h3 class="text-gold font-bold text-sm">📊 Debug Console</h3>
+                <h3 class="text-gold font-bold text-sm cursor-pointer hover:text-gold-light" id="debugHeader" onclick="toggleDebugConsole()">
+                    📊 Debug Console <span id="debugToggleIcon">▼</span>
+                </h3>
                 <div class="flex gap-2">
+                    <button onclick="toggleDebugConsole()" class="text-xs text-white bg-brown-medium px-2 py-1 rounded hover:bg-brown-dark" title="Collapse/Expand">
+                        <span id="debugToggleBtn">▼ Verberg</span>
+                    </button>
                     <button onclick="navigator.clipboard.writeText(document.getElementById('debugConsole').textContent).then(() => alert('Console gekopieerd!'))" class="text-xs text-white bg-green px-2 py-1 rounded hover:bg-green-light">
                         Copy
                     </button>
@@ -411,6 +416,24 @@
             </div>
             <pre id="debugConsole" class="bg-black text-green-light text-xs font-mono p-3 rounded max-h-40 overflow-y-auto whitespace-pre-wrap" style="color: #00ff00;">Wachten op spel start...</pre>
         </div>
+
+        <script>
+            function toggleDebugConsole() {
+                const console = document.getElementById('debugConsole');
+                const toggleBtn = document.getElementById('debugToggleBtn');
+                const toggleIcon = document.getElementById('debugToggleIcon');
+
+                if (console.style.display === 'none') {
+                    console.style.display = 'block';
+                    toggleBtn.textContent = '▼ Verberg';
+                    toggleIcon.textContent = '▼';
+                } else {
+                    console.style.display = 'none';
+                    toggleBtn.textContent = '▶ Toon';
+                    toggleIcon.textContent = '▶';
+                }
+            }
+        </script>
 
     </main>
 
