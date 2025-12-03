@@ -283,13 +283,18 @@
             gameState.isSettingPattern = false;
             gameState.maxThrows = gameState.voorgooierPattern.length;
             showMessage(`✓ Voorgooier patroon vastgesteld! ${gameState.maxThrows} ${gameState.maxThrows === 1 ? 'worp' : 'worpen'}. Je gooide ${gameState.currentThrow}!`, 'success');
+            // After voorgooier pattern, go straight to result
+            showResultButtons();
+        } else if (gameState.throwCount === 1) {
+            // EERSTE BLINDE WORP: Geen hergooien mogelijk!
+            // Direct naar resultaat keuze: Ronde gehaald, Vast, of Verloren
+            showMessage(`Je gooide ${gameState.currentThrow}! Eerste blinde worp - kies het resultaat`, 'info');
+            showResultButtons();
         } else {
-            // Show what was thrown
+            // Latere worpen: normale logica (kan wel hergooien)
             showMessage(`Je gooide ${gameState.currentThrow}! Kies je actie`, 'success');
+            showAfterThrowButtons();
         }
-
-        // Show options after revealing
-        showAfterThrowButtons();
     }
 
     function handleWon() {
