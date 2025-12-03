@@ -13,7 +13,8 @@
             throwCount: 0,
             isBlind: false,
             dice1: 1,
-            dice2: 1
+            dice2: 1,
+            threwBlindThisRound: false // Track if player threw any blind throws this round
         },
         computer: {
             lives: 6,
@@ -21,7 +22,8 @@
             throwCount: 0,
             isBlind: false,
             dice1: 1,
-            dice2: 1
+            dice2: 1,
+            threwBlindThisRound: false // Track if computer threw any blind throws this round
         },
         currentTurn: 'player', // 'player' or 'computer'
         roundNumber: 1,
@@ -30,7 +32,7 @@
         gameOver: false,
         mexicoCount: 0, // Number of Mexico's thrown this round
         maxThrows: 3, // Maximum throws this round (set by voorgooier)
-        voorgooierWasBlind: false // Whether voorgooier threw blind (determines if opponent can throw blind)
+        voorgooierThrewBlind: false // Whether voorgooier threw ANY blind throws (determines if achterligger can throw blind)
     };
 
     // DOM Elements
@@ -101,7 +103,14 @@
         player.isBlind = isBlind;
         player.throwCount++;
 
-        logToConsole(`[Speler] Worp ${player.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'}`);
+        // Track if player threw any blind throws this round
+        if (isBlind) {
+            player.threwBlindThisRound = true;
+            logToConsole(`[Speler] Worp ${player.throwCount} - BLIND (blind vlag gezet)`);
+        } else {
+            logToConsole(`[Speler] Worp ${player.throwCount} - OPEN`);
+        }
+
         throwDice('player', isBlind);
     }
 
@@ -115,9 +124,10 @@
         if (gameState.playerToGoFirst === 'player' && !gameState.isFirstRound) {
             gameState.maxThrows = player.throwCount;
             // Track if player threw any blind throws (if so, computer can also throw blind)
-            // For simplicity: if player threw open on all throws, computer must throw open
-            gameState.voorgooierWasBlind = false; // Player always reveals, so we know it was open
-            logToConsole(`[Speler] VOORGOOIER - Worplimiet voor deze ronde: ${gameState.maxThrows}, Open gegooid`);
+            gameState.voorgooierThrewBlind = player.threwBlindThisRound;
+            const throwType = player.threwBlindThisRound ? 'Met blind' : 'Alleen open';
+            logToConsole(`[Speler] VOORGOOIER - Worplimiet: ${gameState.maxThrows}, ${throwType} gegooid`);
+            logToConsole(`[REGEL] Computer ${player.threwBlindThisRound ? 'MAG' : 'MAG NIET'} blind gooien`);
         }
 
         logToConsole(`[Speler] LATEN STAAN - Eindworp: ${displayValue} (na ${player.throwCount} worpen)`);
@@ -295,10 +305,16 @@
         // Decide if next throw should be blind
         let isBlind = false;
 
-        // Strategy: On 2nd throw with low value (<54), go blind on 3rd throw (1vs1 strategy)
-        if (computer.throwCount === 2 && computer.currentThrow < 54 && gameState.maxThrows >= 3) {
-            isBlind = true;
-            logToConsole(`[Computer] Besluit: LAATSTE WORP BLIND GOOIEN (huidige worp te laag: ${computer.displayThrow || computer.currentThrow})`);
+        // RULE CHECK: If voorgooier threw all open, achterligger MUST throw all open
+        if (!gameState.isFirstRound && !gameState.voorgooierThrewBlind) {
+            isBlind = false; // Force open throws
+            logToConsole(`[REGEL] Computer MAG NIET blind gooien (voorgooier gooide alleen open)`);
+        } else {
+            // Strategy: On 2nd throw with low value (<54), go blind on 3rd throw (1vs1 strategy)
+            if (computer.throwCount === 2 && computer.currentThrow < 54 && gameState.maxThrows >= 3) {
+                isBlind = true;
+                logToConsole(`[Computer] Besluit: LAATSTE WORP BLIND GOOIEN (huidige worp te laag: ${computer.displayThrow || computer.currentThrow})`);
+            }
         }
 
         // Subsequent throws: smart AI decisions
@@ -312,10 +328,11 @@
                 // If computer is voorgooier, set the max throws
                 if (gameState.playerToGoFirst === 'computer' && !gameState.isFirstRound) {
                     gameState.maxThrows = computer.throwCount;
-                    // Computer throws open (unless it was blind, which is rare)
-                    // We'll track: did computer throw any blind throws?
-                    gameState.voorgooierWasBlind = false; // Computer threw open
-                    logToConsole(`[Computer] VOORGOOIER - Worplimiet voor deze ronde: ${gameState.maxThrows}, Open gegooid`);
+                    // Track if computer threw any blind throws (if so, player can also throw blind)
+                    gameState.voorgooierThrewBlind = computer.threwBlindThisRound;
+                    const throwType = computer.threwBlindThisRound ? 'Met blind' : 'Alleen open';
+                    logToConsole(`[Computer] VOORGOOIER - Worplimiet: ${gameState.maxThrows}, ${throwType} gegooid`);
+                    logToConsole(`[REGEL] Speler ${computer.threwBlindThisRound ? 'MAG' : 'MAG NIET'} blind gooien`);
                 }
 
                 logToConsole(`[Computer] LATEN STAAN - Eindworp: ${displayValue} (na ${computer.throwCount} worpen)`);
@@ -340,7 +357,15 @@
 
         // Computer throws
         computer.throwCount++;
-        logToConsole(`[Computer] Worp ${computer.throwCount} - ${isBlind ? 'BLIND' : 'OPEN'}`);
+
+        // Track if computer threw any blind throws this round
+        if (isBlind) {
+            computer.threwBlindThisRound = true;
+            logToConsole(`[Computer] Worp ${computer.throwCount} - BLIND (blind vlag gezet)`);
+        } else {
+            logToConsole(`[Computer] Worp ${computer.throwCount} - OPEN`);
+        }
+
         throwDice('computer', isBlind);
 
         // After throw, decide next action
@@ -863,7 +888,7 @@
 
         // Reset max throws to 3 (will be set by voorgooier during the round)
         gameState.maxThrows = 3;
-        gameState.voorgooierWasBlind = false;
+        gameState.voorgooierThrewBlind = false;
 
         // Reset Mexico count for new round
         gameState.mexicoCount = 0;
@@ -874,6 +899,7 @@
         gameState.player.isMexico = false;
         gameState.player.throwCount = 0;
         gameState.player.isBlind = false;
+        gameState.player.threwBlindThisRound = false;
         gameState.player.dice1 = 1;
         gameState.player.dice2 = 1;
 
@@ -882,6 +908,7 @@
         gameState.computer.isMexico = false;
         gameState.computer.throwCount = 0;
         gameState.computer.isBlind = false;
+        gameState.computer.threwBlindThisRound = false;
         gameState.computer.dice1 = 1;
         gameState.computer.dice2 = 1;
 
@@ -927,13 +954,14 @@
         gameState.gameOver = false;
         gameState.mexicoCount = 0;
         gameState.maxThrows = 3;
-        gameState.voorgooierWasBlind = false;
+        gameState.voorgooierThrewBlind = false;
 
         gameState.player.currentThrow = null;
         gameState.player.displayThrow = null;
         gameState.player.isMexico = false;
         gameState.player.throwCount = 0;
         gameState.player.isBlind = false;
+        gameState.player.threwBlindThisRound = false;
         gameState.player.dice1 = 1;
         gameState.player.dice2 = 1;
 
@@ -942,6 +970,7 @@
         gameState.computer.isMexico = false;
         gameState.computer.throwCount = 0;
         gameState.computer.isBlind = false;
+        gameState.computer.threwBlindThisRound = false;
         gameState.computer.dice1 = 1;
         gameState.computer.dice2 = 1;
 
@@ -1091,12 +1120,13 @@
             elements.throwOpenBtn.style.opacity = '1';
             elements.throwOpenBtn.style.cursor = 'pointer';
 
-            // Check if voorgooier threw open - if so, player cannot throw blind
-            if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer' && !gameState.voorgooierWasBlind) {
-                // Voorgooier (computer) threw open, so player must also throw open
+            // RULE CHECK: If voorgooier threw all open, achterligger MUST throw all open
+            if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer' && !gameState.voorgooierThrewBlind) {
+                // Voorgooier (computer) threw all open, so player must also throw open
                 elements.throwBlindBtn.disabled = true;
                 elements.throwBlindBtn.style.opacity = '0.5';
                 elements.throwBlindBtn.style.cursor = 'not-allowed';
+                logToConsole('[REGEL] Speler MAG NIET blind gooien (voorgooier gooide alleen open)');
             } else {
                 elements.throwBlindBtn.disabled = false;
                 elements.throwBlindBtn.style.opacity = '1';
