@@ -500,6 +500,16 @@
         actor.dice1 = Math.floor(Math.random() * 6) + 1;
         actor.dice2 = Math.floor(Math.random() * 6) + 1;
 
+        // 🎰 EASTER EGG: Lucky Mode - 50% extra chance for Mexico when player throws
+        if (who === 'player' && typeof window.luckyModeActive !== 'undefined' && window.luckyModeActive) {
+            // 50% chance to force Mexico (on top of normal 1/36 chance)
+            if (Math.random() < 0.5) {
+                actor.dice1 = 2;
+                actor.dice2 = 1;
+                logToConsole(`🎰 [LUCKY MODE] Mexico geforceerd!`);
+            }
+        }
+
         // Calculate throw value
         const higher = Math.max(actor.dice1, actor.dice2);
         const lower = Math.min(actor.dice1, actor.dice2);
