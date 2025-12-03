@@ -44,8 +44,6 @@
         dice1: document.getElementById('dice1'),
         dice2: document.getElementById('dice2'),
         diceCup: document.getElementById('diceCup'),
-        currentThrow: document.getElementById('currentThrow'),
-        throwCount: document.getElementById('throwCount'),
         gameInfo: document.getElementById('gameInfo'),
 
         // Buttons
@@ -999,9 +997,9 @@
         // Update turn indicator
         updateTurnIndicator();
 
-        // Update throw count
-        const currentActor = gameState[gameState.currentTurn];
-        elements.throwCount.textContent = currentActor.throwCount;
+        // Update throw count (element doesn't exist in HTML, so skip)
+        // const currentActor = gameState[gameState.currentTurn];
+        // elements.throwCount.textContent = currentActor.throwCount;
 
         // Update active card
         if (gameState.currentTurn === 'player') {
