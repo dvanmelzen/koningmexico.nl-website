@@ -50,7 +50,7 @@ De huidige versie is een volledig functionele, responsive website met:
 ### User Needs (Vervuld)
 - ✓ Snelle toegang tot spelregels vanaf mobiel tijdens het spelen
 - ✓ Overzichtelijke presentatie van worprangorde
-- ✓ Duidelijke uitleg van de vier fases van het spel
+- ✓ Duidelijke uitleg van de vier fases per RONDE
 - ✓ Inzicht in optionele huisregels
 
 ---
@@ -81,8 +81,8 @@ De huidige versie is een volledig functionele, responsive website met:
 - ✓ Hover animaties op cards
 - ✓ Scroll-triggered fade-in animaties
 
-#### Doel van het Spel
-- ✓ Bullet points met key objectives
+#### Doel van het SPEL
+- ✓ Bullet points met key objectives (blijf als laatste over!)
 - ✓ Kroon emoji animatie (pulse)
 
 #### Mexico als Kroegspel - Inzet Sectie
@@ -90,29 +90,29 @@ De huidige versie is een volledig functionele, responsive website met:
 - ✓ Twee inzetopties:
   1. **Rondje drinken** 🍻
   2. **De Pot** 💰 (meest gangbaar)
-- ✓ Duidelijke uitleg dat onze regels met inzetten per ronde werken
+- ✓ Duidelijke uitleg dat onze regels met inzetten per RONDE werken
 - ✓ Visueel onderscheid met border en emphasis
 
-#### Rangorde Worpen
+#### Rangorde WORPEN
 - ✓ **Mexico (21)** - prominente gold card met kroon 👑
 - ✓ **Dubbels (als honderden)** - 6x6=600 tot 1x1=100
-- ✓ **Gewone worpen** - hoogste cijfer vooraan (65 → 31)
+- ✓ **Gewone WORPEN** - hoogste cijfer vooraan (65 → 31)
 - ✓ Alle dobbelstenen zijn klikbaar (dice animation)
 - ✓ Visuele dobbelstenen Unicode symbolen (⚀ t/m ⚅)
 - ✓ Color-coded cards (groene header section)
 
-#### Spelverloop - Onze Variant (4 Fases)
+#### Spelverloop - Onze Variant (4 Fases per RONDE)
 - ✓ **Fase 1: Inzetten** (border-gold)
-  - Elke ronde begint met inzetten in de pot
+  - Elke RONDE begint met inzetten in de pot
   - Afgesproken bedrag of tokens
-  - Winnaar pakt volledige pot
+  - Winnaar van het SPEL pakt volledige pot
 - ✓ **Fase 2: Voorgooien** (border-green)
-  - Verliezer vorige ronde is voorgooier
-  - Eerste ronde: iedereen blind 1x
-  - Voorgooier bepaalt worplimiet (1, 2 of 3 worpen)
-- ✓ **Fase 3: De Ronde Zelf** (border-gold)
-  - Iedereen gooit
-  - Laagste score moet draaien
+  - Verliezer vorige RONDE is voorgooier
+  - Eerste RONDE van nieuw SPEL: iedereen blind 1 WORP
+  - Voorgooier bepaalt worplimiet voor deze RONDE (1, 2 of 3 WORPEN)
+- ✓ **Fase 3: De RONDE Zelf** (border-gold)
+  - Iedereen doet zijn WORPEN (binnen worplimiet)
+  - Laagste score van de RONDE moet draaien
   - Mexico stacking: 1× Mexico = 2 punten, 2× = 4, 3× = 6
 - ✓ **Fase 4: Overgooien (bij vastloper)** (border-green)
   - Definitie vastloper (minimaal 2× laagste op tafel)
@@ -126,10 +126,10 @@ De huidige versie is een volledig functionele, responsive website met:
   - Voorbeeld met €20 → €40
 - ✓ **Dobbelsteen van Tafel = Draaien** 🎲
   - Straf voor slordigheid: 1 punt verliezen
-  - Spel gaat door
+  - RONDE gaat gewoon door
 - ✓ Beide als variant-cards (klikbaar, hover effecten)
 
-#### Waarom dit Spel zo Leuk Is
+#### Waarom dit SPEL zo Leuk Is
 - ✓ Storytelling sectie (rode gradient background)
 - ✓ 3 strategy cards:
   - 🎯 Strategie (wanneer stop/doorgooien)

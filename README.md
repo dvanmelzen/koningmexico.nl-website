@@ -2,16 +2,17 @@
 
 **Website voor het dobbelspel Mexico (Mexxen) - koningmexico.nl**
 
-Een interactieve single-page website die het klassieke dobbelspel Mexico/Mexxen uitlegt met duidelijke spelregels, rangorde van worpen, spelverloop in 4 fases, en optionele huisregels.
+Een interactieve single-page website die het klassieke dobbelspel Mexico/Mexxen uitlegt met duidelijke spelregels, rangorde van WORPEN, spelverloop in 4 fases per RONDE, en optionele huisregels.
 
 ---
 
 ## 📋 Overzicht
 
 Deze website presenteert **onze specifieke variant** van Mexico met:
-- ✅ Complete spelregels (4 fases: Inzetten, Voorgooien, De Ronde, Overgooien)
+- ✅ Complete spelregels (4 fases per RONDE: Inzetten, Voorgooien, De RONDE, Overgooien)
+- ✅ Duidelijke terminologie (SPEL > RONDE > WORP hiërarchie)
 - ✅ Inzetregels (pot systeem met afgesproken bedrag)
-- ✅ Duidelijke rangorde van worpen (Mexico, Dubbels, Gewone worpen)
+- ✅ Duidelijke rangorde van WORPEN (Mexico, Dubbels, Gewone worpen)
 - ✅ Optionele huisregels (Winnaar van 6, Dobbelsteen van tafel)
 - ✅ Responsive design (mobile-first)
 - ✅ Interactieve elementen (klikbare dobbelstenen, animaties, Easter eggs)
@@ -34,12 +35,12 @@ Deze website presenteert **onze specifieke variant** van Mexico met:
 
 ### Secties
 1. **Hero** - Logo, tagline, floating dobbelstenen
-2. **Wat is Mexico?** - Introductie van het spel
+2. **Wat is Mexico?** - Introductie + Terminologie box (SPEL > RONDE > WORP)
 3. **Benodigdheden** - 5 items met emoji's
-4. **Doel van het Spel** - Key objectives
+4. **Doel van het SPEL** - Key objectives (blijf als laatste over!)
 5. **Mexico als Kroegspel** - Inzetopties (rondje drinken, de pot)
-6. **Rangorde Worpen** - Mexico, Dubbels, Gewone worpen
-7. **Spelverloop** - 4 fases met genummerde badges
+6. **Rangorde WORPEN** - Mexico, Dubbels, Gewone worpen
+7. **Spelverloop** - 4 fases per RONDE met genummerde badges
 8. **Optionele Huisregels** - 2 populaire varianten
 9. **Waarom zo Leuk** - 3 redenen (Strategie, Macht, Psychologie)
 10. **Call-to-Action** - Klaar om te spelen?
@@ -218,8 +219,8 @@ git push origin master
 - **Intersection Observer** voor:
   - `.requirement-card` (Benodigdheden)
   - `.variant-card` (Huisregels)
-  - `.phase-card` (Spelverloop fases)
-  - `.rangorde-item` (Worpen rangorde)
+  - `.phase-card` (Spelverloop fases per RONDE)
+  - `.rangorde-item` (WORPEN rangorde)
   - `.strategy-item` (Waarom leuk)
 - **Effect**: Fade-in + translateY(20px → 0)
 
@@ -357,11 +358,11 @@ Open Developer Tools (F12) en check console voor:
 
 #### Scroll animaties werken niet
 - Check of elements correct classes hebben:
-  - `.requirement-card`
-  - `.variant-card`
-  - `.phase-card`
-  - `.rangorde-item`
-  - `.strategy-item`
+  - `.requirement-card` (Benodigdheden)
+  - `.variant-card` (Huisregels)
+  - `.phase-card` (Spelverloop fases)
+  - `.rangorde-item` (WORPEN rangorde)
+  - `.strategy-item` (Waarom leuk)
 - Intersection Observer support checken
 
 ---
