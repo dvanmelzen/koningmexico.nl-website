@@ -644,6 +644,7 @@
             gameState.playerToGoFirst = 'player';
             message = `🎯 Jij: ${playerDisplay} vs Computer: ${computerDisplay}<br>Computer wint de eerste ronde! Jij verliest ${penaltyText} (${player.lives} over)<br>Jij bent voorgooier voor ronde 2.`;
             logToConsole(`Ronde 1: Speler ${playerDisplay} < Computer ${computerDisplay} - Computer wint, Speler verliest ${penalty} (${gameState.mexicoCount}× Mexico), ${player.lives} levens over`);
+            logToConsole(`[DEBUG] Computer wint blok afgerond, ga naar showMessage...`);
         } else {
             // TIE - VASTGOOIER! Both throw again, no lives lost
             message = `🔄 <strong>VASTGOOIER!</strong> Beide: ${playerDisplay}<br>Gelijkspel! Geen levens verloren - beide spelers gooien opnieuw!`;
@@ -688,8 +689,12 @@
             return;
         }
 
+        logToConsole(`[DEBUG] Na if/else blokken, message = "${message.substring(0, 50)}..."`);
+        logToConsole(`[DEBUG] Roep showMessage aan...`);
         showMessage(message, 'info');
+        logToConsole(`[DEBUG] showMessage succesvol, roep updateUI aan...`);
         updateUI();
+        logToConsole(`[DEBUG] updateUI succesvol`);
 
         logToConsole(`[RONDE 1 EINDE] Wachten 3 sec voor game over check...`);
 
