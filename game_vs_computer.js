@@ -500,10 +500,10 @@
         actor.dice1 = Math.floor(Math.random() * 6) + 1;
         actor.dice2 = Math.floor(Math.random() * 6) + 1;
 
-        // 🎰 EASTER EGG: Lucky Mode - 50% extra chance for Mexico when player throws
+        // 🎰 EASTER EGG: Lucky Mode - 70% extra chance for Mexico when player throws
         if (who === 'player' && typeof window.luckyModeActive !== 'undefined' && window.luckyModeActive) {
-            // 50% chance to force Mexico (on top of normal 1/36 chance)
-            if (Math.random() < 0.5) {
+            // 70% chance to force Mexico (on top of normal 1/36 chance)
+            if (Math.random() < 0.7) {
                 actor.dice1 = 2;
                 actor.dice2 = 1;
                 logToConsole(`🎰 [LUCKY MODE] Mexico geforceerd!`);
