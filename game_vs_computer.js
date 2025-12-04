@@ -58,7 +58,40 @@
         mexicoCount: 0, // Number of Mexico's thrown this round
         maxThrows: 3, // Maximum throws this round (set by voorgooier)
         voorgooierPattern: [], // Array tracking blind/open for each throw: [false, true, false] = [open, blind, open]
-        aiPersonality: null // Current AI personality for this round
+        aiPersonality: null, // Current AI personality for this round
+
+        // AI Psychology State (8 psychological principles)
+        aiPsychology: {
+            // Loss Aversion tracking
+            isWinning: false,
+            livesAdvantage: 0,
+
+            // Tilt Mechanics tracking
+            tiltLevel: 0, // 0-3: none, mild, moderate, severe
+            consecutiveLosses: 0,
+            roundsSinceLoss: 0,
+
+            // Gambler's Fallacy tracking
+            recentBadThrows: 0, // Count of throws < 40 in last 5 throws
+            recentThrowHistory: [], // Last 5 throw values
+
+            // Hot Hand Fallacy tracking
+            consecutiveGoodThrows: 0, // Count of good throws (>50) in a row
+
+            // Recency Bias tracking
+            lastRoundOutcome: null, // 'win' or 'loss'
+            lastThrowQuality: 0, // 0-100 quality of last throw
+
+            // Anchoring Effect tracking
+            firstThrowOfRound: null, // Value of first throw this round
+
+            // Overconfidence Bias tracking
+            recentWins: 0, // Wins in last 3 rounds
+            confidenceMultiplier: 1.0,
+
+            // Satisficing tracking
+            satisficingThreshold: 0.65 // "Good enough" threshold (65%)
+        }
     };
 
     // DOM Elements
@@ -453,6 +486,9 @@
 
                 logToConsole(`[Computer] ONTHUL - Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
 
+                // Track throw for psychology
+                updatePsychologyAfterThrow(computer.currentThrow);
+
                 if (computer.isMexico) {
                     celebrateMexico();
                 }
@@ -466,12 +502,252 @@
             } else {
                 // Open throw, continue sequence
                 logToConsole(`[Computer] Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
+
+                // Track throw for psychology
+                updatePsychologyAfterThrow(computer.currentThrow);
+
                 showMessage(`🤖 Computer gooide ${displayValue}!`, 'info');
                 setTimeout(() => {
                     computerThrowSequence();
                 }, 2500);
             }
         }, 1500);
+    }
+
+    // ========================================
+    // AI Psychology Functions (8 Principles)
+    // ========================================
+
+    // 1. Loss Aversion: Extra voorzichtig als winnend
+    function applyLossAversion(threshold) {
+        const psych = gameState.aiPsychology;
+        const computer = gameState.computer;
+        const player = gameState.player;
+
+        psych.livesAdvantage = computer.lives - player.lives;
+        psych.isWinning = psych.livesAdvantage > 0;
+
+        if (psych.isWinning) {
+            // Loss aversion: 2.5x sterker gewicht aan verliezen
+            // Als je wint, wil je NIET verliezen → verhoog threshold (voorzichtiger)
+            const adjustment = Math.min(psych.livesAdvantage * 3, 10);
+            logToConsole(`[Psychology] Loss Aversion: +${adjustment} voorzichtiger (${psych.livesAdvantage} punten voorsprong)`);
+            return threshold + adjustment;
+        }
+
+        return threshold;
+    }
+
+    // 2. Tilt Mechanics: Emotioneel na herhaalde verliezen
+    function applyTiltMechanics(threshold, bluffChance) {
+        const psych = gameState.aiPsychology;
+
+        // Tilt levels: 0=none, 1=mild (2 losses), 2=moderate (3 losses), 3=severe (4+ losses)
+        if (psych.consecutiveLosses >= 4) {
+            psych.tiltLevel = 3;
+        } else if (psych.consecutiveLosses >= 3) {
+            psych.tiltLevel = 2;
+        } else if (psych.consecutiveLosses >= 2) {
+            psych.tiltLevel = 1;
+        } else {
+            psych.tiltLevel = 0;
+        }
+
+        // Tilt decay: herstel na 2-4 rondes zonder loss
+        if (psych.roundsSinceLoss >= 3) {
+            psych.tiltLevel = Math.max(0, psych.tiltLevel - 1);
+        }
+
+        if (psych.tiltLevel > 0) {
+            // Tijdens tilt: agressiever (lager threshold) + meer bluffen
+            const thresholdReduction = psych.tiltLevel * 5; // 5/10/15 punten agressiever
+            const bluffIncrease = psych.tiltLevel * 0.15; // +15%/+30%/+45% bluff rate
+
+            logToConsole(`[Psychology] TILT Level ${psych.tiltLevel}: -${thresholdReduction} threshold, +${Math.round(bluffIncrease * 100)}% bluff`);
+
+            return {
+                threshold: threshold - thresholdReduction,
+                bluffChance: Math.min(bluffChance + bluffIncrease, 0.6) // Max 60% bluff
+            };
+        }
+
+        return { threshold, bluffChance };
+    }
+
+    // 3. Gambler's Fallacy: "Ik heb 5x slecht gegooid, nu moet ik wel goed gooien"
+    function applyGamblersFallacy(threshold) {
+        const psych = gameState.aiPsychology;
+
+        // Count recent bad throws (< 40)
+        if (psych.recentBadThrows >= 3) {
+            // Na 3+ slechte worpen: denk dat je nu wel goed MOET gooien
+            // → lager threshold (agressiever, want "nu ga ik vast goed gooien")
+            const adjustment = Math.min(psych.recentBadThrows * 3, 12);
+            logToConsole(`[Psychology] Gambler's Fallacy: -${adjustment} (${psych.recentBadThrows} slechte worpen, "nu moet het wel goed gaan")`);
+            return threshold - adjustment;
+        }
+
+        return threshold;
+    }
+
+    // 4. Hot Hand Fallacy: "Ik ben on fire, dit gaat gewoon door"
+    function applyHotHandFallacy(threshold) {
+        const psych = gameState.aiPsychology;
+
+        if (psych.consecutiveGoodThrows >= 3) {
+            // Na 3+ goede worpen: denk dat je "on fire" bent
+            // → lager threshold (agressiever, want "ik gooi toch wel goed")
+            const adjustment = Math.min(psych.consecutiveGoodThrows * 2, 10);
+            logToConsole(`[Psychology] Hot Hand Fallacy: -${adjustment} (${psych.consecutiveGoodThrows} goede worpen, "I'm on fire!")`);
+            return threshold - adjustment;
+        }
+
+        return threshold;
+    }
+
+    // 5. Recency Bias: Laatste events wegen zwaarder
+    function applyRecencyBias(threshold) {
+        const psych = gameState.aiPsychology;
+
+        if (psych.lastRoundOutcome === 'loss' && psych.lastThrowQuality < 50) {
+            // Laatste ronde verloren met slechte worp → extra voorzichtig
+            logToConsole(`[Psychology] Recency Bias: +5 voorzichtiger (laatste ronde slecht verloren)`);
+            return threshold + 5;
+        } else if (psych.lastRoundOutcome === 'win' && psych.lastThrowQuality > 70) {
+            // Laatste ronde gewonnen met goede worp → meer vertrouwen
+            logToConsole(`[Psychology] Recency Bias: -4 agressiever (laatste ronde goed gewonnen)`);
+            return threshold - 4;
+        }
+
+        return threshold;
+    }
+
+    // 6. Anchoring Effect: Eerste worp beïnvloedt beslissingen
+    function applyAnchoringEffect(threshold, currentThrow) {
+        const psych = gameState.aiPsychology;
+
+        if (psych.firstThrowOfRound && currentThrow) {
+            const firstThrowQuality = calculateThrowQuality(psych.firstThrowOfRound);
+
+            if (firstThrowQuality > 70) {
+                // Eerste worp was goed → verhoogde verwachtingen
+                logToConsole(`[Psychology] Anchoring: +3 (eerste worp ${psych.firstThrowOfRound} was goed, hogere verwachtingen)`);
+                return threshold + 3;
+            } else if (firstThrowQuality < 40) {
+                // Eerste worp was slecht → verlaagde verwachtingen
+                logToConsole(`[Psychology] Anchoring: -3 (eerste worp ${psych.firstThrowOfRound} was slecht, lagere verwachtingen)`);
+                return threshold - 3;
+            }
+        }
+
+        return threshold;
+    }
+
+    // 7. Overconfidence Bias: Overschat kansen na wins
+    function applyOverconfidenceBias(threshold) {
+        const psych = gameState.aiPsychology;
+
+        if (psych.recentWins >= 2) {
+            // Na 2+ wins in laatste 3 rondes: overconfident
+            psych.confidenceMultiplier = 1.0 + (psych.recentWins * 0.1); // +10% per win
+            const adjustment = Math.round(threshold * (psych.confidenceMultiplier - 1.0));
+
+            logToConsole(`[Psychology] Overconfidence: -${adjustment} (${psych.recentWins} recente wins, ${Math.round((psych.confidenceMultiplier - 1) * 100)}% overconfident)`);
+            return threshold - adjustment;
+        }
+
+        psych.confidenceMultiplier = 1.0;
+        return threshold;
+    }
+
+    // 8. Satisficing: "Good enough" in plaats van optimaal
+    function applySatisficing(currentThrow, threshold) {
+        const psych = gameState.aiPsychology;
+        const throwQuality = calculateThrowQuality(currentThrow);
+
+        // Als worp >= 65% quality EN niet te agressief → "good enough"
+        if (throwQuality >= psych.satisficingThreshold && throwQuality < 0.9) {
+            const rand = Math.random();
+            // 40% kans om te stoppen bij "good enough"
+            if (rand < 0.4) {
+                logToConsole(`[Psychology] Satisficing: Stop bij ${currentThrow} (${Math.round(throwQuality * 100)}% quality = "good enough")`);
+                return true; // Signal to stop
+            }
+        }
+
+        return false; // No satisficing, continue normal logic
+    }
+
+    // Helper: Calculate throw quality (0-1 scale)
+    function calculateThrowQuality(throwValue) {
+        if (throwValue === 1000) return 1.0; // Mexico = 100%
+        if (throwValue >= 600) return 0.95; // High doubles
+        if (throwValue >= 500) return 0.85;
+        if (throwValue >= 400) return 0.75;
+        if (throwValue >= 300) return 0.65;
+        if (throwValue >= 200) return 0.55;
+        if (throwValue >= 65) return 0.50; // Top normal throws
+        if (throwValue >= 54) return 0.40;
+        if (throwValue >= 43) return 0.30;
+        if (throwValue >= 32) return 0.20;
+        return 0.10; // Bad throws
+    }
+
+    // Update psychology state after computer throw
+    function updatePsychologyAfterThrow(throwValue) {
+        const psych = gameState.aiPsychology;
+        const quality = calculateThrowQuality(throwValue);
+
+        // Track first throw of round (anchoring)
+        if (!psych.firstThrowOfRound) {
+            psych.firstThrowOfRound = throwValue;
+        }
+
+        // Update throw history (last 5 throws) for Gambler's Fallacy
+        psych.recentThrowHistory.push(throwValue);
+        if (psych.recentThrowHistory.length > 5) {
+            psych.recentThrowHistory.shift();
+        }
+
+        // Count bad throws in history
+        psych.recentBadThrows = psych.recentThrowHistory.filter(t => calculateThrowQuality(t) < 0.4).length;
+
+        // Track consecutive good throws (Hot Hand)
+        if (quality > 0.5) {
+            psych.consecutiveGoodThrows++;
+        } else {
+            psych.consecutiveGoodThrows = 0;
+        }
+
+        // Store last throw quality (Recency Bias)
+        psych.lastThrowQuality = quality * 100;
+
+        logToConsole(`[Psychology] Throw tracked: quality=${Math.round(quality * 100)}%, bad throws in history=${psych.recentBadThrows}, good streak=${psych.consecutiveGoodThrows}`);
+    }
+
+    // Update psychology state after round ends
+    function updatePsychologyAfterRound(didComputerWin) {
+        const psych = gameState.aiPsychology;
+
+        // Reset round-specific tracking
+        psych.firstThrowOfRound = null;
+
+        // Update win/loss tracking
+        if (didComputerWin) {
+            psych.lastRoundOutcome = 'win';
+            psych.consecutiveLosses = 0;
+            psych.roundsSinceLoss++;
+            psych.recentWins = Math.min(psych.recentWins + 1, 3);
+
+            logToConsole(`[Psychology] Round won! Consecutive losses reset, recent wins: ${psych.recentWins}`);
+        } else {
+            psych.lastRoundOutcome = 'loss';
+            psych.consecutiveLosses++;
+            psych.roundsSinceLoss = 0;
+            psych.recentWins = Math.max(psych.recentWins - 1, 0);
+
+            logToConsole(`[Psychology] Round lost! Consecutive losses: ${psych.consecutiveLosses}, tilt incoming...`);
+        }
     }
 
     // ========================================
@@ -512,6 +788,7 @@
         }
 
         const personality = gameState.aiPersonality;
+        let bluffChance = personality.bluffChance;
 
         // RISK ANALYSIS: Check if next throw would be blind (forced by pattern)
         const nextThrowIndex = computer.throwCount; // Next throw (0-indexed)
@@ -523,20 +800,43 @@
             }
         }
 
-        // BLUFF OPTION: Sometimes stop at mediocre scores to bluff
-        if (Math.random() < personality.bluffChance) {
+        // ========================================
+        // APPLY 8 PSYCHOLOGICAL PRINCIPLES
+        // ========================================
+        logToConsole(`\n[Psychology] === Applying 8 Psychological Principles ===`);
+
+        // Get base threshold from personality for current throw count
+        let threshold = personality.thresholds[computer.throwCount] || 61;
+        logToConsole(`[AI ${personality.name}] Basis threshold voor worp ${computer.throwCount}: ${threshold}`);
+
+        // 8. Satisficing: Check first (can short-circuit decision)
+        if (applySatisficing(computer.currentThrow, threshold)) {
+            return false; // Stop at "good enough"
+        }
+
+        // Apply all other psychological principles
+        threshold = applyLossAversion(threshold);
+        const tiltResult = applyTiltMechanics(threshold, bluffChance);
+        threshold = tiltResult.threshold;
+        bluffChance = tiltResult.bluffChance;
+        threshold = applyGamblersFallacy(threshold);
+        threshold = applyHotHandFallacy(threshold);
+        threshold = applyRecencyBias(threshold);
+        threshold = applyAnchoringEffect(threshold, computer.currentThrow);
+        threshold = applyOverconfidenceBias(threshold);
+
+        logToConsole(`[Psychology] Final threshold after all adjustments: ${threshold}`);
+        logToConsole(`[Psychology] =======================================\n`);
+
+        // BLUFF OPTION: Sometimes stop at mediocre scores to bluff (affected by Tilt)
+        if (Math.random() < bluffChance) {
             if (computer.currentThrow >= 43 && computer.currentThrow <= 62) {
-                logToConsole(`[AI BLUF] Stop bij ${computer.displayThrow || computer.currentThrow} - probeer te bluffen (${Math.round(personality.bluffChance * 100)}% kans)`);
+                logToConsole(`[AI BLUF] Stop bij ${computer.displayThrow || computer.currentThrow} - probeer te bluffen (${Math.round(bluffChance * 100)}% kans)`);
                 return false;
             }
         }
 
-        // Get base threshold from personality for current throw count
-        let threshold = personality.thresholds[computer.throwCount] || 61;
-
-        logToConsole(`[AI ${personality.name}] Basis threshold voor worp ${computer.throwCount}: ${threshold}`);
-
-        // PSYCHOLOGY: Analyze player behavior
+        // PSYCHOLOGY: Analyze player behavior (old logic, kept for compatibility)
         if (player.currentThrow !== null && player.isBlind && player.throwCount >= 2) {
             // Player threw multiple times then blind = probably low
             // Computer can be more aggressive (lower threshold)
@@ -562,6 +862,9 @@
             threshold = Math.min(threshold + 10, 65);
             logToConsole(`[AI Voorzichtig] Volgende worp MOET blind - threshold verhoogd: ${oldThreshold} → ${threshold}`);
         }
+
+        // Clamp threshold to reasonable bounds (31-66)
+        threshold = Math.max(31, Math.min(threshold, 66));
 
         // DECISION: Compare current score with threshold
         const currentScore = computer.currentThrow;
@@ -784,12 +1087,20 @@
             // Player wins first round - computer loses lives and becomes voorgooier
             computer.lives -= penalty;
             gameState.playerToGoFirst = 'computer';
+
+            // Update psychology: computer LOST this round
+            updatePsychologyAfterRound(false);
+
             message = `🎯 Jij: ${playerDisplay} vs Computer: ${computerDisplay}<br>Je wint de eerste ronde! Computer verliest ${penaltyText} (${computer.lives} over)<br>Computer is voorgooier voor ronde 2.`;
             logToConsole(`Ronde 1: Speler ${playerDisplay} > Computer ${computerDisplay} - Speler wint, Computer verliest ${penalty} (${gameState.mexicoCount}× Mexico), ${computer.lives} levens over`);
         } else if (computer.currentThrow > player.currentThrow) {
             // Computer wins first round - player loses lives and becomes voorgooier
             player.lives -= penalty;
             gameState.playerToGoFirst = 'player';
+
+            // Update psychology: computer WON this round
+            updatePsychologyAfterRound(true);
+
             message = `🎯 Jij: ${playerDisplay} vs Computer: ${computerDisplay}<br>Computer wint de eerste ronde! Jij verliest ${penaltyText} (${player.lives} over)<br>Jij bent voorgooier voor ronde 2.`;
             logToConsole(`Ronde 1: Speler ${playerDisplay} < Computer ${computerDisplay} - Computer wint, Speler verliest ${penalty} (${gameState.mexicoCount}× Mexico), ${player.lives} levens over`);
             logToConsole(`[DEBUG] Computer wint blok afgerond, ga naar showMessage...`);
@@ -919,6 +1230,10 @@
             // Player wins round
             computer.lives -= penalty;
             winner = 'player';
+
+            // Update psychology: computer LOST this round
+            updatePsychologyAfterRound(false);
+
             message = `🎉 Je wint de ronde!<br>Jij: ${playerDisplay} vs Computer: ${computerDisplay}<br>Computer verliest ${penaltyText} (${computer.lives} over)`;
             logToConsole(`Ronde ${gameState.roundNumber}: Speler ${playerDisplay} > Computer ${computerDisplay} - Speler wint, Computer verliest ${penalty} (${gameState.mexicoCount}× Mexico), ${computer.lives} levens over`);
 
@@ -928,6 +1243,10 @@
             // Computer wins round
             player.lives -= penalty;
             winner = 'computer';
+
+            // Update psychology: computer WON this round
+            updatePsychologyAfterRound(true);
+
             message = `😔 Computer wint de ronde!<br>Jij: ${playerDisplay} vs Computer: ${computerDisplay}<br>Jij verliest ${penaltyText} (${player.lives} over)`;
             logToConsole(`Ronde ${gameState.roundNumber}: Speler ${playerDisplay} < Computer ${computerDisplay} - Computer wint, Speler verliest ${penalty} (${gameState.mexicoCount}× Mexico), ${player.lives} levens over`);
 
