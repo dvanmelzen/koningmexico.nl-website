@@ -173,7 +173,7 @@
             <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🎯 Overzicht</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
                 <p class="text-xl mb-6">
-                    <strong>Koning Mexico</strong> is een digitaal dobbelspel waarbij je probeert te overleven door strategisch te gooien met twee dobbelstenen. Je start met <strong class="text-green">6 levens</strong> en het doel is om de laatste overlevende te zijn.
+                    <strong>Koning Mexico</strong> is een digitaal dobbelspel waarbij je probeert te overleven door strategisch te gooien met twee dobbelstenen. Je start met <strong class="text-green">6 punten</strong> op je draaisteen en het doel is om de laatste overlevende te zijn.
                 </p>
 
                 <h3 class="font-heading text-2xl font-bold text-green mb-4">Kern Mechanica</h3>
@@ -235,7 +235,7 @@
                         <div class="bg-cream-light p-4 rounded-lg">
                             <div class="font-bold text-gold-dark mb-2">Start:</div>
                             <ul class="text-sm space-y-1">
-                                <li>• Alle spelers hebben 6 levens</li>
+                                <li>• Alle spelers beginnen met 6 punten</li>
                                 <li>• Niemand is voorgooier (eerste ronde = blind)</li>
                             </ul>
                         </div>
@@ -244,13 +244,13 @@
                             <ul class="text-sm space-y-1">
                                 <li>• Bestaat uit meerdere rondes</li>
                                 <li>• Elke ronde heeft een voorgooier</li>
-                                <li>• Spelers verliezen levens bij verlies</li>
+                                <li>• Spelers moeten draaien bij verlies</li>
                             </ul>
                         </div>
                         <div class="bg-cream-light p-4 rounded-lg">
                             <div class="font-bold text-gold-dark mb-2">Einde:</div>
                             <ul class="text-sm space-y-1">
-                                <li>• Als nog maar 1 persoon levens heeft</li>
+                                <li>• Als nog maar 1 persoon punten heeft</li>
                                 <li>• Die persoon is de winnaar 🏆</li>
                                 <li>• Daarna start een nieuw spel</li>
                             </ul>
@@ -277,9 +277,9 @@
                         <div class="bg-cream-light p-4 rounded-lg">
                             <div class="font-bold text-gold-dark mb-2">Resultaat:</div>
                             <ul class="text-sm space-y-1">
-                                <li>• <strong>Gewonnen:</strong> Levens blijven, niet voorgooier</li>
+                                <li>• <strong>Gewonnen:</strong> Geen draaien, niet voorgooier</li>
                                 <li>• <strong>Vast:</strong> Tie-breaker, +1 extra worp</li>
-                                <li>• <strong>Verloren:</strong> -1 leven, wordt voorgooier</li>
+                                <li>• <strong>Verloren:</strong> Moet 1× draaien, wordt voorgooier</li>
                             </ul>
                         </div>
                     </div>
@@ -318,7 +318,7 @@
                     <h3 class="font-heading text-xl font-bold text-green mb-4">Startpositie (Nieuw Spel)</h3>
                     <pre class="text-sm">🎮 SPEL START
    │
-Levens: 6 ● ● ● ● ● ●
+Punten: 6 ● ● ● ● ● ●
 Rondes gespeeld: 0
 Voorgooier: NIEMAND
 Status: Eerste ronde van nieuw spel
@@ -330,7 +330,7 @@ Status: Eerste ronde van nieuw spel
                     <h3 class="font-heading text-xl font-bold text-green mb-4">Tijdens Spel</h3>
                     <pre class="text-sm">🔄 RONDE [nummer]
    │
-Levens: X ● ● ●
+Punten: X ● ● ●
 Worpen deze ronde: 0/3
 Voorgooier: [Ja/Nee]
 Patroon: [Open/Blind] of [Geen]
@@ -578,7 +578,7 @@ else {
                     <h3 class="font-heading text-2xl font-bold text-green mb-6">Level 1: SPEL Flow</h3>
                     <pre class="decision-tree">┌─────────────────────┐
 │  🎮 NIEUW SPEL      │
-│  Alle: 6 levens     │
+│  Alle: 6 punten     │
 └─────────────────────┘
          ↓
 ┌─────────────────────┐
@@ -719,7 +719,7 @@ else {
                         <div class="bg-green/10 p-6 rounded-lg border-l-4 border-green">
                             <h4 class="font-bold text-green text-xl mb-3">✅ Ronde Gehaald</h4>
                             <ul class="space-y-2 text-sm">
-                                <li>✅ Levens blijven intact</li>
+                                <li>✅ Hoeft niet te draaien</li>
                                 <li>❌ Je bent NIET de voorgooier (reset)</li>
                                 <li>🎉 Kleine viering</li>
                                 <li>♻️ Volgende ronde begint</li>
@@ -741,9 +741,9 @@ else {
                         <div class="bg-red/10 p-6 rounded-lg border-l-4 border-red">
                             <h4 class="font-bold text-red text-xl mb-3">❌ Verloren</h4>
                             <ul class="space-y-2 text-sm">
-                                <li>❌ Verlies <strong>1 leven</strong></li>
+                                <li>❌ Moet <strong>1× draaien</strong></li>
                                 <li>👑 Je wordt <strong>automatisch voorgooier</strong></li>
-                                <li>💀 Bij 0 levens: UIT HET SPEL</li>
+                                <li>💀 Bij 0 punten: UIT HET SPEL</li>
                                 <li>♻️ Anders: volgende ronde als voorgooier</li>
                             </ul>
                         </div>
@@ -1027,7 +1027,7 @@ Voorgooier = ON
     ↓
 ┌─────────────────────┐
 │ Tel spelers met     │
-│ levens > 0          │
+│ punten > 0          │
 └─────────────────────┘
     ↓
 ┌──────────┐
@@ -1184,7 +1184,7 @@ THEN
         isVoorgooier = true (automatisch!)
         Bericht: "👑 Jij bent nu de voorgooier van de volgende ronde!"
 
-        IF (nog >1 speler met levens)
+        IF (nog >1 speler met punten)
         THEN
             Start volgende ronde
             Jij bepaalt patroon
@@ -1212,10 +1212,10 @@ END</pre>
                     <pre class="mb-3">IF (gebruiker kiest "Ronde Gehaald")
 THEN
     isVoorgooier = false (reset!)
-    Levens blijven gelijk
+    Hoeft niet te draaien
     Bericht: "🎉 Ronde gehaald!"
 
-    IF (nog >1 speler met levens)
+    IF (nog >1 speler met punten)
     THEN
         Start volgende ronde
         Jij bent gewone speler
@@ -1390,23 +1390,23 @@ END</pre>
 
                 <!-- Tip 5 -->
                 <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-gold col-span-full">
-                    <h3 class="font-bold text-gold-dark text-xl mb-3">❤️ Tip 5: Levens Beheer</h3>
-                    <p class="mb-3"><strong>Levens strategisch inzetten:</strong></p>
+                    <h3 class="font-bold text-gold-dark text-xl mb-3">❤️ Tip 5: Punten Beheer</h3>
+                    <p class="mb-3"><strong>Strategisch spelen op basis van je punten:</strong></p>
                     <div class="grid md:grid-cols-4 gap-4">
                         <div class="bg-green/10 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-green mb-1">6 levens</div>
+                            <div class="text-2xl font-bold text-green mb-1">6 punten</div>
                             <div class="text-sm">Kan je riskant spelen</div>
                         </div>
                         <div class="bg-gold/10 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-gold-dark mb-1">3-4 levens</div>
+                            <div class="text-2xl font-bold text-gold-dark mb-1">3-4 punten</div>
                             <div class="text-sm">Wees voorzichtig</div>
                         </div>
                         <div class="bg-red/10 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-red mb-1">1-2 levens</div>
+                            <div class="text-2xl font-bold text-red mb-1">1-2 punten</div>
                             <div class="text-sm">Maximale focus</div>
                         </div>
                         <div class="bg-red/20 p-3 rounded-lg text-center border-2 border-red">
-                            <div class="text-2xl font-bold text-red mb-1">1 leven</div>
+                            <div class="text-2xl font-bold text-red mb-1">1 punt</div>
                             <div class="text-sm"><strong>Alles of niets!</strong></div>
                         </div>
                     </div>
@@ -1431,7 +1431,7 @@ END</pre>
                     <tbody>
                         <tr>
                             <td class="font-bold">1</td>
-                            <td><strong>Start met 6 levens</strong></td>
+                            <td><strong>Start met 6 punten</strong></td>
                             <td><span class="bg-green/20 px-2 py-1 rounded text-sm">SPEL</span></td>
                             <td>Begin van elk nieuw spel</td>
                         </tr>
