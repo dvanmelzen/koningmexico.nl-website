@@ -242,7 +242,7 @@
             <div class="text-6xl mb-4">🧠</div>
             <h1 class="font-heading text-5xl md:text-6xl font-bold mb-4">AI Psychology Implementation</h1>
             <p class="text-xl md:text-2xl font-semibold mb-2">Mexico Spel - Wetenschappelijk Onderbouwde AI</p>
-            <p class="text-lg opacity-90">Versie 2.0 | 4 December 2025</p>
+            <p class="text-lg opacity-90">Versie 2.1 | 4 December 2025</p>
             <div class="mt-6">
                 <span class="inline-block bg-green text-white px-6 py-2 rounded-full font-bold text-lg">
                     ✅ ALL 8 PSYCHOLOGICAL PRINCIPLES IMPLEMENTED
@@ -258,6 +258,7 @@
             <p class="text-xl mb-8 opacity-95">
                 Vanaf versie 2.0 zijn alle 8 psychologische principes volledig geïmplementeerd in game_vs_computer.js.
                 De AI simuleert nu complex menselijk gedrag met realistische fouten en emotionele reacties.
+                <strong>Versie 2.1</strong> voegt probabilistische triggers toe - psychologische effecten treden op met 60-80% kans, voor meer onvoorspelbaarheid.
             </p>
 
             <div class="grid md:grid-cols-2 gap-4">
@@ -284,6 +285,7 @@
                         <li>✓ Psychology state tracking: tilt level, recent wins, throw history, etc.</li>
                         <li>✓ Dynamic threshold adjustments (-15 tot +10 punten)</li>
                         <li>✓ Bluff chance modifications (5% tot 60% tijdens tilt)</li>
+                        <li>✓ <strong>Probabilistische triggers (v2.1):</strong> 60-80% kans per principe</li>
                         <li>✓ Console logging voor debug insights</li>
                     </ul>
                 </div>
@@ -682,78 +684,225 @@ if (Math.random() < personality.bluffChance) {
         </div>
     </section>
 
-    <!-- Geplande Verbeteringen -->
+    <!-- Alle 8 Principes in Detail -->
     <section class="py-12 bg-gradient-to-br from-green/10 to-green-light/10">
         <div class="container mx-auto px-8 max-w-6xl">
-            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🚀 Geplande Verbeteringen</h2>
+            <h2 class="font-heading text-4xl font-bold text-gold-dark mb-6">🧠 Alle 8 Psychologische Principes (v2.1)</h2>
+            <p class="text-xl mb-8">
+                Elk principe heeft een <strong>probabilistische trigger</strong> - ze treden op met 60-80% kans, voor realistische onvoorspelbaarheid.
+            </p>
 
             <div class="space-y-6">
-                <!-- Priority 1 -->
+                <!-- Loss Aversion -->
                 <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-green">
                     <div class="flex items-start justify-between mb-4">
-                        <h3 class="font-heading text-2xl font-bold text-green">Priority 1: Loss Aversion Implementation</h3>
-                        <span class="priority-badge bg-green text-white">HIGH PRIORITY</span>
+                        <h3 class="font-heading text-2xl font-bold text-green">1. Loss Aversion (Verliesaversie)</h3>
+                        <span class="priority-badge bg-green text-white">✅ GEÏMPLEMENTEERD</span>
                     </div>
 
                     <div class="bg-green/10 p-6 rounded-lg mb-4">
-                        <h4 class="font-bold text-green mb-3">Implementatie Plan:</h4>
+                        <h4 class="font-bold text-green mb-3">Implementatie:</h4>
                         <ul class="space-y-2 text-sm">
-                            <li>• Track score differential: <code>livesDiff = player.lives - computer.lives</code></li>
-                            <li>• Computer achter: decrease threshold (meer agressief)</li>
-                            <li>• Computer voor: increase threshold (meer conservatief)</li>
-                            <li>• Asymmetrische multipliers: 3x voor behind, 2x voor ahead</li>
-                            <li>• Cap adjustments om extreme waarden te voorkomen</li>
+                            <li>• <strong>Trigger:</strong> 80% kans wanneer computer voorstaat</li>
+                            <li>• <strong>Effect:</strong> +adjustment punten (voorzichtiger spelen)</li>
+                            <li>• <strong>Bereik:</strong> ±20% variatie in adjustment sterkte</li>
+                            <li>• <strong>Formule:</strong> <code>adjustment = min(livesAdvantage × 3, 10) × (0.8 tot 1.2)</code></li>
+                            <li>• <strong>Console log:</strong> "[Psychology] Loss Aversion TRIGGERED: +X voorzichtiger"</li>
                         </ul>
                     </div>
 
-                    <div class="bg-cream-light p-4 rounded-lg">
-                        <strong>Geschatte Effort:</strong> 5 minuten
-                    </div>
+                    <pre class="text-xs">// Voorbeeld: Computer +2 levens voorsprong
+→ 80% kans: Threshold +5 tot +7 punten (voorzichtiger)
+→ 20% kans: Geen effect (speelt normaal)</pre>
                 </div>
 
-                <!-- Priority 2 -->
+                <!-- Tilt Mechanics -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-red">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-red">2. Tilt Mechanics (Emotionele Ontregeling)</h3>
+                        <span class="priority-badge bg-red text-white">✅ GEÏMPLEMENTEERD</span>
+                    </div>
+
+                    <div class="bg-red/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-red mb-3">Implementatie:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Trigger:</strong> ALTIJD actief (emotionele staat, geen keuze)</li>
+                            <li>• <strong>Tilt levels:</strong> 0 (none), 1 (mild), 2 (moderate), 3 (severe)</li>
+                            <li>• <strong>Effect op threshold:</strong> -5 (mild) tot -15 (severe)</li>
+                            <li>• <strong>Effect op bluffChance:</strong> ×1.2 tot ×1.6</li>
+                            <li>• <strong>Herstel:</strong> Geleidelijk na 2-4 rondes zonder verlies</li>
+                        </ul>
+                    </div>
+
+                    <pre class="text-xs">// Voorbeeld: 3 verliezen op rij
+→ Tilt level 2 (moderate)
+→ Threshold -10, bluffChance ×1.4
+→ Speelt emotioneel, meer risico's</pre>
+                </div>
+
+                <!-- Gambler's Fallacy -->
                 <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-gold">
                     <div class="flex items-start justify-between mb-4">
-                        <h3 class="font-heading text-2xl font-bold text-gold-dark">Priority 2: Tilt Mechanics</h3>
-                        <span class="priority-badge bg-gold text-brown-dark">MEDIUM PRIORITY</span>
+                        <h3 class="font-heading text-2xl font-bold text-gold-dark">3. Gambler's Fallacy</h3>
+                        <span class="priority-badge bg-gold text-brown-dark">✅ GEÏMPLEMENTEERD</span>
                     </div>
 
                     <div class="bg-gold/10 p-6 rounded-lg mb-4">
-                        <h4 class="font-bold text-gold-dark mb-3">Implementatie Plan:</h4>
+                        <h4 class="font-bold text-gold-dark mb-3">Implementatie:</h4>
                         <ul class="space-y-2 text-sm">
-                            <li>• Track consecutive losses: <code>consecutiveLosses</code></li>
-                            <li>• Activate tilt mode after 3+ losses</li>
-                            <li>• Increase bluff rate, decrease threshold</li>
-                            <li>• Recovery after 2-4 rounds</li>
+                            <li>• <strong>Trigger:</strong> 65% kans na 3-5 slechte worpen</li>
+                            <li>• <strong>Effect:</strong> -adjustment punten (denkt "nu moet ik wel goed gooien")</li>
+                            <li>• <strong>Bereik:</strong> ±30% variatie in adjustment sterkte</li>
+                            <li>• <strong>Formule:</strong> <code>adjustment = min(recentBadThrows × 2, 8) × (0.7 tot 1.3)</code></li>
                         </ul>
                     </div>
 
-                    <div class="bg-cream-light p-4 rounded-lg">
-                        <strong>Geschatte Effort:</strong> 10 minuten
-                    </div>
+                    <pre class="text-xs">// Voorbeeld: 4 slechte worpen achter elkaar
+→ 65% kans: Threshold -5 tot -10 punten
+→ 35% kans: Geen effect</pre>
                 </div>
 
-                <!-- Priority 3 -->
+                <!-- Hot Hand Fallacy -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-gold-light">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-gold-dark">4. Hot Hand Fallacy</h3>
+                        <span class="priority-badge bg-gold-light text-brown-dark">✅ GEÏMPLEMENTEERD</span>
+                    </div>
+
+                    <div class="bg-gold-light/20 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-gold-dark mb-3">Implementatie:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Trigger:</strong> 70% kans na 3+ goede worpen</li>
+                            <li>• <strong>Effect:</strong> -adjustment punten (denkt "I'm on fire!")</li>
+                            <li>• <strong>Bereik:</strong> ±25% variatie in adjustment sterkte</li>
+                            <li>• <strong>Formule:</strong> <code>adjustment = min(consecutiveGood × 2, 8) × (0.75 tot 1.25)</code></li>
+                        </ul>
+                    </div>
+
+                    <pre class="text-xs">// Voorbeeld: 4 goede worpen achter elkaar
+→ 70% kans: Threshold -6 tot -10 punten
+→ 30% kans: Geen effect</pre>
+                </div>
+
+                <!-- Recency Bias -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-brown-medium">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-brown-medium">5. Recency Bias</h3>
+                        <span class="priority-badge bg-brown-medium text-white">✅ GEÏMPLEMENTEERD</span>
+                    </div>
+
+                    <div class="bg-brown-medium/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-brown-medium mb-3">Implementatie:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Trigger:</strong> 75% kans bij laatste ronde win/loss</li>
+                            <li>• <strong>Effect na win:</strong> -3 tot -7 punten (overmoedig)</li>
+                            <li>• <strong>Effect na loss:</strong> +3 tot +6 punten (voorzichtiger)</li>
+                            <li>• <strong>Dynamische variatie:</strong> Willekeurige adjustment per keer</li>
+                        </ul>
+                    </div>
+
+                    <pre class="text-xs">// Voorbeeld: Net vorige ronde gewonnen
+→ 75% kans: Threshold -5 punten (risicovoller)
+→ 25% kans: Geen effect</pre>
+                </div>
+
+                <!-- Anchoring Effect -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-green-light">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-green-light">6. Anchoring Effect</h3>
+                        <span class="priority-badge bg-green-light text-white">✅ GEÏMPLEMENTEERD</span>
+                    </div>
+
+                    <div class="bg-green-light/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-green-light mb-3">Implementatie:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Trigger:</strong> 60% kans bij eerste worp van ronde</li>
+                            <li>• <strong>Effect bij goede 1e worp:</strong> -2 tot -5 punten</li>
+                            <li>• <strong>Effect bij slechte 1e worp:</strong> +2 tot +5 punten</li>
+                            <li>• <strong>Logica:</strong> Eerste worp beïnvloedt verwachtingen voor rest van ronde</li>
+                        </ul>
+                    </div>
+
+                    <pre class="text-xs">// Voorbeeld: Eerste worp = 65 (goed)
+→ 60% kans: Threshold -3 punten (verwacht meer goede worpen)
+→ 40% kans: Geen effect</pre>
+                </div>
+
+                <!-- Overconfidence Bias -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-red-light">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="font-heading text-2xl font-bold text-red-light">7. Overconfidence Bias</h3>
+                        <span class="priority-badge bg-red-light text-white">✅ GEÏMPLEMENTEERD</span>
+                    </div>
+
+                    <div class="bg-red-light/10 p-6 rounded-lg mb-4">
+                        <h4 class="font-bold text-red-light mb-3">Implementatie:</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• <strong>Trigger:</strong> 70% kans na 2+ recente wins</li>
+                            <li>• <strong>Multiplier bereik:</strong> 1.06 tot 1.12 (6-12% variatie)</li>
+                            <li>• <strong>Effect:</strong> Overschat kansen, threshold × confidence multiplier</li>
+                            <li>• <strong>Resets:</strong> Na verlies gaat multiplier terug naar 1.0</li>
+                        </ul>
+                    </div>
+
+                    <pre class="text-xs">// Voorbeeld: 3 recente wins, threshold = 60
+→ 70% kans: confidenceMultiplier = 1.09, threshold = 65
+→ 30% kans: Geen effect</pre>
+                </div>
+
+                <!-- Satisficing -->
                 <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-brown-dark">
                     <div class="flex items-start justify-between mb-4">
-                        <h3 class="font-heading text-2xl font-bold text-brown-dark">Priority 3: Recency Bias (Gambler's Fallacy/Hot Hand)</h3>
-                        <span class="priority-badge bg-brown-dark text-white">MEDIUM PRIORITY</span>
+                        <h3 class="font-heading text-2xl font-bold text-brown-dark">8. Satisficing ("Good Enough")</h3>
+                        <span class="priority-badge bg-brown-dark text-white">✅ GEÏMPLEMENTEERD</span>
                     </div>
 
                     <div class="bg-brown-dark/10 p-6 rounded-lg mb-4">
-                        <h4 class="font-bold text-brown-dark mb-3">Implementatie Plan:</h4>
+                        <h4 class="font-bold text-brown-dark mb-3">Implementatie:</h4>
                         <ul class="space-y-2 text-sm">
-                            <li>• Track recent roll quality (good/bad)</li>
-                            <li>• Gambler's Fallacy after 3-5 bad rolls</li>
-                            <li>• Hot Hand after 6+ good rolls</li>
-                            <li>• Small threshold adjustments (±5)</li>
+                            <li>• <strong>Trigger:</strong> 40% kans (al probabilistisch ingebouwd)</li>
+                            <li>• <strong>Threshold:</strong> 65% van personality threshold</li>
+                            <li>• <strong>Logica:</strong> "Dit is goed genoeg, geen perfectie nodig"</li>
+                            <li>• <strong>Effect:</strong> Stopt vroeger met gooien dan rationeel optimaal</li>
                         </ul>
                     </div>
 
-                    <div class="bg-cream-light p-4 rounded-lg">
-                        <strong>Geschatte Effort:</strong> 15 minuten
+                    <pre class="text-xs">// Voorbeeld: Current throw = 58, threshold = 61
+→ 40% kans: Stopt bij 58 ("good enough")
+→ 60% kans: Gooit door (rationeel)</pre>
+                </div>
+            </div>
+
+            <!-- Probabilistic Philosophy -->
+            <div class="mt-12 bg-gradient-to-r from-gold/20 to-gold-light/20 p-8 rounded-xl border-2 border-gold">
+                <h3 class="font-heading text-3xl font-bold text-gold-dark mb-4">🎲 Filosofie van Probabilistische Psychologie</h3>
+                <p class="text-lg mb-4">
+                    In versie 2.1 hebben we <strong>probabilistische triggers</strong> toegevoegd aan alle psychologische principes.
+                    Dit zorgt ervoor dat de AI zich meer als een echte mens gedraagt:
+                </p>
+                <div class="grid md:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-white p-6 rounded-lg">
+                        <h4 class="font-bold text-red mb-3">❌ Zonder Probabilistic (v2.0):</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Na 3 slechte worpen → ALTIJD Gambler's Fallacy</li>
+                            <li>• Bij voorsprong → ALTIJD Loss Aversion</li>
+                            <li>• Voorspelbaar patroon na N events</li>
+                            <li>• Voelt robotachtig en te consistent</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg">
+                        <h4 class="font-bold text-green mb-3">✅ Met Probabilistic (v2.1):</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Na 3 slechte worpen → 65% kans Gambler's Fallacy</li>
+                            <li>• Bij voorsprong → 80% kans Loss Aversion</li>
+                            <li>• Onvoorspelbaar gedrag, zelfs in zelfde situatie</li>
+                            <li>• Voelt menselijk en realistisch</li>
+                        </ul>
                     </div>
                 </div>
+                <p class="mt-6 italic text-lg text-center text-gold-dark">
+                    "Mensen zijn niet consistent - ze reageren soms wel en soms niet op dezelfde situatie. Dat is wat deze AI nu simuleert."
+                </p>
             </div>
         </div>
     </section>
@@ -764,7 +913,7 @@ if (Math.random() < personality.bluffChance) {
             <img src="assets/logo-fixed.png" alt="Koning Mexico" class="w-32 h-auto mx-auto mb-4 opacity-90">
             <p class="opacity-80 mb-4">&copy; 2025 Koning Mexico - AI Psychology Documentation</p>
             <p class="text-sm opacity-70">
-                Gebaseerd op wetenschappelijk onderzoek • Versie 1.0
+                Gebaseerd op wetenschappelijk onderzoek • Versie 2.1 - Probabilistic AI
             </p>
             <div class="mt-6 flex justify-center gap-8">
                 <a href="index.html" class="text-gold hover:text-gold-light transition-colors">Home</a>
