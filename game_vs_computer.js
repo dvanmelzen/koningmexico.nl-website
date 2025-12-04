@@ -528,11 +528,18 @@
         psych.isWinning = psych.livesAdvantage > 0;
 
         if (psych.isWinning) {
-            // Loss aversion: 2.5x sterker gewicht aan verliezen
-            // Als je wint, wil je NIET verliezen → verhoog threshold (voorzichtiger)
-            const adjustment = Math.min(psych.livesAdvantage * 3, 10);
-            logToConsole(`[Psychology] Loss Aversion: +${adjustment} voorzichtiger (${psych.livesAdvantage} punten voorsprong)`);
-            return threshold + adjustment;
+            // 80% kans om loss aversion te triggeren (sterk maar niet altijd)
+            if (Math.random() < 0.80) {
+                // Loss aversion: 2.5x sterker gewicht aan verliezen
+                // Als je wint, wil je NIET verliezen → verhoog threshold (voorzichtiger)
+                const baseAdjustment = Math.min(psych.livesAdvantage * 3, 10);
+                // Variatie: ±20% rondom base adjustment
+                const adjustment = Math.round(baseAdjustment * (0.8 + Math.random() * 0.4));
+                logToConsole(`[Psychology] Loss Aversion TRIGGERED: +${adjustment} voorzichtiger (${psych.livesAdvantage} punten voorsprong)`);
+                return threshold + adjustment;
+            } else {
+                logToConsole(`[Psychology] Loss Aversion possible but NOT triggered (20% kans)`);
+            }
         }
 
         return threshold;
@@ -580,11 +587,18 @@
 
         // Count recent bad throws (< 40)
         if (psych.recentBadThrows >= 3) {
-            // Na 3+ slechte worpen: denk dat je nu wel goed MOET gooien
-            // → lager threshold (agressiever, want "nu ga ik vast goed gooien")
-            const adjustment = Math.min(psych.recentBadThrows * 3, 12);
-            logToConsole(`[Psychology] Gambler's Fallacy: -${adjustment} (${psych.recentBadThrows} slechte worpen, "nu moet het wel goed gaan")`);
-            return threshold - adjustment;
+            // 65% kans om te triggeren (veel mensen hebben dit, maar niet iedereen)
+            if (Math.random() < 0.65) {
+                // Na 3+ slechte worpen: denk dat je nu wel goed MOET gooien
+                // → lager threshold (agressiever, want "nu ga ik vast goed gooien")
+                const baseAdjustment = Math.min(psych.recentBadThrows * 3, 12);
+                // Variatie: ±30% (meer variatie want irrationele bias)
+                const adjustment = Math.round(baseAdjustment * (0.7 + Math.random() * 0.6));
+                logToConsole(`[Psychology] Gambler's Fallacy TRIGGERED: -${adjustment} (${psych.recentBadThrows} slechte worpen, "nu moet het wel goed gaan")`);
+                return threshold - adjustment;
+            } else {
+                logToConsole(`[Psychology] Gambler's Fallacy possible (${psych.recentBadThrows} bad throws) but NOT triggered`);
+            }
         }
 
         return threshold;
@@ -595,11 +609,18 @@
         const psych = gameState.aiPsychology;
 
         if (psych.consecutiveGoodThrows >= 3) {
-            // Na 3+ goede worpen: denk dat je "on fire" bent
-            // → lager threshold (agressiever, want "ik gooi toch wel goed")
-            const adjustment = Math.min(psych.consecutiveGoodThrows * 2, 10);
-            logToConsole(`[Psychology] Hot Hand Fallacy: -${adjustment} (${psych.consecutiveGoodThrows} goede worpen, "I'm on fire!")`);
-            return threshold - adjustment;
+            // 70% kans om te triggeren
+            if (Math.random() < 0.70) {
+                // Na 3+ goede worpen: denk dat je "on fire" bent
+                // → lager threshold (agressiever, want "ik gooi toch wel goed")
+                const baseAdjustment = Math.min(psych.consecutiveGoodThrows * 2, 10);
+                // Variatie: ±25%
+                const adjustment = Math.round(baseAdjustment * (0.75 + Math.random() * 0.5));
+                logToConsole(`[Psychology] Hot Hand Fallacy TRIGGERED: -${adjustment} (${psych.consecutiveGoodThrows} goede worpen, "I'm on fire!")`);
+                return threshold - adjustment;
+            } else {
+                logToConsole(`[Psychology] Hot Hand possible (${psych.consecutiveGoodThrows} good throws) but NOT triggered`);
+            }
         }
 
         return threshold;
@@ -610,13 +631,21 @@
         const psych = gameState.aiPsychology;
 
         if (psych.lastRoundOutcome === 'loss' && psych.lastThrowQuality < 50) {
-            // Laatste ronde verloren met slechte worp → extra voorzichtig
-            logToConsole(`[Psychology] Recency Bias: +5 voorzichtiger (laatste ronde slecht verloren)`);
-            return threshold + 5;
+            // 75% kans (recente events zijn sterk maar niet altijd dominant)
+            if (Math.random() < 0.75) {
+                // Laatste ronde verloren met slechte worp → extra voorzichtig
+                const adjustment = 3 + Math.round(Math.random() * 4); // 3-7 voorzichtiger
+                logToConsole(`[Psychology] Recency Bias TRIGGERED: +${adjustment} voorzichtiger (laatste ronde slecht verloren)`);
+                return threshold + adjustment;
+            }
         } else if (psych.lastRoundOutcome === 'win' && psych.lastThrowQuality > 70) {
-            // Laatste ronde gewonnen met goede worp → meer vertrouwen
-            logToConsole(`[Psychology] Recency Bias: -4 agressiever (laatste ronde goed gewonnen)`);
-            return threshold - 4;
+            // 75% kans
+            if (Math.random() < 0.75) {
+                // Laatste ronde gewonnen met goede worp → meer vertrouwen
+                const adjustment = 3 + Math.round(Math.random() * 3); // 3-6 agressiever
+                logToConsole(`[Psychology] Recency Bias TRIGGERED: -${adjustment} agressiever (laatste ronde goed gewonnen)`);
+                return threshold - adjustment;
+            }
         }
 
         return threshold;
@@ -629,14 +658,19 @@
         if (psych.firstThrowOfRound && currentThrow) {
             const firstThrowQuality = calculateThrowQuality(psych.firstThrowOfRound);
 
-            if (firstThrowQuality > 70) {
-                // Eerste worp was goed → verhoogde verwachtingen
-                logToConsole(`[Psychology] Anchoring: +3 (eerste worp ${psych.firstThrowOfRound} was goed, hogere verwachtingen)`);
-                return threshold + 3;
-            } else if (firstThrowQuality < 40) {
-                // Eerste worp was slecht → verlaagde verwachtingen
-                logToConsole(`[Psychology] Anchoring: -3 (eerste worp ${psych.firstThrowOfRound} was slecht, lagere verwachtingen)`);
-                return threshold - 3;
+            // 60% kans (anchoring is subtiel)
+            if (Math.random() < 0.60) {
+                if (firstThrowQuality > 70) {
+                    // Eerste worp was goed → verhoogde verwachtingen
+                    const adjustment = 2 + Math.round(Math.random() * 3); // 2-5
+                    logToConsole(`[Psychology] Anchoring TRIGGERED: +${adjustment} (eerste worp ${psych.firstThrowOfRound} was goed, hogere verwachtingen)`);
+                    return threshold + adjustment;
+                } else if (firstThrowQuality < 40) {
+                    // Eerste worp was slecht → verlaagde verwachtingen
+                    const adjustment = 2 + Math.round(Math.random() * 3); // 2-5
+                    logToConsole(`[Psychology] Anchoring TRIGGERED: -${adjustment} (eerste worp ${psych.firstThrowOfRound} was slecht, lagere verwachtingen)`);
+                    return threshold - adjustment;
+                }
             }
         }
 
@@ -648,12 +682,17 @@
         const psych = gameState.aiPsychology;
 
         if (psych.recentWins >= 2) {
-            // Na 2+ wins in laatste 3 rondes: overconfident
-            psych.confidenceMultiplier = 1.0 + (psych.recentWins * 0.1); // +10% per win
-            const adjustment = Math.round(threshold * (psych.confidenceMultiplier - 1.0));
+            // 70% kans (niet iedereen wordt overconfident)
+            if (Math.random() < 0.70) {
+                // Na 2+ wins in laatste 3 rondes: overconfident
+                psych.confidenceMultiplier = 1.0 + (psych.recentWins * 0.08 * (0.8 + Math.random() * 0.4)); // 6-12% per win
+                const adjustment = Math.round(threshold * (psych.confidenceMultiplier - 1.0));
 
-            logToConsole(`[Psychology] Overconfidence: -${adjustment} (${psych.recentWins} recente wins, ${Math.round((psych.confidenceMultiplier - 1) * 100)}% overconfident)`);
-            return threshold - adjustment;
+                logToConsole(`[Psychology] Overconfidence TRIGGERED: -${adjustment} (${psych.recentWins} recente wins, ${Math.round((psych.confidenceMultiplier - 1) * 100)}% overconfident)`);
+                return threshold - adjustment;
+            } else {
+                logToConsole(`[Psychology] Overconfidence possible (${psych.recentWins} wins) but NOT triggered`);
+            }
         }
 
         psych.confidenceMultiplier = 1.0;
