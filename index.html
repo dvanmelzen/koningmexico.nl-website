@@ -79,11 +79,16 @@
                 <a href="spel.html" class="text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-all hover:-translate-y-0.5">🎲 Solo Spelen</a>
                 <a href="spel_vs_computer.html" class="text-gold-light font-bold px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all hover:-translate-y-0.5 border-2 border-gold-light">🤖 vs Computer</a>
             </nav>
-            <button class="mobile-menu-toggle md:hidden flex flex-col gap-1 p-2" aria-label="Menu" aria-expanded="false" aria-controls="main-navigation">
-                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
-                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
-                <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
-            </button>
+            <div class="flex items-center gap-3">
+                <button id="themeToggle" class="text-white font-semibold hover:text-gold transition-colors hidden md:block" title="Toggle dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <button class="mobile-menu-toggle md:hidden flex flex-col gap-1 p-2" aria-label="Menu" aria-expanded="false" aria-controls="main-navigation">
+                    <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
+                    <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
+                    <span class="block w-6 h-0.5 bg-white rounded transition-all"></span>
+                </button>
+            </div>
         </div>
     </header>
 

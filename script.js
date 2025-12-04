@@ -426,8 +426,50 @@
         initLazyLoading();
         initBackToTop();
         initMexicoCelebration();
+        initDarkMode();
 
         console.log('🎲 Koning Mexico website loaded! Veel speelplezier!');
+    }
+
+    // ========================================
+    // Dark Mode Toggle
+    // ========================================
+    function initDarkMode() {
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+
+        if (!themeToggle || !themeIcon) return;
+
+        // Check for saved theme preference or default to system preference
+        const savedTheme = localStorage.getItem('theme');
+        let shouldUseDarkMode = false;
+
+        if (savedTheme) {
+            shouldUseDarkMode = savedTheme === 'dark';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            shouldUseDarkMode = true;
+            console.log('🌙 Dark mode auto-detected from system preferences');
+        }
+
+        // Apply dark mode if needed
+        if (shouldUseDarkMode) {
+            document.body.classList.add('dark-mode');
+            themeIcon.textContent = '☀️';
+        }
+
+        // Toggle dark mode
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+
+            // Update icon
+            themeIcon.textContent = isDark ? '☀️' : '🌙';
+
+            // Save preference
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            console.log(`Theme switched to ${isDark ? 'dark' : 'light'} mode`);
+        });
     }
 
     // Start initialization

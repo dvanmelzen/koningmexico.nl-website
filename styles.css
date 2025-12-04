@@ -46,6 +46,58 @@
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
     --radius-full: 9999px;
+
+    /* Background colors */
+    --bg-primary: #FFF8E7;
+    --bg-secondary: #F5E6D3;
+    --text-primary: #3E2723;
+    --text-secondary: #5D4037;
+}
+
+/* ========================================
+   Dark Mode Variables
+   ======================================== */
+
+body.dark-mode {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --color-cream: #2a2a2a;
+    --color-cream-light: #1a1a1a;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode section {
+    background-color: var(--bg-secondary) !important;
+}
+
+body.dark-mode .bg-white {
+    background-color: #2a2a2a !important;
+}
+
+body.dark-mode .bg-cream,
+body.dark-mode .bg-cream-light {
+    background-color: #1a1a1a !important;
+}
+
+body.dark-mode .text-brown-dark {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .card {
+    background-color: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .shadow-lg,
+body.dark-mode .shadow-xl {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* ========================================
