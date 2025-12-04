@@ -20,7 +20,7 @@
 
 ## 🎯 Overzicht
 
-**Koning Mexico** is een digitaal dobbelspel waarbij je probeert te overleven door strategisch te gooien met twee dobbelstenen. Je start met **6 levens** en het doel is om de laatste overlevende te zijn.
+**Koning Mexico** is een digitaal dobbelspel waarbij je probeert te overleven door strategisch te gooien met twee dobbelstenen. Je start met **6 punten** en het doel is om de laatste overlevende te zijn.
 
 ### Kern Mechanica
 - **2 dobbelstenen** in een beker
@@ -54,16 +54,16 @@
 **Het complete spel van start tot finish**
 
 **Start:**
-- Alle spelers hebben 6 levens
+- Alle spelers hebben 6 punten
 - Niemand is voorgooier (eerste ronde = blind)
 
 **Tijdens:**
 - Bestaat uit meerdere **rondes**
 - Elke ronde heeft een voorgooier (behalve eerste)
-- Spelers verliezen levens bij verlies
+- Spelers moeten draaien bij verlies
 
 **Einde:**
-- Als nog maar **1 persoon levens heeft**
+- Als nog maar **1 persoon punten heeft**
 - Die persoon is de winnaar 🏆
 - Daarna start een **nieuw spel**
 
@@ -76,9 +76,9 @@
 - Eindigt met resultaat: Won/Vast/Lost
 
 **Resultaat:**
-- **Gewonnen**: Levens blijven gelijk, niet voorgooier
+- **Gewonnen**: Hoeft niet te draaien, niet voorgooier
 - **Vast**: Tie-breaker, +1 extra worp
-- **Verloren**: -1 leven, wordt voorgooier van volgende ronde
+- **Verloren**: Moet 1× draaien, wordt voorgooier van volgende ronde
 
 ### 🎲 WORP (Throw)
 **Eén actie: dobbelstenen gooien**
@@ -98,7 +98,7 @@
 ```
 🎮 SPEL START
    │
-Levens: 6 ● ● ● ● ● ●
+Punten: 6 ● ● ● ● ● ●
 Rondes gespeeld: 0
 Voorgooier: NIEMAND
 Status: Eerste ronde van nieuw spel
@@ -110,7 +110,7 @@ Status: Eerste ronde van nieuw spel
 ```
 🔄 RONDE [nummer]
    │
-Levens: X ● ● ●
+Punten: X ● ● ●
 Worpen deze ronde: 0/3
 Voorgooier: [Ja/Nee]
 Patroon: [Open/Blind] of [Geen]
@@ -226,7 +226,7 @@ else {
 ```
 ┌─────────────────────┐
 │  🎮 NIEUW SPEL      │
-│  Alle: 6 levens     │
+│  Alle: 6 punten     │
 └─────────────────────┘
          ↓
 ┌─────────────────────┐
@@ -399,7 +399,7 @@ else {
 │ RONDE GEHAALD! ✓    │
 └─────────────────────┘
         ↓
-  [Levens blijven gelijk]
+  [Hoeft niet te draaien gelijk]
         ↓
   [Kleine confetti]
         ↓
@@ -419,7 +419,7 @@ else {
 ```
 
 **Effecten:**
-- ✅ Levens blijven intact
+- ✅ Hoeft niet te draaien intact
 - ❌ Je bent NIET de voorgooier (reset)
 - 🎉 Kleine viering
 - ♻️ Volgende ronde begint (of nieuw spel als laatste over)
@@ -475,9 +475,9 @@ else {
 ```
 
 **Effecten:**
-- ❌ Verlies **1 leven**
+- ❌ Moet **1× draaien**
 - 👑 Je wordt **automatisch voorgooier** van volgende ronde
-- 💀 Bij 0 levens: UIT HET SPEL
+- 💀 Bij 0 punten: UIT HET SPEL
   - Als nog >1 persoon over: Spel gaat door
   - Als nog 1 persoon over: **SPEL EINDIGT** → Winnaar!
 - ♻️ Anders: volgende ronde als voorgooier
@@ -747,7 +747,7 @@ NA ELKE RONDE
     ↓
 ┌─────────────────────┐
 │ Tel spelers met     │
-│ levens > 0          │
+│ punten > 0          │
 └─────────────────────┘
     ↓
 ┌──────────┐
@@ -899,7 +899,7 @@ THEN
         isVoorgooier = true (automatisch!)
         Bericht: "👑 Jij bent nu de voorgooier van de volgende ronde!"
 
-        IF (nog >1 speler met levens)
+        IF (nog >1 speler met punten)
         THEN
             Start volgende ronde
             Jij bepaalt patroon
@@ -926,10 +926,10 @@ De verliezer krijgt macht over de volgende ronde als compensatie.
 IF (gebruiker kiest "Ronde Gehaald")
 THEN
     isVoorgooier = false (reset!)
-    Levens blijven gelijk
+    Hoeft niet te draaien gelijk
     Bericht: "🎉 Ronde gehaald!"
 
-    IF (nog >1 speler met levens)
+    IF (nog >1 speler met punten)
     THEN
         Start volgende ronde
         Jij bent gewone speler
@@ -1207,12 +1207,12 @@ Visuele reminder dat speciale "eerste ronde blind" regel van toepassing is.
 - Kies "Vast" voor extra drama (maar risico!)
 - Geniet van de confetti 🎉
 
-### Tip 5: Levens Beheer
-**Levens strategisch inzetten:**
-- Bij 6 levens: Kan je riskant spelen
-- Bij 3-4 levens: Wees voorzichtig
-- Bij 1-2 levens: Maximale focus
-- Bij 1 leven: Alles of niets!
+### Tip 5: Punten Beheer
+**Strategisch spelen op basis van je punten:**
+- Bij 6 punten: Kan je riskant spelen
+- Bij 3-4 punten: Wees voorzichtig
+- Bij 1-2 punten: Maximale focus
+- Bij 1 punt: Alles of niets!
 
 ---
 
@@ -1220,7 +1220,7 @@ Visuele reminder dat speciale "eerste ronde blind" regel van toepassing is.
 
 | # | Regel | Scope | Uitleg |
 |---|-------|-------|--------|
-| 1 | **Start met 6 levens** | SPEL | Begin van elk nieuw spel |
+| 1 | **Start met 6 punten** | SPEL | Begin van elk nieuw spel |
 | 2 | **Worplimiet 1-3** | RONDE | Max worpen per ronde |
 | 3 | **Open of Blind** | WORP | Elke worp kies je type |
 | 4 | **Eerste ronde nieuw spel = blind** | SPEL | Altijd als geen voorgooier |
@@ -1285,7 +1285,7 @@ RESULTAAT
   ↓
 [Ronde Gehaald] [Vast] [Verloren]
   ↓               ↓         ↓
-Volgende ronde  +1 worp   -1 leven
+Volgende ronde  +1 worp   Moet draaien
                            + voorgooier
                            volgende ronde
 ```
