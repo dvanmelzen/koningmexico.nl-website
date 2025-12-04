@@ -557,11 +557,12 @@ else {
 
                 <div class="mt-6 bg-gradient-to-r from-red/20 to-gold/20 p-6 rounded-lg border-l-4 border-red">
                     <h4 class="font-bold text-red text-xl mb-3">🎉 Mexico Speciale Regel</h4>
-                    <p><strong>Mexico (21) is ALTIJD direct zichtbaar</strong>, zelfs als je blind gooit!</p>
+                    <p><strong>Mexico (21) wordt altijd gevierd bij onthulling!</strong></p>
                     <ul class="mt-3 space-y-2">
-                        <li>• Automatische onthulling</li>
-                        <li>• Confetti celebratie</li>
+                        <li>• Als je blind gooit en 21 hebt: zie je het pas bij "Laten Zien"</li>
+                        <li>• Dan volgt automatisch: Confetti celebratie 🎉</li>
                         <li>• Speciale Mexico knoppen verschijnen</li>
+                        <li>• Let op: Je kunt niet door de beker heen kijken! Mexico is pas zichtbaar na onthulling</li>
                     </ul>
                 </div>
             </div>
@@ -1098,17 +1099,16 @@ END</pre>
 
                 <!-- Regel 3 -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="font-bold text-green text-xl mb-3">Regel 3: Mexico Altijd Zichtbaar</h3>
-                    <pre class="mb-3">IF (worp waarde == 21)
+                    <h3 class="font-bold text-green text-xl mb-3">Regel 3: Mexico Viering bij Onthulling</h3>
+                    <pre class="mb-3">IF (worp waarde == 21) AND (speler onthult dobbelstenen)
 THEN
-    isBlind = false (override!)
-    Toon dobbelstenen ALTIJD
-    Trigger celebratie
+    Trigger celebratie 🎉
     Toon Mexico knoppen (Laten Staan / Vast)
-    Geen "Laten Zien" knop (al zichtbaar)
+    Confetti animatie
 END</pre>
                     <div class="bg-gold/10 p-4 rounded-lg border-l-4 border-gold">
-                        <strong>Waarom?</strong> Mexico is zo speciaal dat het altijd gevierd moet worden, zelfs bij blinde worp.
+                        <p class="mb-2"><strong>Waarom?</strong> Mexico is zo speciaal dat het altijd gevierd moet worden!</p>
+                        <p class="text-sm"><strong>Let op:</strong> In het digitale spel zie je Mexico pas bij onthulling (net als in het echt - je kunt niet door de beker kijken!)</p>
                     </div>
                 </div>
 

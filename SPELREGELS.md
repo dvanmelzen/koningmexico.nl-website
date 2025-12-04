@@ -211,10 +211,11 @@ else {
 | 20 | 3-1 | 31 | Normaal | Laagste normale worp |
 
 ### Mexico Speciale Regel 🎉
-**Mexico (21) is ALTIJD direct zichtbaar**, zelfs als je blind gooit!
-- Automatische onthulling
-- Confetti celebratie
+**Mexico (21) wordt altijd gevierd bij onthulling!**
+- Als je blind gooit en 21 hebt: zie je het pas bij "Laten Zien"
+- Dan volgt automatisch: Confetti celebratie 🎉
 - Speciale Mexico knoppen verschijnen
+- Let op: Je kunt niet door de beker heen kijken! Mexico is pas zichtbaar na onthulling
 
 ---
 
@@ -814,20 +815,20 @@ END
 **Waarom?**
 Dit is een kernregel: de eerste blinde worp van een ronde is definitief en kan niet hergooid worden.
 
-### Regel 3: Mexico Altijd Zichtbaar
+### Regel 3: Mexico Viering bij Onthulling
 ```
-IF (worp waarde == 21)
+IF (worp waarde == 21) AND (speler onthult dobbelstenen)
 THEN
-    isBlind = false (override!)
-    Toon dobbelstenen ALTIJD
-    Trigger celebratie
+    Trigger celebratie 🎉
     Toon Mexico knoppen (Laten Staan / Vast)
-    Geen "Laten Zien" knop (al zichtbaar)
+    Confetti animatie
 END
 ```
 
 **Waarom?**
-Mexico is zo speciaal dat het altijd gevierd moet worden, zelfs bij blinde worp.
+Mexico is zo speciaal dat het altijd gevierd moet worden!
+
+**Let op:** In het digitale spel zie je Mexico pas bij onthulling (net als in het echt - je kunt niet door de beker kijken!)
 
 ### Regel 4: Derde Worp Dicht (Optioneel)
 ```
