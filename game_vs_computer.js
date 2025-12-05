@@ -2016,6 +2016,7 @@
             }
         }
         elements.keepBtn.classList.remove('hidden');
+        elements.keepBtn.disabled = false;
         elements.revealBtn.classList.add('hidden');
     }
 
