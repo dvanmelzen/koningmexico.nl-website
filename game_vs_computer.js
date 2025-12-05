@@ -39,7 +39,8 @@
             isBlind: false,
             dice1: 1,
             dice2: 1,
-            threwBlindThisRound: false // Track if player threw any blind throws this round
+            threwBlindThisRound: false, // Track if player threw any blind throws this round
+            throwHistory: [] // Track all throws this round: [{value, displayValue, isBlind, isMexico}]
         },
         computer: {
             lives: 6,
@@ -48,7 +49,8 @@
             isBlind: false,
             dice1: 1,
             dice2: 1,
-            threwBlindThisRound: false // Track if computer threw any blind throws this round
+            threwBlindThisRound: false, // Track if computer threw any blind throws this round
+            throwHistory: [] // Track all throws this round: [{value, displayValue, isBlind, isMexico}]
         },
         currentTurn: 'player', // 'player' or 'computer'
         roundNumber: 1,
@@ -100,11 +102,17 @@
         computerLives: document.getElementById('computerLives'),
         playerCard: document.getElementById('playerCard'),
         computerCard: document.getElementById('computerCard'),
-        roundNumber: document.getElementById('roundNumber'),
-        currentPlayer: document.getElementById('currentPlayer'),
-        dice1: document.getElementById('dice1'),
-        dice2: document.getElementById('dice2'),
-        diceCup: document.getElementById('diceCup'),
+
+        // Player dice
+        playerDice1: document.getElementById('playerDice1'),
+        playerDice2: document.getElementById('playerDice2'),
+        playerDiceCup: document.getElementById('playerDiceCup'),
+
+        // Computer dice
+        computerDice1: document.getElementById('computerDice1'),
+        computerDice2: document.getElementById('computerDice2'),
+        computerDiceCup: document.getElementById('computerDiceCup'),
+
         gameInfo: document.getElementById('gameInfo'),
 
         // Buttons
@@ -112,11 +120,180 @@
         throwBlindBtn: document.getElementById('throwBlindBtn'),
         keepBtn: document.getElementById('keepBtn'),
         revealBtn: document.getElementById('revealBtn'),
-        newGameBtn: document.getElementById('newGameBtn')
+        newGameBtn: document.getElementById('newGameBtn'),
+
+        // New UI Elements
+        statsWins: document.getElementById('statsWins'),
+        statsLosses: document.getElementById('statsLosses'),
+        statsWinRate: document.getElementById('statsWinRate'),
+        statsStreak: document.getElementById('statsStreak'),
+        throwHistoryDisplay: document.getElementById('throwHistoryDisplay'),
+        playerThrowHistoryItems: document.getElementById('playerThrowHistoryItems'),
+        computerThrowHistoryItems: document.getElementById('computerThrowHistoryItems'),
+        gameInfoInHistory: document.getElementById('gameInfoInHistory')
     };
+
+    // ========================================
+    // Game Statistics System (localStorage)
+    // ========================================
+    const STATS_KEY = 'mexicoVsComputerStats';
+
+    function loadStats() {
+        try {
+            const stored = localStorage.getItem(STATS_KEY);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Failed to load stats:', e);
+        }
+
+        // Default stats
+        return {
+            gamesPlayed: 0,
+            wins: 0,
+            losses: 0,
+            currentStreak: 0, // Positive = win streak, Negative = loss streak
+            longestWinStreak: 0,
+            highestRoundReached: 0
+        };
+    }
+
+    function saveStats(stats) {
+        try {
+            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        } catch (e) {
+            console.error('Failed to save stats:', e);
+        }
+    }
+
+    function updateStatsUI() {
+        const stats = loadStats();
+
+        elements.statsWins.textContent = stats.wins;
+        elements.statsLosses.textContent = stats.losses;
+
+        // Win rate calculation
+        const winRate = stats.gamesPlayed > 0
+            ? Math.round((stats.wins / stats.gamesPlayed) * 100)
+            : 0;
+        elements.statsWinRate.textContent = winRate;
+
+        // Streak display
+        if (stats.currentStreak > 0) {
+            elements.statsStreak.textContent = `+${stats.currentStreak}`;
+            elements.statsStreak.style.color = 'var(--color-green)';
+        } else if (stats.currentStreak < 0) {
+            elements.statsStreak.textContent = stats.currentStreak;
+            elements.statsStreak.style.color = 'var(--color-red)';
+        } else {
+            elements.statsStreak.textContent = '0';
+            elements.statsStreak.style.color = 'var(--text-secondary)';
+        }
+    }
+
+    function recordGameResult(didPlayerWin) {
+        const stats = loadStats();
+
+        stats.gamesPlayed++;
+
+        if (didPlayerWin) {
+            stats.wins++;
+            stats.currentStreak = stats.currentStreak >= 0 ? stats.currentStreak + 1 : 1;
+            stats.longestWinStreak = Math.max(stats.longestWinStreak, stats.currentStreak);
+        } else {
+            stats.losses++;
+            stats.currentStreak = stats.currentStreak <= 0 ? stats.currentStreak - 1 : -1;
+        }
+
+        // Track highest round reached
+        stats.highestRoundReached = Math.max(stats.highestRoundReached, gameState.roundNumber);
+
+        saveStats(stats);
+        updateStatsUI();
+
+        logToConsole(`[Stats] Game ${stats.gamesPlayed}: ${didPlayerWin ? 'WIN' : 'LOSS'}, Streak: ${stats.currentStreak}, Win Rate: ${Math.round((stats.wins / stats.gamesPlayed) * 100)}%`);
+    }
 
     // Dice symbols
     const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+    // ========================================
+    // Throw History & Game Info Display
+    // ========================================
+    function updateThrowHistory() {
+        // Always show the throw history panel (it now includes game info)
+        elements.throwHistoryDisplay.classList.remove('hidden');
+        const playerHistory = gameState.player.throwHistory;
+        const computerHistory = gameState.computer.throwHistory;
+
+        // Build player column
+            let playerHtml = '';
+            if (playerHistory.length === 0) {
+                playerHtml = '<div class="text-xs opacity-50" style="color: var(--text-secondary);">Nog geen worpen</div>';
+            } else {
+                playerHistory.forEach((throwData, index) => {
+                    // Check if this is the current throw and still blind
+                    const isCurrentAndBlind = (index === playerHistory.length - 1) && throwData.isBlind && gameState.player.isBlind;
+
+                    let displayValue, typeLabel, mexicoLabel;
+
+                    if (isCurrentAndBlind) {
+                        // Current throw is still blind - don't reveal!
+                        displayValue = '???';
+                        typeLabel = '🙈 Verborgen';
+                        mexicoLabel = '';
+                    } else {
+                        // Throw has been revealed (or was open from start)
+                        displayValue = throwData.displayValue;
+                        typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                        mexicoLabel = throwData.isMexico ? ' <span class="text-gold-light font-bold">🎉</span>' : '';
+                    }
+
+                    playerHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                        <span class="opacity-75">${index + 1}.</span>
+                        <span class="font-bold text-gold">${displayValue}</span>
+                        <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
+                        ${mexicoLabel}
+                    </div>`;
+                });
+            }
+
+            // Build computer column
+            let computerHtml = '';
+            if (computerHistory.length === 0) {
+                computerHtml = '<div class="text-xs opacity-50" style="color: var(--text-secondary);">Nog geen worpen</div>';
+            } else {
+                computerHistory.forEach((throwData, index) => {
+                    // Check if this throw is still blind (not revealed yet)
+                    const isStillBlind = throwData.isBlind;
+
+                    let displayValue, typeLabel, mexicoLabel;
+
+                    if (isStillBlind) {
+                        // Computer throw is still blind - don't reveal until end of round!
+                        displayValue = '???';
+                        typeLabel = '🙈 Verborgen';
+                        mexicoLabel = '';
+                    } else {
+                        // Throw has been revealed
+                        displayValue = throwData.displayValue;
+                        typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                        mexicoLabel = throwData.isMexico ? ' <span class="text-gold-light font-bold">🎉</span>' : '';
+                    }
+
+                    computerHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                        <span class="opacity-75">${index + 1}.</span>
+                        <span class="font-bold text-gold">${displayValue}</span>
+                        <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
+                        ${mexicoLabel}
+                    </div>`;
+                });
+            }
+
+        elements.playerThrowHistoryItems.innerHTML = playerHtml;
+        elements.computerThrowHistoryItems.innerHTML = computerHtml;
+    }
 
     // ========================================
     // Initialize Game
@@ -128,6 +305,9 @@
         elements.keepBtn.addEventListener('click', handlePlayerKeep);
         elements.revealBtn.addEventListener('click', handlePlayerReveal);
         elements.newGameBtn.addEventListener('click', startNewGame);
+
+        // Load and display stats
+        updateStatsUI();
 
         updateUI();
         enablePlayerButtons(); // Initialize button states
@@ -223,7 +403,7 @@
             disablePlayerButtons();
             setTimeout(() => {
                 compareResults();
-            }, 1500);
+            }, 1000);
         } else {
             // Computer hasn't thrown yet, it's their turn
             showMessage('Je hebt je worp vastgezet! Computer is aan de beurt...', 'info');
@@ -235,7 +415,7 @@
                 } else {
                     computerTurn();
                 }
-            }, 1500);
+            }, 1000);
         }
     }
 
@@ -243,9 +423,17 @@
         const player = gameState.player;
         player.isBlind = false;
 
+        // Update throw history to mark current throw as revealed
+        if (player.throwHistory.length > 0) {
+            const lastThrow = player.throwHistory[player.throwHistory.length - 1];
+            lastThrow.isBlind = false; // Mark as revealed
+        }
+
         // Reveal dice
-        elements.dice1.classList.remove('hidden');
-        elements.dice2.classList.remove('hidden');
+        elements.playerDice1.classList.remove('hidden');
+        elements.playerDice2.classList.remove('hidden');
+        // Flip cup back to normal position
+        elements.playerDiceCup.classList.remove('flipped');
 
         updateThrowDisplay();
 
@@ -265,7 +453,7 @@
             // Computer's turn in first round
             setTimeout(() => {
                 computerFirstRoundTurn();
-            }, 1500);
+            }, 1000);
         } else {
             // Normal game flow
             showMessage(`Je gooide ${displayValue}!`, 'success');
@@ -280,7 +468,7 @@
                 // Auto-keep after short delay
                 setTimeout(() => {
                     handlePlayerKeep();
-                }, 2000);
+                }, 1200);
             } else {
                 // Show keep button after reveal
                 elements.revealBtn.classList.add('hidden');
@@ -306,14 +494,13 @@
         const player = gameState.player;
 
         showMessage('🤖 Computer gooit...', 'info');
-        updateTurnIndicator();
 
         // Computer strategy:
         // - First throw is always blind (if first round)
         // - Otherwise, makes smart decisions based on player's throw
         setTimeout(() => {
             computerThrowSequence();
-        }, 1000);
+        }, 600);
     }
 
     function computerFirstRoundTurn() {
@@ -326,28 +513,19 @@
         computer.throwCount++;
         throwDice('computer', true);
 
-        // After throw animation, reveal and compare
+        // After throw animation, DON'T reveal yet - wait for comparison
         setTimeout(() => {
-            // Reveal computer's throw
-            computer.isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
-            updateThrowDisplay();
+            // Don't reveal yet - both throws revealed at same time in compareFirstRoundResults
+            logToConsole(`[Computer] Worp voltooid - blijft verborgen tot vergelijking${computer.isMexico ? ' (MEXICO!)' : ''}`);
 
-            const displayValue = computer.displayThrow || computer.currentThrow;
-            logToConsole(`[Computer] ONTHUL - Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
+            // Blind Mexico also stays hidden until reveal
+            showMessage(`🤖 Computer heeft gegooid! Vergelijken...`, 'info');
 
-            if (computer.isMexico) {
-                celebrateMexico();
-            }
-
-            showMessage(`🤖 Computer gooide ${displayValue}!`, 'info');
-
-            // Compare results after longer delay to read
+            // Compare results after shorter delay
             setTimeout(() => {
                 compareFirstRoundResults();
-            }, 3000);
-        }, 2000);
+            }, 1500);
+        }, 1000);
     }
 
     function computerThrowSequence() {
@@ -361,15 +539,15 @@
             logToConsole(`[Computer] LATEN STAAN - Eindworp: ${displayValue} (na 1 worp, eerste ronde)`);
             setTimeout(() => {
                 compareFirstRoundResults();
-            }, 1500);
+            }, 1000);
             return;
         }
 
         // Check if computer reached max throws (set by voorgooier)
         if (computer.throwCount >= gameState.maxThrows) {
             // Computer is done
-            const displayValue = computer.displayThrow || computer.currentThrow;
-            logToConsole(`[Computer] AUTOMATISCH VASTGEZET - Eindworp: ${displayValue} (limiet ${gameState.maxThrows} bereikt)`);
+            const displayValue = computer.isBlind ? '???' : (computer.displayThrow || computer.currentThrow);
+            logToConsole(`[Computer] AUTOMATISCH VASTGEZET - Eindworp: ${computer.isBlind ? '???' : (computer.displayThrow || computer.currentThrow)} (limiet ${gameState.maxThrows} bereikt)`);
 
             // Check if player has thrown yet
             if (player.currentThrow === null) {
@@ -381,7 +559,7 @@
                 showMessage(`🤖 Computer gooide ${displayValue}! Automatisch vastgezet (limiet: ${gameState.maxThrows}).`, 'info');
                 setTimeout(() => {
                     compareResults();
-                }, 1500);
+                }, 1000);
             }
             return;
         }
@@ -447,7 +625,7 @@
                     showMessage(`🤖 Computer houdt ${displayValue}!`, 'info');
                     setTimeout(() => {
                         compareResults();
-                    }, 1500);
+                    }, 1000);
                 }
                 return;
             } else {
@@ -478,27 +656,45 @@
             const displayValue = computer.displayThrow || computer.currentThrow;
 
             if (computer.isBlind) {
-                // Computer reveals blind throw
-                computer.isBlind = false;
-                elements.dice1.classList.remove('hidden');
-                elements.dice2.classList.remove('hidden');
-                updateThrowDisplay();
+                // Check if this is the last throw - if so, keep it hidden for comparison
+                const isLastThrow = computer.throwCount >= gameState.maxThrows;
 
-                logToConsole(`[Computer] ONTHUL - Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
+                if (isLastThrow) {
+                    // Last throw stays blind until comparison
+                    logToConsole(`[Computer] Worp ${computer.throwCount} voltooid - blijft verborgen (laatste worp)`);
 
-                // Track throw for psychology
-                updatePsychologyAfterThrow(computer.currentThrow);
+                    // Track throw for psychology (without revealing)
+                    updatePsychologyAfterThrow(computer.currentThrow);
 
-                if (computer.isMexico) {
-                    celebrateMexico();
+                    // Continue to next phase (will hit maxThrows check)
+                    setTimeout(() => {
+                        computerThrowSequence();
+                    }, 1000);
+                } else {
+                    // Not the last throw - reveal it
+                    computer.isBlind = false;
+                    elements.computerDice1.classList.remove('hidden');
+                    elements.computerDice2.classList.remove('hidden');
+                    // Flip cup back to normal position
+                    elements.computerDiceCup.classList.remove('flipped');
+                    updateThrowDisplay();
+
+                    logToConsole(`[Computer] ONTHUL - Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
+
+                    // Track throw for psychology
+                    updatePsychologyAfterThrow(computer.currentThrow);
+
+                    if (computer.isMexico) {
+                        celebrateMexico();
+                    }
+
+                    showMessage(`🤖 Computer gooide ${displayValue}!`, 'info');
+
+                    // Continue sequence
+                    setTimeout(() => {
+                        computerThrowSequence();
+                    }, 1500);
                 }
-
-                showMessage(`🤖 Computer gooide ${displayValue}!`, 'info');
-
-                // Continue sequence with longer delay
-                setTimeout(() => {
-                    computerThrowSequence();
-                }, 2500);
             } else {
                 // Open throw, continue sequence
                 logToConsole(`[Computer] Resultaat: ${displayValue}${computer.isMexico ? ' (MEXICO!)' : ''}`);
@@ -509,9 +705,9 @@
                 showMessage(`🤖 Computer gooide ${displayValue}!`, 'info');
                 setTimeout(() => {
                     computerThrowSequence();
-                }, 2500);
+                }, 1500);
             }
-        }, 1500);
+        }, 1000);
     }
 
     // ========================================
@@ -819,6 +1015,16 @@
             return true;
         }
 
+        // DESPERATE SITUATION: If player has Mexico and computer has lower score
+        // Computer MUST keep throwing - only chance is to also get Mexico
+        if (player.currentThrow === 1000 && computer.currentThrow < 1000) {
+            // Check if computer has throws left
+            if (computer.throwCount < gameState.maxThrows) {
+                logToConsole(`[AI DESPERATE] Speler heeft Mexico! Huidige score ${computer.displayThrow || computer.currentThrow} verliest 100%. DOORGOOIEN voor Mexico kans!`);
+                return true;
+            }
+        }
+
         // Select or keep personality for this round
         if (!gameState.aiPersonality) {
             gameState.aiPersonality = selectAIPersonality();
@@ -924,23 +1130,28 @@
     function throwDice(who, isBlind) {
         const actor = gameState[who];
 
+        // Get the right dice elements based on who is throwing
+        const dice1 = who === 'player' ? elements.playerDice1 : elements.computerDice1;
+        const dice2 = who === 'player' ? elements.playerDice2 : elements.computerDice2;
+        const diceCup = who === 'player' ? elements.playerDiceCup : elements.computerDiceCup;
+
         // Animate dice cup
-        elements.diceCup.classList.add('shaking');
+        diceCup.classList.add('shaking');
         setTimeout(() => {
-            elements.diceCup.classList.remove('shaking');
+            diceCup.classList.remove('shaking');
         }, 500);
 
         // Roll animation
-        elements.dice1.classList.add('rolling');
-        elements.dice2.classList.add('rolling');
+        dice1.classList.add('rolling');
+        dice2.classList.add('rolling');
 
         // Random rolling effect
         let rollCount = 0;
         const rollInterval = setInterval(() => {
             const rand1 = Math.floor(Math.random() * 6) + 1;
             const rand2 = Math.floor(Math.random() * 6) + 1;
-            elements.dice1.textContent = diceSymbols[rand1 - 1];
-            elements.dice2.textContent = diceSymbols[rand2 - 1];
+            dice1.textContent = diceSymbols[rand1 - 1];
+            dice2.textContent = diceSymbols[rand2 - 1];
             rollCount++;
 
             if (rollCount >= 10) {
@@ -952,6 +1163,11 @@
 
     function finishThrow(who, isBlind) {
         const actor = gameState[who];
+
+        // Get the right dice elements based on who is throwing
+        const dice1 = who === 'player' ? elements.playerDice1 : elements.computerDice1;
+        const dice2 = who === 'player' ? elements.playerDice2 : elements.computerDice2;
+        const diceCup = who === 'player' ? elements.playerDiceCup : elements.computerDiceCup;
 
         // Generate final dice values
         actor.dice1 = Math.floor(Math.random() * 6) + 1;
@@ -995,57 +1211,88 @@
         actor.currentThrow = throwValue;
         actor.displayThrow = displayValue;
 
-        // Update dice display
-        elements.dice1.textContent = diceSymbols[actor.dice1 - 1];
-        elements.dice2.textContent = diceSymbols[actor.dice2 - 1];
-        elements.dice1.classList.remove('rolling');
-        elements.dice2.classList.remove('rolling');
+        // Track throw history for both players
+        if (who === 'player') {
+            gameState.player.throwHistory.push({
+                value: throwValue,
+                displayValue: displayValue,
+                isBlind: isBlind,
+                wasBlind: isBlind, // Track original blind state
+                isMexico: actor.isMexico
+            });
+            logToConsole(`[Throw History] Player throw #${gameState.player.throwHistory.length}: ${isBlind ? '??? (Blind - verborgen)' : displayValue + ' (Open)'}`);
+        } else if (who === 'computer') {
+            gameState.computer.throwHistory.push({
+                value: throwValue,
+                displayValue: displayValue,
+                isBlind: isBlind,
+                wasBlind: isBlind, // Track original blind state
+                isMexico: actor.isMexico
+            });
+            logToConsole(`[Throw History] Computer throw #${gameState.computer.throwHistory.length}: ${isBlind ? '??? (Blind - verborgen)' : displayValue + ' (Open)'}`);
+        }
 
-        // Handle Mexico (always revealed)
-        if (actor.isMexico) {
-            actor.isBlind = false;
-            isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+        // IMPORTANT: Hide dice BEFORE updating display if blind (INCLUDING Mexico!)
+        // This prevents the value from flashing briefly
+        if (isBlind) {
+            dice1.classList.add('hidden');
+            dice2.classList.add('hidden');
+            // Flip the cup upside down to show it's hidden
+            diceCup.classList.add('flipped');
+        } else {
+            // Ensure dice are visible for open throws
+            dice1.classList.remove('hidden');
+            dice2.classList.remove('hidden');
+            // Make sure cup is right-side up
+            diceCup.classList.remove('flipped');
+        }
+
+        // Update dice display (now already hidden if blind)
+        dice1.textContent = diceSymbols[actor.dice1 - 1];
+        dice2.textContent = diceSymbols[actor.dice2 - 1];
+        dice1.classList.remove('rolling');
+        dice2.classList.remove('rolling');
+
+        // Handle Mexico - only celebrate if OPEN (blind Mexico stays hidden)
+        if (actor.isMexico && !isBlind) {
             celebrateMexico();
         }
 
-        // Handle blind throw
-        if (isBlind && !actor.isMexico) {
+        // Handle blind throw (including blind Mexico)
+        if (isBlind) {
             actor.isBlind = true;
-            elements.dice1.classList.add('hidden');
-            elements.dice2.classList.add('hidden');
+            // Already hidden above
 
             if (who === 'player') {
                 // FIRST ROUND: Player must stay blind until computer has also thrown!
                 if (gameState.isFirstRound) {
-                    logToConsole(`[Speler] BLIND - EERSTE RONDE - Worp blijft verborgen tot computer ook heeft gegooid`);
+                    logToConsole(`[Speler] BLIND - EERSTE RONDE - Worp blijft verborgen tot computer ook heeft gegooid${actor.isMexico ? ' (MEXICO!)' : ''}`);
                     showMessage(`🙈 Blind gegooid! Worp blijft verborgen. Computer is aan de beurt...`, 'info');
                     disablePlayerButtons();
 
                     // Auto-continue to computer's turn, keeping it blind
                     setTimeout(() => {
                         handlePlayerKeep();
-                    }, 2500);
+                    }, 1500);
                 } else if (gameState.player.throwCount >= gameState.maxThrows) {
                     // Check if player reached max throws - if so, keep it blind and auto-continue
-                    logToConsole(`[Speler] BLIND - AUTOMATISCH VASTGEZET - Worplimiet bereikt (${gameState.maxThrows})`);
+                    logToConsole(`[Speler] BLIND - AUTOMATISCH VASTGEZET - Worplimiet bereikt (${gameState.maxThrows})${actor.isMexico ? ' (MEXICO!)' : ''}`);
                     showMessage(`🙈 Blind gegooid! Worp blijft verborgen (limiet: ${gameState.maxThrows}). Computer is aan de beurt...`, 'info');
                     disablePlayerButtons();
 
                     // Auto-keep after short delay, keeping it blind
                     setTimeout(() => {
                         handlePlayerKeep();
-                    }, 2500);
+                    }, 1500);
                 } else {
-                    showMessage('🙈 Blind gegooid! Klik "Laten Zien" om te onthullen', 'info');
+                    showMessage(`🙈 Blind gegooid! Klik "Laten Zien" om te onthullen`, 'info');
                     showRevealButton();
                 }
             }
         } else {
-            // Open throw or Mexico
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+            // Open throw (Mexico celebration only happens for open throws)
+            dice1.classList.remove('hidden');
+            dice2.classList.remove('hidden');
             updateThrowDisplay();
 
             if (who === 'player') {
@@ -1065,7 +1312,7 @@
                     // Auto-keep after short delay
                     setTimeout(() => {
                         handlePlayerKeep();
-                    }, 2000);
+                    }, 1200);
                 } else {
                     // Show options - can still throw again
                     showThrowAgainButtons();
@@ -1090,15 +1337,35 @@
         // Reveal blind throws before comparison
         if (player.isBlind) {
             player.isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+
+            // Update throw history to mark all player throws as revealed
+            player.throwHistory.forEach(throwData => {
+                if (throwData.isBlind) {
+                    throwData.isBlind = false;
+                }
+            });
+
+            elements.playerDice1.classList.remove('hidden');
+            elements.playerDice2.classList.remove('hidden');
+            // Flip cup back to normal position
+            elements.playerDiceCup.classList.remove('flipped');
             updateThrowDisplay();
             logToConsole(`[Speler] ONTHUL - Resultaat: ${player.displayThrow || player.currentThrow}${player.isMexico ? ' (MEXICO!)' : ''}`);
         }
         if (computer.isBlind) {
             computer.isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+
+            // Update throw history to mark all computer throws as revealed
+            computer.throwHistory.forEach(throwData => {
+                if (throwData.isBlind) {
+                    throwData.isBlind = false;
+                }
+            });
+
+            elements.computerDice1.classList.remove('hidden');
+            elements.computerDice2.classList.remove('hidden');
+            // Flip cup back to normal position
+            elements.computerDiceCup.classList.remove('flipped');
             updateThrowDisplay();
             logToConsole(`[Computer] ONTHUL - Resultaat: ${computer.displayThrow || computer.currentThrow}${computer.isMexico ? ' (MEXICO!)' : ''}`);
         }
@@ -1112,7 +1379,7 @@
         // Wait for player to see the reveal before showing result
         setTimeout(() => {
             continueCompareFirstRoundResults(player, computer, playerDisplay, computerDisplay);
-        }, 3000);
+        }, 1800);
     }
 
     function continueCompareFirstRoundResults(player, computer, playerDisplay, computerDisplay) {
@@ -1173,10 +1440,16 @@
             computer.isBlind = false;
 
             // Reset dice display
-            elements.dice1.textContent = diceSymbols[0];
-            elements.dice2.textContent = diceSymbols[0];
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+            elements.playerDice1.textContent = diceSymbols[0];
+            elements.playerDice2.textContent = diceSymbols[0];
+            elements.playerDice1.classList.remove('hidden');
+            elements.playerDice2.classList.remove('hidden');
+            elements.playerDiceCup.classList.remove('flipped');
+            elements.computerDice1.textContent = diceSymbols[0];
+            elements.computerDice2.textContent = diceSymbols[0];
+            elements.computerDice1.classList.remove('hidden');
+            elements.computerDice2.classList.remove('hidden');
+            elements.computerDiceCup.classList.remove('flipped');
 
             updateUI();
 
@@ -1185,7 +1458,7 @@
                 logToConsole(`[VASTGOOIER] Knoppen activeren - speler mag opnieuw gooien (1 worp)`);
                 showMessage('🎲 Eerste ronde blijft blind - gooi opnieuw (1 worp)!', 'info');
                 enablePlayerButtons();
-            }, 3000);
+            }, 1800);
             return;
         }
 
@@ -1205,14 +1478,14 @@
                 logToConsole(`[GAME OVER] Spel is afgelopen`);
                 handleGameOver();
             } else {
-                logToConsole(`[VOLGENDE RONDE] Wachten 3 sec voordat ronde 2 start...`);
-                // Next round - longer delay to read results
+                logToConsole(`[VOLGENDE RONDE] Wachten voordat ronde 2 start...`);
+                // Next round - delay to read results
                 setTimeout(() => {
                     logToConsole(`[START RONDE 2] startNextRound() wordt aangeroepen...`);
                     startNextRound();
-                }, 3000);
+                }, 1800);
             }
-        }, 3000);
+        }, 1800);
     }
 
     function compareResults() {
@@ -1226,15 +1499,35 @@
         // Reveal blind throws before comparison
         if (player.isBlind) {
             player.isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+
+            // Update throw history to mark all player throws as revealed
+            player.throwHistory.forEach(throwData => {
+                if (throwData.isBlind) {
+                    throwData.isBlind = false;
+                }
+            });
+
+            elements.playerDice1.classList.remove('hidden');
+            elements.playerDice2.classList.remove('hidden');
+            // Flip cup back to normal position
+            elements.playerDiceCup.classList.remove('flipped');
             updateThrowDisplay();
             logToConsole(`[Speler] ONTHUL - Resultaat: ${player.displayThrow || player.currentThrow}${player.isMexico ? ' (MEXICO!)' : ''}`);
         }
         if (computer.isBlind) {
             computer.isBlind = false;
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+
+            // Update throw history to mark all computer throws as revealed
+            computer.throwHistory.forEach(throwData => {
+                if (throwData.isBlind) {
+                    throwData.isBlind = false;
+                }
+            });
+
+            elements.computerDice1.classList.remove('hidden');
+            elements.computerDice2.classList.remove('hidden');
+            // Flip cup back to normal position
+            elements.computerDiceCup.classList.remove('flipped');
             updateThrowDisplay();
             logToConsole(`[Computer] ONTHUL - Resultaat: ${computer.displayThrow || computer.currentThrow}${computer.isMexico ? ' (MEXICO!)' : ''}`);
         }
@@ -1249,7 +1542,7 @@
             // Wait for player to see the reveal before showing result
             setTimeout(() => {
                 continueCompareResults(player, computer, playerDisplay, computerDisplay);
-            }, 3000);
+            }, 1800);
             return;
         }
 
@@ -1321,10 +1614,16 @@
             computer.isBlind = false;
 
             // Reset dice display
-            elements.dice1.textContent = diceSymbols[0];
-            elements.dice2.textContent = diceSymbols[0];
-            elements.dice1.classList.remove('hidden');
-            elements.dice2.classList.remove('hidden');
+            elements.playerDice1.textContent = diceSymbols[0];
+            elements.playerDice2.textContent = diceSymbols[0];
+            elements.playerDice1.classList.remove('hidden');
+            elements.playerDice2.classList.remove('hidden');
+            elements.playerDiceCup.classList.remove('flipped');
+            elements.computerDice1.textContent = diceSymbols[0];
+            elements.computerDice2.textContent = diceSymbols[0];
+            elements.computerDice1.classList.remove('hidden');
+            elements.computerDice2.classList.remove('hidden');
+            elements.computerDiceCup.classList.remove('flipped');
 
             updateUI();
 
@@ -1340,26 +1639,26 @@
                     disablePlayerButtons();
                     setTimeout(() => {
                         computerTurn();
-                    }, 2500);
+                    }, 1500);
                 }
-            }, 3000);
+            }, 1800);
             return;
         }
 
         showMessage(message, winner === 'player' ? 'success' : 'warning');
         updateUI();
 
-        // Check for game over with longer delays
+        // Check for game over
         setTimeout(() => {
             if (player.lives <= 0 || computer.lives <= 0) {
                 handleGameOver();
             } else {
-                // Next round - longer delay to read results
+                // Next round - delay to read results
                 setTimeout(() => {
                     startNextRound();
-                }, 3000);
+                }, 1800);
             }
-        }, 3000);
+        }, 1800);
     }
 
     // ========================================
@@ -1390,6 +1689,7 @@
         gameState.player.threwBlindThisRound = false;
         gameState.player.dice1 = 1;
         gameState.player.dice2 = 1;
+        gameState.player.throwHistory = []; // Reset throw history
 
         gameState.computer.currentThrow = null;
         gameState.computer.displayThrow = null;
@@ -1399,15 +1699,20 @@
         gameState.computer.threwBlindThisRound = false;
         gameState.computer.dice1 = 1;
         gameState.computer.dice2 = 1;
+        gameState.computer.throwHistory = []; // Reset throw history
 
         // Determine who goes first
         gameState.currentTurn = gameState.playerToGoFirst;
 
         // Reset dice display
-        elements.dice1.textContent = diceSymbols[0];
-        elements.dice2.textContent = diceSymbols[0];
-        elements.dice1.classList.remove('hidden');
-        elements.dice2.classList.remove('hidden');
+        elements.playerDice1.textContent = diceSymbols[0];
+        elements.playerDice2.textContent = diceSymbols[0];
+        elements.playerDice1.classList.remove('hidden');
+        elements.playerDice2.classList.remove('hidden');
+        elements.computerDice1.textContent = diceSymbols[0];
+        elements.computerDice2.textContent = diceSymbols[0];
+        elements.computerDice1.classList.remove('hidden');
+        elements.computerDice2.classList.remove('hidden');
 
         updateUI();
 
@@ -1423,11 +1728,11 @@
             logToConsole(`Voorgooier: COMPUTER | Levens: Speler ${gameState.player.lives} vs Computer ${gameState.computer.lives}`);
             showMessage(`🎲 Ronde ${gameState.roundNumber}! Computer is voorgooier en begint...`, 'info');
             disablePlayerButtons();
-            logToConsole(`[startNextRound] Computer beurt start over 2.5 seconden...`);
+            logToConsole(`[startNextRound] Computer beurt start over 1.5 seconden...`);
             setTimeout(() => {
                 logToConsole(`[startNextRound] computerTurn() wordt aangeroepen...`);
                 computerTurn();
-            }, 2500);
+            }, 1500);
         }
     }
 
@@ -1453,6 +1758,7 @@
         gameState.player.threwBlindThisRound = false;
         gameState.player.dice1 = 1;
         gameState.player.dice2 = 1;
+        gameState.player.throwHistory = []; // Reset throw history
 
         gameState.computer.currentThrow = null;
         gameState.computer.displayThrow = null;
@@ -1462,11 +1768,16 @@
         gameState.computer.threwBlindThisRound = false;
         gameState.computer.dice1 = 1;
         gameState.computer.dice2 = 1;
+        gameState.computer.throwHistory = []; // Reset throw history
 
-        elements.dice1.textContent = diceSymbols[0];
-        elements.dice2.textContent = diceSymbols[0];
-        elements.dice1.classList.remove('hidden');
-        elements.dice2.classList.remove('hidden');
+        elements.playerDice1.textContent = diceSymbols[0];
+        elements.playerDice2.textContent = diceSymbols[0];
+        elements.playerDice1.classList.remove('hidden');
+        elements.playerDice2.classList.remove('hidden');
+        elements.computerDice1.textContent = diceSymbols[0];
+        elements.computerDice2.textContent = diceSymbols[0];
+        elements.computerDice1.classList.remove('hidden');
+        elements.computerDice2.classList.remove('hidden');
 
         updateUI();
         enablePlayerButtons();
@@ -1485,13 +1796,16 @@
             for (let i = 0; i < 30; i++) {
                 setTimeout(() => createConfetti('#D4AF37'), i * 30);
             }
+            // No stats recorded for tie
         } else if (gameState.player.lives > 0) {
             // Player wins
             showMessage('🎉🎊 JE HEBT GEWONNEN! DE COMPUTER IS VERSLAGEN! 🎊🎉', 'success');
             celebrateWin();
+            recordGameResult(true); // Record win
         } else {
             // Computer wins
             showMessage('😔 Game Over! De computer heeft gewonnen. Probeer opnieuw!', 'danger');
+            recordGameResult(false); // Record loss
         }
 
         disablePlayerButtons();
@@ -1527,19 +1841,19 @@
     // UI Updates
     // ========================================
     function updateUI() {
-        // Update lives
-        elements.playerLives.textContent = gameState.player.lives;
-        elements.computerLives.textContent = gameState.computer.lives;
+        // Map lives to dice emoji: 0=💀, 1=⚀, 2=⚁, 3=⚂, 4=⚃, 5=⚄, 6=⚅
+        const livesEmoji = ['💀', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+        // Update lives with dice emoji
+        elements.playerLives.textContent = livesEmoji[gameState.player.lives] || '💀';
+        elements.computerLives.textContent = livesEmoji[gameState.computer.lives] || '💀';
 
         // Color lives based on remaining
         updateLivesColor(elements.playerLives, gameState.player.lives);
         updateLivesColor(elements.computerLives, gameState.computer.lives);
 
-        // Update round number
-        elements.roundNumber.textContent = gameState.roundNumber;
-
-        // Update turn indicator
-        updateTurnIndicator();
+        // Update throw history display (includes game info and turn indicator)
+        updateThrowHistory();
 
         // Update throw count (element doesn't exist in HTML, so skip)
         // const currentActor = gameState[gameState.currentTurn];
@@ -1572,16 +1886,6 @@
         }
     }
 
-    function updateTurnIndicator() {
-        if (gameState.currentTurn === 'player') {
-            elements.currentPlayer.textContent = '👤 Jouw beurt!';
-            elements.currentPlayer.style.color = 'var(--color-green)';
-        } else {
-            elements.currentPlayer.textContent = '🤖 Computer is aan de beurt';
-            elements.currentPlayer.style.color = 'var(--color-red)';
-        }
-    }
-
     function updateThrowDisplay() {
         // No longer needed - removed "Huidige Worp" display
         // Dice in cup show the throw visually
@@ -1602,18 +1906,15 @@
             info: 'var(--color-green-light)'
         };
 
-        const title = {
-            success: 'Gelukt!',
-            warning: 'Let op',
-            danger: 'Verloren',
-            info: 'Info'
-        };
+        // Log the message (strip HTML tags for cleaner log)
+        const cleanMessage = message.replace(/<br>/g, ' | ').replace(/<[^>]*>/g, '');
+        logToConsole(`[UI] ${icons[type]} ${cleanMessage}`);
 
-        elements.gameInfo.innerHTML = `
-            <div class="text-base font-bold mb-2" style="color: ${colors[type]}">
-                ${icons[type]} ${title[type]}
+        // Simplified message for integrated display
+        elements.gameInfoInHistory.innerHTML = `
+            <div style="color: ${colors[type]}">
+                ${icons[type]} ${message}
             </div>
-            <p class="text-brown-medium text-sm">${message}</p>
         `;
     }
 
@@ -1675,10 +1976,40 @@
         // First round check: only show blind button
         if (gameState.isFirstRound && gameState.player.throwCount === 0) {
             elements.throwOpenBtn.classList.add('hidden');
+            elements.throwBlindBtn.classList.remove('hidden');
         } else {
             elements.throwOpenBtn.classList.remove('hidden');
+            elements.throwOpenBtn.disabled = false;
+            elements.throwOpenBtn.style.opacity = '1';
+            elements.throwOpenBtn.style.cursor = 'pointer';
+            elements.throwBlindBtn.classList.remove('hidden');
+            elements.throwBlindBtn.disabled = false;
+            elements.throwBlindBtn.style.opacity = '1';
+            elements.throwBlindBtn.style.cursor = 'pointer';
+
+            // RULE CHECK: If player is achterligger, check voorgooier pattern for next throw
+            if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
+                // Player is achterligger - check if pattern dictates next throw
+                const throwIndex = gameState.player.throwCount; // About to throw this number (0-indexed)
+                if (throwIndex < gameState.voorgooierPattern.length) {
+                    // Voorgooier made this throw - must match pattern
+                    const mustBeBlind = gameState.voorgooierPattern[throwIndex];
+                    if (mustBeBlind) {
+                        // Must throw blind - disable open button
+                        elements.throwOpenBtn.disabled = true;
+                        elements.throwOpenBtn.style.opacity = '0.5';
+                        elements.throwOpenBtn.style.cursor = 'not-allowed';
+                        logToConsole(`[REGEL] Speler MOET blind gooien op worp ${throwIndex + 1} (voorgooier patroon)`);
+                    } else {
+                        // Must throw open - disable blind button
+                        elements.throwBlindBtn.disabled = true;
+                        elements.throwBlindBtn.style.opacity = '0.5';
+                        elements.throwBlindBtn.style.cursor = 'not-allowed';
+                        logToConsole(`[REGEL] Speler MOET open gooien op worp ${throwIndex + 1} (voorgooier patroon)`);
+                    }
+                }
+            }
         }
-        elements.throwBlindBtn.classList.remove('hidden');
         elements.keepBtn.classList.remove('hidden');
         elements.revealBtn.classList.add('hidden');
     }
