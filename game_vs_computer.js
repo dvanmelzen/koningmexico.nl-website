@@ -1923,6 +1923,9 @@
     // ========================================
     function enablePlayerButtons() {
         elements.throwBlindBtn.classList.remove('hidden');
+        elements.throwBlindBtn.disabled = false;
+        elements.throwBlindBtn.style.opacity = '1';
+        elements.throwBlindBtn.style.cursor = 'pointer';
         elements.keepBtn.classList.add('hidden');
         elements.revealBtn.classList.add('hidden');
 
@@ -1935,9 +1938,6 @@
             elements.throwOpenBtn.disabled = false;
             elements.throwOpenBtn.style.opacity = '1';
             elements.throwOpenBtn.style.cursor = 'pointer';
-            elements.throwBlindBtn.disabled = false;
-            elements.throwBlindBtn.style.opacity = '1';
-            elements.throwBlindBtn.style.cursor = 'pointer';
 
             // RULE CHECK: If player is achterligger, check voorgooier pattern for current throw
             if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
@@ -1967,25 +1967,30 @@
 
     function disablePlayerButtons() {
         elements.throwOpenBtn.classList.add('hidden');
+        elements.throwOpenBtn.disabled = true;
         elements.throwBlindBtn.classList.add('hidden');
+        elements.throwBlindBtn.disabled = true;
         elements.keepBtn.classList.add('hidden');
+        elements.keepBtn.disabled = true;
         elements.revealBtn.classList.add('hidden');
+        elements.revealBtn.disabled = true;
     }
 
     function showThrowAgainButtons() {
+        // Enable and show blind button by default
+        elements.throwBlindBtn.classList.remove('hidden');
+        elements.throwBlindBtn.disabled = false;
+        elements.throwBlindBtn.style.opacity = '1';
+        elements.throwBlindBtn.style.cursor = 'pointer';
+
         // First round check: only show blind button
         if (gameState.isFirstRound && gameState.player.throwCount === 0) {
             elements.throwOpenBtn.classList.add('hidden');
-            elements.throwBlindBtn.classList.remove('hidden');
         } else {
             elements.throwOpenBtn.classList.remove('hidden');
             elements.throwOpenBtn.disabled = false;
             elements.throwOpenBtn.style.opacity = '1';
             elements.throwOpenBtn.style.cursor = 'pointer';
-            elements.throwBlindBtn.classList.remove('hidden');
-            elements.throwBlindBtn.disabled = false;
-            elements.throwBlindBtn.style.opacity = '1';
-            elements.throwBlindBtn.style.cursor = 'pointer';
 
             // RULE CHECK: If player is achterligger, check voorgooier pattern for next throw
             if (!gameState.isFirstRound && gameState.playerToGoFirst === 'computer') {
@@ -2018,6 +2023,7 @@
         elements.throwOpenBtn.classList.add('hidden');
         elements.throwBlindBtn.classList.add('hidden');
         elements.keepBtn.classList.remove('hidden');
+        elements.keepBtn.disabled = false;
         elements.revealBtn.classList.add('hidden');
     }
 
@@ -2026,6 +2032,7 @@
         elements.throwBlindBtn.classList.add('hidden');
         elements.keepBtn.classList.add('hidden');
         elements.revealBtn.classList.remove('hidden');
+        elements.revealBtn.disabled = false;
     }
 
     // ========================================
