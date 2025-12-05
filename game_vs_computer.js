@@ -509,8 +509,19 @@
             // Normal game flow
             showMessage(`Je gooide ${displayValue}!`, 'success');
 
+            // SPECIAL RULE: First blind throw of round = direct to result choice
+            if (player.throwCount === 1) {
+                logToConsole(`[REGEL] Eerste blinde worp van ronde - direct naar resultaat keuze`);
+                showMessage(`Eerste blinde worp - kies het resultaat`, 'info');
+                disablePlayerButtons();
+
+                // Auto-keep after short delay (goes to result screen)
+                setTimeout(() => {
+                    handlePlayerKeep();
+                }, 1200);
+            }
             // Check if player has reached max throws (set by voorgooier)
-            if (player.throwCount >= gameState.maxThrows) {
+            else if (player.throwCount >= gameState.maxThrows) {
                 // Forced keep - no choice
                 logToConsole(`[Speler] AUTOMATISCH VASTGEZET - Worplimiet bereikt (${gameState.maxThrows})`);
                 showMessage(`Je gooide ${displayValue}! Worp automatisch vastgezet (limiet: ${gameState.maxThrows})`, 'info');
@@ -521,9 +532,10 @@
                     handlePlayerKeep();
                 }, 1200);
             } else {
-                // Show keep button after reveal
+                // Show keep button after reveal (worp 2 or 3)
                 elements.revealBtn.classList.add('hidden');
                 elements.keepBtn.classList.remove('hidden');
+                elements.keepBtn.disabled = false;
 
                 // Can still throw again if under max throws
                 // First round check: only show blind button
