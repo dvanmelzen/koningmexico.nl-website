@@ -306,6 +306,57 @@
         elements.revealBtn.addEventListener('click', handlePlayerReveal);
         elements.newGameBtn.addEventListener('click', startNewGame);
 
+        // Easter egg keyboard cheat codes
+        let typedKeys = '';
+        document.addEventListener('keydown', (e) => {
+            // Only track alphanumeric keys
+            if (e.key.length === 1) {
+                typedKeys += e.key.toLowerCase();
+
+                // Keep only last 15 characters to check for codes
+                if (typedKeys.length > 15) {
+                    typedKeys = typedKeys.slice(-15);
+                }
+
+                // Check for cheat codes
+                if (typedKeys.includes('resetstats')) {
+                    typedKeys = ''; // Reset to prevent multiple triggers
+
+                    // Reset all statistics
+                    const defaultStats = {
+                        gamesPlayed: 0,
+                        wins: 0,
+                        losses: 0,
+                        currentStreak: 0,
+                        longestWinStreak: 0,
+                        highestRoundReached: 0
+                    };
+                    saveStats(defaultStats);
+                    updateStatsUI();
+                    showMessage('📊 Alle statistieken zijn gewist!', 'warning');
+                    logToConsole('[CHEAT] Statistics reset via keyboard command');
+
+                } else if (typedKeys.includes('iamking')) {
+                    typedKeys = ''; // Reset to prevent multiple triggers
+
+                    // Instant win!
+                    gameState.computer.lives = 0;
+                    gameState.player.lives = Math.max(1, gameState.player.lives);
+
+                    // Update UI to show skull at computer
+                    updateUI();
+
+                    logToConsole('[CHEAT] Instant win activated via keyboard command');
+                    showMessage('👑 Je bent de koning! Instant win!', 'success');
+
+                    // Trigger game over after short delay for dramatic effect
+                    setTimeout(() => {
+                        handleGameOver();
+                    }, 500);
+                }
+            }
+        });
+
         // Load and display stats
         updateStatsUI();
 
