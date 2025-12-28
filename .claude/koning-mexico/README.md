@@ -46,6 +46,12 @@ Claude will then have full context about the project without you needing to expl
    - Testing guidelines
    - Deployment process
 
+6. **[hosting-platform-advice.md](hosting-platform-advice.md)** - Platform selection guide
+   - DevOps learning path recommendations
+   - Fly.io vs Railway vs European alternatives
+   - GDPR compliance considerations
+   - Security best practices
+
 ---
 
 ## Project Quick Facts
@@ -79,7 +85,7 @@ Claude will then have full context about the project without you needing to expl
 ```
 You: "Read .claude/koning-mexico/ documentation"
 
-Claude: [Reads all 5 documentation files]
+Claude: [Reads all 6 documentation files]
 Claude: "I now have full context on the Koning Mexico project..."
 ```
 
@@ -134,6 +140,7 @@ Claude: "Let me help. The game engine is in game_vs_computer.js.
 - [Directory Structure](directory-structure.md)
 - [Key Features](key-features.md)
 - [Development Notes](development-notes.md)
+- [Hosting Platform Advice](hosting-platform-advice.md)
 
 ---
 
@@ -165,7 +172,8 @@ Current documentation size:
 - `directory-structure.md`: ~18 KB
 - `key-features.md`: ~25 KB
 - `development-notes.md`: ~20 KB
-- **Total**: ~108 KB
+- `hosting-platform-advice.md`: ~12 KB
+- **Total**: ~120 KB
 
 This is negligible storage and easily fits in Claude's context window.
 
