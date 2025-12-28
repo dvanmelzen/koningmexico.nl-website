@@ -1,0 +1,570 @@
+/* ========================================
+   Koning Mexico - Main Stylesheet
+   ======================================== */
+
+/* CSS Custom Properties (Design Tokens) */
+:root {
+    /* Colors */
+    --color-gold: #D4AF37;
+    --color-gold-light: #FFD700;
+    --color-gold-dark: #B8960F;
+    --color-green: #0D5E3A;
+    --color-green-light: #1B7A4B;
+    --color-red: #8B0000;
+    --color-red-light: #B22222;
+    --color-brown-dark: #3E2723;
+    --color-brown-medium: #5D4037;
+    --color-cream: #F5E6D3;
+    --color-cream-light: #FFF8E7;
+    --color-white: #FFFFFF;
+
+    /* Typography */
+    --font-heading: 'Cinzel', serif;
+    --font-body: 'Open Sans', sans-serif;
+
+    /* Spacing */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 2rem;
+    --space-lg: 3rem;
+    --space-xl: 4rem;
+
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.6s ease;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.25);
+
+    /* Border Radius */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Background colors */
+    --bg-primary: #FFF8E7;
+    --bg-secondary: #F5E6D3;
+    --text-primary: #3E2723;
+    --text-secondary: #5D4037;
+}
+
+/* ========================================
+   Dark Mode Variables
+   ======================================== */
+
+body.dark-mode {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --color-cream: #2a2a2a;
+    --color-cream-light: #1a1a1a;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode section {
+    background-color: var(--bg-secondary) !important;
+}
+
+body.dark-mode .bg-white {
+    background-color: #2a2a2a !important;
+}
+
+body.dark-mode .bg-cream,
+body.dark-mode .bg-cream-light {
+    background-color: #1a1a1a !important;
+}
+
+body.dark-mode .text-brown-dark {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .card {
+    background-color: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .shadow-lg,
+body.dark-mode .shadow-xl {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ========================================
+   Mobile Navigation Styles
+   ======================================== */
+
+/* Mobile menu hidden by default */
+@media (max-width: 768px) {
+    #main-navigation {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to bottom, var(--color-green), var(--color-green-light));
+        flex-direction: column;
+        padding: 1rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    #main-navigation.active {
+        display: flex !important;
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    #main-navigation a {
+        padding: 1rem;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #main-navigation a:last-child {
+        border-bottom: none;
+    }
+
+    /* Hamburger animation */
+    .mobile-menu-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .mobile-menu-toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .mobile-menu-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -6px);
+    }
+}
+
+/* ========================================
+   Dice Styles
+   ======================================== */
+
+.die,
+.die-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--transition-fast);
+}
+
+.die:hover,
+.die-mini:hover {
+    transform: scale(1.1);
+}
+
+.die.rolling {
+    animation: diceRoll 0.5s ease;
+}
+
+@keyframes diceRoll {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+    25% {
+        transform: rotate(90deg) scale(1.1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+    }
+    75% {
+        transform: rotate(270deg) scale(1.1);
+    }
+}
+
+/* ========================================
+   Card Styles
+   ======================================== */
+
+.requirement-card,
+.variant-card,
+.phase-card,
+.strategy-item {
+    transition: all var(--transition-normal);
+}
+
+.variant-card {
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.variant-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-gold);
+}
+
+.variant-card.active {
+    border-color: var(--color-gold);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ========================================
+   Scroll Animations
+   ======================================== */
+
+.animate-in {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* ========================================
+   Floating Animation
+   ======================================== */
+
+@keyframes diceFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.dice-float {
+    animation: diceFloat 3s ease-in-out infinite;
+}
+
+.dice-float:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+/* ========================================
+   Pulse Animation
+   ======================================== */
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.pulse-anim {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ========================================
+   Bounce Animation (for Easter Egg)
+   ======================================== */
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+/* ========================================
+   Back to Top Button
+   ======================================== */
+
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+    color: var(--color-brown-dark);
+    border: 3px solid var(--color-gold-dark);
+    font-size: 24px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    z-index: 999;
+    transition: all var(--transition-normal);
+}
+
+.back-to-top:hover {
+    transform: scale(1.1) translateY(-5px);
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.no-scroll {
+    overflow: hidden;
+}
+
+/* ========================================
+   Responsive Typography
+   ======================================== */
+
+@media (max-width: 640px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    html {
+        font-size: 15px;
+    }
+}
+
+@media (min-width: 1025px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+    /* Hide non-essential elements */
+    .back-to-top,
+    .mobile-menu-toggle,
+    header nav,
+    .cta-button,
+    button,
+    .action-log,
+    .debug-console,
+    .controls,
+    footer {
+        display: none !important;
+    }
+
+    /* Keep logo but simplify */
+    header {
+        padding: 1rem 0;
+        border-bottom: 1px solid #000;
+        margin-bottom: 1rem;
+    }
+
+    /* Optimize for print */
+    body {
+        background: white;
+        color: black;
+        font-size: 11pt;
+        line-height: 1.4;
+        margin: 0;
+        padding: 1cm;
+    }
+
+    /* Better page breaks */
+    section,
+    .card,
+    .phase-card,
+    .requirement-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    h1, h2, h3 {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* Inhoudsopgave optimization for spelregels */
+    .table-of-contents {
+        border: none;
+        border-bottom: 1px solid #ccc;
+        padding: 0.5rem 0;
+        margin-bottom: 2rem;
+        page-break-after: always;
+    }
+
+    .table-of-contents a {
+        color: black;
+        text-decoration: none;
+    }
+
+    .table-of-contents a::after {
+        content: " (pagina " attr(data-page) ")";
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    /* Code blocks - minimal styling */
+    pre, code {
+        border: none;
+        background: transparent;
+        padding: 0.25rem 0;
+        font-size: 9pt;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Tables - minimal borders */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 10pt;
+    }
+
+    table, th, td {
+        border: 1px solid #ccc;
+    }
+
+    th {
+        border-bottom: 2px solid #000;
+        background: transparent;
+    }
+
+    th, td {
+        padding: 0.4rem;
+        text-align: left;
+    }
+
+    /* Links - show URL in print */
+    a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    /* Internal links - no URL needed */
+    a[href^="#"]::after {
+        content: "";
+    }
+
+    /* Highlight boxes - remove backgrounds and borders to save ink */
+    .bg-gold-50,
+    .bg-green-50,
+    .bg-red-50,
+    .bg-cream,
+    .bg-cream-light {
+        background: transparent !important;
+        border: none !important;
+        border-left: 2px solid #000 !important;
+        padding: 0.5rem 0 0.5rem 1rem !important;
+        margin: 1rem 0;
+    }
+
+    /* Numbered badges (fase badges) - minimal */
+    .badge {
+        border: 1px solid #000;
+        border-radius: 0;
+        width: auto;
+        height: auto;
+        display: inline;
+        padding: 0.2rem 0.5rem;
+        font-weight: bold;
+        margin-right: 0.5rem;
+        background: transparent;
+    }
+
+    /* Remove shadows (waste ink) */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* Optimize images */
+    img {
+        max-width: 100%;
+        height: auto;
+        page-break-inside: avoid;
+    }
+
+    /* Header for each page (optional - browser-dependent) */
+    @page {
+        margin: 2cm;
+        @top-right {
+            content: "Koning Mexico Spelregels - Pagina " counter(page);
+        }
+    }
+
+    /* First page (cover) - no header */
+    @page :first {
+        @top-right {
+            content: "";
+        }
+    }
+}
+
+/* ========================================
+   Accessibility Improvements
+   ======================================== */
+
+/* Focus styles for keyboard navigation */
+a:focus,
+button:focus {
+    outline: 3px solid var(--color-gold);
+    outline-offset: 2px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --color-gold: #FFD700;
+        --color-green: #00FF00;
+        --color-red: #FF0000;
+    }
+}
+
+/* ========================================
+   Loading State (Optional)
+   ======================================== */
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-cream);
+    border-top-color: var(--color-gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
