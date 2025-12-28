@@ -346,19 +346,167 @@ body.dark-mode .shadow-xl {
    ======================================== */
 
 @media print {
+    /* Hide non-essential elements */
     .back-to-top,
     .mobile-menu-toggle,
-    header {
+    header nav,
+    .cta-button,
+    button,
+    .action-log,
+    .debug-console,
+    .controls,
+    footer {
         display: none !important;
     }
 
+    /* Keep logo but simplify */
+    header {
+        padding: 1rem 0;
+        border-bottom: 1px solid #000;
+        margin-bottom: 1rem;
+    }
+
+    /* Optimize for print */
     body {
         background: white;
         color: black;
+        font-size: 11pt;
+        line-height: 1.4;
+        margin: 0;
+        padding: 1cm;
     }
 
-    section {
+    /* Better page breaks */
+    section,
+    .card,
+    .phase-card,
+    .requirement-card {
         page-break-inside: avoid;
+        break-inside: avoid;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    h1, h2, h3 {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* Inhoudsopgave optimization for spelregels */
+    .table-of-contents {
+        border: none;
+        border-bottom: 1px solid #ccc;
+        padding: 0.5rem 0;
+        margin-bottom: 2rem;
+        page-break-after: always;
+    }
+
+    .table-of-contents a {
+        color: black;
+        text-decoration: none;
+    }
+
+    .table-of-contents a::after {
+        content: " (pagina " attr(data-page) ")";
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    /* Code blocks - minimal styling */
+    pre, code {
+        border: none;
+        background: transparent;
+        padding: 0.25rem 0;
+        font-size: 9pt;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Tables - minimal borders */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 10pt;
+    }
+
+    table, th, td {
+        border: 1px solid #ccc;
+    }
+
+    th {
+        border-bottom: 2px solid #000;
+        background: transparent;
+    }
+
+    th, td {
+        padding: 0.4rem;
+        text-align: left;
+    }
+
+    /* Links - show URL in print */
+    a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    /* Internal links - no URL needed */
+    a[href^="#"]::after {
+        content: "";
+    }
+
+    /* Highlight boxes - remove backgrounds and borders to save ink */
+    .bg-gold-50,
+    .bg-green-50,
+    .bg-red-50,
+    .bg-cream,
+    .bg-cream-light {
+        background: transparent !important;
+        border: none !important;
+        border-left: 2px solid #000 !important;
+        padding: 0.5rem 0 0.5rem 1rem !important;
+        margin: 1rem 0;
+    }
+
+    /* Numbered badges (fase badges) - minimal */
+    .badge {
+        border: 1px solid #000;
+        border-radius: 0;
+        width: auto;
+        height: auto;
+        display: inline;
+        padding: 0.2rem 0.5rem;
+        font-weight: bold;
+        margin-right: 0.5rem;
+        background: transparent;
+    }
+
+    /* Remove shadows (waste ink) */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* Optimize images */
+    img {
+        max-width: 100%;
+        height: auto;
+        page-break-inside: avoid;
+    }
+
+    /* Header for each page (optional - browser-dependent) */
+    @page {
+        margin: 2cm;
+        @top-right {
+            content: "Koning Mexico Spelregels - Pagina " counter(page);
+        }
+    }
+
+    /* First page (cover) - no header */
+    @page :first {
+        @top-right {
+            content: "";
+        }
     }
 }
 

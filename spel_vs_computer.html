@@ -383,6 +383,27 @@
             </div>
         </div>
 
+        <!-- AI Difficulty Selector -->
+        <div class="rounded-lg shadow-lg p-3 mb-4 border-l-4 border-gold" style="background: var(--bg-card);" id="difficultyPanel">
+            <div class="text-xs font-semibold mb-2" style="color: var(--text-secondary);">
+                🎯 AI Moeilijkheidsgraad:
+            </div>
+            <div class="flex gap-2">
+                <button id="difficultyEasy" class="difficulty-btn flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all" style="background: var(--bg-secondary); color: var(--text-primary); border: 2px solid transparent;">
+                    😊 Makkelijk
+                </button>
+                <button id="difficultyMedium" class="difficulty-btn active flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all" style="background: var(--color-gold); color: #000; border: 2px solid var(--color-gold);">
+                    😐 Normaal
+                </button>
+                <button id="difficultyHard" class="difficulty-btn flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all" style="background: var(--bg-secondary); color: var(--text-primary); border: 2px solid transparent;">
+                    😈 Moeilijk
+                </button>
+            </div>
+            <div class="text-xs mt-2" style="color: var(--text-secondary); opacity: 0.8;">
+                <span id="difficultyDescription">Normale AI met realistische psychologie</span>
+            </div>
+        </div>
+
         <!-- Scores -->
         <div class="grid grid-cols-2 gap-4 mb-6">
             <!-- Player -->

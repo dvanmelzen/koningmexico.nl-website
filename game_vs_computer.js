@@ -30,8 +30,37 @@
         }
     };
 
+    // Difficulty modifiers
+    const DIFFICULTY_MODIFIERS = {
+        easy: {
+            name: 'Makkelijk',
+            description: 'AI maakt meer fouten en speelt minder optimaal',
+            psychologyTriggerRate: 0.50, // 50% chance to trigger psychology (vs 80% medium)
+            thresholdAdjustment: 0.60, // Psychology effects 40% weaker
+            bluffChanceMultiplier: 0.50, // 50% less likely to bluff intelligently
+            mistakeChance: 0.15 // 15% chance to make random mistakes
+        },
+        medium: {
+            name: 'Normaal',
+            description: 'Normale AI met realistische psychologie',
+            psychologyTriggerRate: 0.80, // 80% chance (default)
+            thresholdAdjustment: 1.00, // Full psychology effects
+            bluffChanceMultiplier: 1.00, // Normal bluff intelligence
+            mistakeChance: 0.05 // 5% chance for minor mistakes
+        },
+        hard: {
+            name: 'Moeilijk',
+            description: 'Slimme AI die bijna perfect speelt',
+            psychologyTriggerRate: 0.95, // 95% chance to trigger psychology
+            thresholdAdjustment: 1.30, // Psychology effects 30% stronger
+            bluffChanceMultiplier: 1.40, // 40% better at bluffing
+            mistakeChance: 0.00 // No mistakes
+        }
+    };
+
     // Game State
     let gameState = {
+        difficulty: 'medium', // Current difficulty: 'easy', 'medium', 'hard'
         player: {
             lives: 6,
             currentThrow: null,
@@ -121,6 +150,12 @@
         keepBtn: document.getElementById('keepBtn'),
         revealBtn: document.getElementById('revealBtn'),
         newGameBtn: document.getElementById('newGameBtn'),
+
+        // Difficulty buttons
+        difficultyEasy: document.getElementById('difficultyEasy'),
+        difficultyMedium: document.getElementById('difficultyMedium'),
+        difficultyHard: document.getElementById('difficultyHard'),
+        difficultyDescription: document.getElementById('difficultyDescription'),
 
         // New UI Elements
         statsWins: document.getElementById('statsWins'),
@@ -213,6 +248,96 @@
         updateStatsUI();
 
         logToConsole(`[Stats] Game ${stats.gamesPlayed}: ${didPlayerWin ? 'WIN' : 'LOSS'}, Streak: ${stats.currentStreak}, Win Rate: ${Math.round((stats.wins / stats.gamesPlayed) * 100)}%`);
+    }
+
+    // ========================================
+    // Difficulty System (localStorage)
+    // ========================================
+    const DIFFICULTY_KEY = 'mexicoVsComputerDifficulty';
+
+    function loadDifficulty() {
+        try {
+            const stored = localStorage.getItem(DIFFICULTY_KEY);
+            if (stored && DIFFICULTY_MODIFIERS[stored]) {
+                return stored;
+            }
+        } catch (e) {
+            console.error('Failed to load difficulty:', e);
+        }
+        return 'medium'; // Default
+    }
+
+    function saveDifficulty(difficulty) {
+        try {
+            localStorage.setItem(DIFFICULTY_KEY, difficulty);
+            logToConsole(`[Difficulty] Saved: ${difficulty}`);
+        } catch (e) {
+            console.error('Failed to save difficulty:', e);
+        }
+    }
+
+    function setDifficulty(difficulty) {
+        if (!DIFFICULTY_MODIFIERS[difficulty]) {
+            console.error(`Invalid difficulty: ${difficulty}`);
+            return;
+        }
+
+        gameState.difficulty = difficulty;
+        saveDifficulty(difficulty);
+        updateDifficultyUI();
+
+        const modifier = DIFFICULTY_MODIFIERS[difficulty];
+        logToConsole(`[Difficulty] Set to ${modifier.name}: ${modifier.description}`);
+        logToConsole(`[Difficulty] Psychology trigger rate: ${Math.round(modifier.psychologyTriggerRate * 100)}%`);
+        logToConsole(`[Difficulty] Threshold adjustment: ${Math.round(modifier.thresholdAdjustment * 100)}%`);
+        logToConsole(`[Difficulty] Bluff multiplier: ${Math.round(modifier.bluffChanceMultiplier * 100)}%`);
+        logToConsole(`[Difficulty] Mistake chance: ${Math.round(modifier.mistakeChance * 100)}%`);
+    }
+
+    function updateDifficultyUI() {
+        const difficulty = gameState.difficulty;
+        const modifier = DIFFICULTY_MODIFIERS[difficulty];
+
+        // Update button states
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.background = 'var(--bg-secondary)';
+            btn.style.color = 'var(--text-primary)';
+            btn.style.border = '2px solid transparent';
+        });
+
+        // Highlight active button
+        const activeBtn = elements[`difficulty${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`];
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.style.background = 'var(--color-gold)';
+            activeBtn.style.color = '#000';
+            activeBtn.style.border = '2px solid var(--color-gold)';
+        }
+
+        // Update description
+        if (elements.difficultyDescription) {
+            elements.difficultyDescription.textContent = modifier.description;
+        }
+    }
+
+    function initDifficultyUI() {
+        // Load saved difficulty
+        gameState.difficulty = loadDifficulty();
+        updateDifficultyUI();
+
+        // Add event listeners
+        if (elements.difficultyEasy) {
+            elements.difficultyEasy.addEventListener('click', () => setDifficulty('easy'));
+        }
+        if (elements.difficultyMedium) {
+            elements.difficultyMedium.addEventListener('click', () => setDifficulty('medium'));
+        }
+        if (elements.difficultyHard) {
+            elements.difficultyHard.addEventListener('click', () => setDifficulty('hard'));
+        }
+
+        logToConsole(`[Difficulty] Initialized to: ${gameState.difficulty}`);
     }
 
     // Dice symbols
@@ -359,6 +484,9 @@
 
         // Load and display stats
         updateStatsUI();
+
+        // Initialize difficulty UI
+        initDifficultyUI();
 
         updateUI();
         enablePlayerButtons(); // Initialize button states
@@ -782,22 +910,25 @@
         const psych = gameState.aiPsychology;
         const computer = gameState.computer;
         const player = gameState.player;
+        const difficulty = DIFFICULTY_MODIFIERS[gameState.difficulty];
 
         psych.livesAdvantage = computer.lives - player.lives;
         psych.isWinning = psych.livesAdvantage > 0;
 
         if (psych.isWinning) {
-            // 80% kans om loss aversion te triggeren (sterk maar niet altijd)
-            if (Math.random() < 0.80) {
+            // Trigger rate based on difficulty (easy: 50%, medium: 80%, hard: 95%)
+            if (Math.random() < difficulty.psychologyTriggerRate) {
                 // Loss aversion: 2.5x sterker gewicht aan verliezen
                 // Als je wint, wil je NIET verliezen → verhoog threshold (voorzichtiger)
                 const baseAdjustment = Math.min(psych.livesAdvantage * 3, 10);
                 // Variatie: ±20% rondom base adjustment
-                const adjustment = Math.round(baseAdjustment * (0.8 + Math.random() * 0.4));
+                const rawAdjustment = baseAdjustment * (0.8 + Math.random() * 0.4);
+                // Apply difficulty modifier
+                const adjustment = Math.round(rawAdjustment * difficulty.thresholdAdjustment);
                 logToConsole(`[Psychology] Loss Aversion TRIGGERED: +${adjustment} voorzichtiger (${psych.livesAdvantage} punten voorsprong)`);
                 return threshold + adjustment;
             } else {
-                logToConsole(`[Psychology] Loss Aversion possible but NOT triggered (20% kans)`);
+                logToConsole(`[Psychology] Loss Aversion possible but NOT triggered (${Math.round((1 - difficulty.psychologyTriggerRate) * 100)}% kans)`);
             }
         }
 
@@ -1096,7 +1227,8 @@
         }
 
         const personality = gameState.aiPersonality;
-        let bluffChance = personality.bluffChance;
+        const difficulty = DIFFICULTY_MODIFIERS[gameState.difficulty];
+        let bluffChance = personality.bluffChance * difficulty.bluffChanceMultiplier;
 
         // RISK ANALYSIS: Check if next throw would be blind (forced by pattern)
         const nextThrowIndex = computer.throwCount; // Next throw (0-indexed)
