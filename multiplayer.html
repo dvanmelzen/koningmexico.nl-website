@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 Multiplayer - Koning Mexico</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .hidden { display: none !important; }
+        .game-screen { min-height: 80vh; }
+
+        /* Smooth transitions */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pulse animation for waiting */
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        /* Chat messages */
+        .chat-message {
+            animation: slideIn 0.2s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Dice animation */
+        .dice-roll {
+            animation: diceRoll 0.5s ease-in-out;
+        }
+        @keyframes diceRoll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg) scale(1.1); }
+            75% { transform: rotate(10deg) scale(0.9); }
+        }
+
+        /* Status indicators */
+        .status-online {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Leaderboard styles */
+        .leaderboard-rank {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .leaderboard-rank.top-1 { color: #FFD700; }
+        .leaderboard-rank.top-2 { color: #C0C0C0; }
+        .leaderboard-rank.top-3 { color: #CD7F32; }
+
+        /* Emote picker */
+        .emote-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .emote-btn {
+            font-size: 1.5em;
+            padding: 8px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .emote-btn:hover {
+            border-color: var(--gold);
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-yellow-50 to-orange-50 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold" style="color: var(--gold);">🎲 Koning Mexico</a>
+            <div class="flex gap-4 items-center">
+                <a href="spelregels.html" class="hover:text-gold transition">Spelregels</a>
+                <a href="spel_vs_computer.html" class="hover:text-gold transition">Single Player</a>
+                <span id="userDisplay" class="hidden">
+                    <span class="font-semibold" id="username"></span>
+                    <span class="text-sm text-gray-600" id="eloRating"></span>
+                </span>
+                <button id="logoutBtn" class="hidden px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                    Uitloggen
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+
+        <!-- Login/Register Screen -->
+        <div id="authScreen" class="game-screen">
+            <div class="max-w-md mx-auto">
+                <div class="bg-white rounded-2xl shadow-2xl p-8">
+                    <h1 class="text-3xl font-bold text-center mb-6" style="color: var(--gold);">
+                        🎮 Multiplayer Mexico
+                    </h1>
+
+                    <!-- Tab Selector -->
+                    <div class="flex mb-6 border-b">
+                        <button id="loginTab" class="flex-1 py-3 font-semibold border-b-2 border-gold">
+                            Inloggen
+                        </button>
+                        <button id="registerTab" class="flex-1 py-3 font-semibold text-gray-500 hover:text-gold transition">
+                            Registreren
+                        </button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Gebruikersnaam</label>
+                            <input type="text" id="loginUsername" required
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                placeholder="Jouw gebruikersnaam">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Wachtwoord</label>
+                            <input type="password" id="loginPassword" required
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-gold text-white font-bold rounded-lg hover:bg-yellow-600 transition">
+                            Inloggen
+                        </button>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="registerForm" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Gebruikersnaam</label>
+                            <input type="text" id="registerUsername" required minlength="3" maxlength="50"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                placeholder="3-50 karakters">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Email</label>
+                            <input type="email" id="registerEmail" required
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                placeholder="jouw@email.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Wachtwoord</label>
+                            <input type="password" id="registerPassword" required minlength="6"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                placeholder="Minimaal 6 karakters">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-gold text-white font-bold rounded-lg hover:bg-yellow-600 transition">
+                            Account Aanmaken
+                        </button>
+                    </form>
+
+                    <div id="authError" class="hidden mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm"></div>
+                    <div id="authSuccess" class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobbyScreen" class="game-screen hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Main Lobby Area -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <h2 class="text-2xl font-bold mb-4" style="color: var(--gold);">🎮 Lobby</h2>
+
+                        <!-- User Stats -->
+                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-bold" id="lobbyUsername"></div>
+                                    <div class="text-sm text-gray-600">Elo Rating: <span id="lobbyElo" class="font-bold"></span></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl" id="lobbyEmoji">👤</div>
+                                    <div class="text-xs text-gray-600">
+                                        <span id="lobbyWins">0</span>W - <span id="lobbyLosses">0</span>L
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Matchmaking Queue -->
+                        <div id="queueIdle" class="text-center py-12">
+                            <div class="text-6xl mb-4">🎯</div>
+                            <h3 class="text-xl font-bold mb-2">Klaar om te spelen?</h3>
+                            <p class="text-gray-600 mb-6">Zoek een tegenstander en begin met spelen!</p>
+                            <button id="joinQueueBtn" class="px-8 py-4 bg-gold text-white font-bold text-lg rounded-xl hover:bg-yellow-600 transition shadow-lg">
+                                🔍 Zoek Tegenstander
+                            </button>
+                        </div>
+
+                        <div id="queueSearching" class="hidden text-center py-12">
+                            <div class="text-6xl mb-4 pulse-animation">⏳</div>
+                            <h3 class="text-xl font-bold mb-2">Zoeken naar tegenstander...</h3>
+                            <p class="text-gray-600 mb-4">We zoeken een speler met vergelijkbare Elo rating</p>
+                            <div class="text-sm text-gray-500 mb-6">
+                                Spelers in queue: <span id="queueCount" class="font-bold">1</span>
+                            </div>
+                            <button id="leaveQueueBtn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                ❌ Annuleren
+                            </button>
+                        </div>
+
+                        <div id="matchFound" class="hidden text-center py-12">
+                            <div class="text-6xl mb-4">🎉</div>
+                            <h3 class="text-xl font-bold mb-2">Tegenstander gevonden!</h3>
+                            <div class="text-lg mb-4">
+                                Je speelt tegen: <span id="opponentNameMatch" class="font-bold text-gold"></span>
+                                (Elo: <span id="opponentEloMatch"></span>)
+                            </div>
+                            <p class="text-gray-600">Het spel begint zo...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Sidebar -->
+                <div>
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span>🏆</span>
+                            <span style="color: var(--gold);">Top Spelers</span>
+                        </h3>
+                        <div id="leaderboardList" class="space-y-3">
+                            <div class="text-center text-gray-400 py-8">
+                                <div class="text-4xl mb-2">📊</div>
+                                <div class="text-sm">Laden...</div>
+                            </div>
+                        </div>
+                        <button id="refreshLeaderboard" class="w-full mt-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            🔄 Ververs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="game-screen hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                <!-- Game Board (3 columns) -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+
+                        <!-- Game Header -->
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="text-center flex-1">
+                                <div class="text-lg font-bold" id="playerName"></div>
+                                <div class="text-sm text-gray-600">Elo: <span id="playerElo"></span></div>
+                                <div class="text-xs mt-1">
+                                    Score: <span id="playerScore" class="font-bold text-gold">0</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center px-6">
+                                <div class="text-3xl font-bold" style="color: var(--gold);">VS</div>
+                                <div class="text-xs text-gray-500 mt-1" id="gameStatus">Wachten...</div>
+                            </div>
+
+                            <div class="text-center flex-1">
+                                <div class="text-lg font-bold" id="opponentName"></div>
+                                <div class="text-sm text-gray-600">Elo: <span id="opponentElo"></span></div>
+                                <div class="text-xs mt-1">
+                                    Score: <span id="opponentScore" class="font-bold text-gold">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Turn Indicator -->
+                        <div id="turnIndicator" class="text-center py-4 mb-6 rounded-xl font-bold text-lg"></div>
+
+                        <!-- Dice Display -->
+                        <div class="bg-cream rounded-xl p-6 mb-6">
+                            <div class="flex justify-center items-center gap-4 mb-4">
+                                <div id="dice1" class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center text-4xl font-bold border-2 border-gray-300">
+                                    ?
+                                </div>
+                                <div id="dice2" class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center text-4xl font-bold border-2 border-gray-300">
+                                    ?
+                                </div>
+                            </div>
+                            <div id="currentThrowValue" class="text-center text-2xl font-bold mb-4" style="color: var(--gold);"></div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div id="actionButtons" class="flex flex-wrap gap-3 justify-center mb-6">
+                            <button id="throwDiceBtn" class="px-6 py-3 bg-gold text-white font-bold rounded-xl hover:bg-yellow-600 transition shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed">
+                                🎲 Gooi Dobbelstenen
+                            </button>
+                            <button id="keepThrowBtn" class="hidden px-6 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition shadow-lg">
+                                ✅ Houd Worp
+                            </button>
+                            <button id="continueThrowBtn" class="hidden px-6 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition shadow-lg">
+                                🔄 Gooi Opnieuw
+                            </button>
+                        </div>
+
+                        <!-- Throw History -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold mb-2">🎯 Jouw worpen:</h4>
+                                <div id="playerHistory" class="space-y-1 text-sm"></div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-2">👤 Tegenstander worpen:</h4>
+                                <div id="opponentHistory" class="space-y-1 text-sm"></div>
+                            </div>
+                        </div>
+
+                        <!-- Game Result -->
+                        <div id="gameResult" class="hidden mt-6 p-6 rounded-xl text-center">
+                            <div id="resultIcon" class="text-6xl mb-4"></div>
+                            <div id="resultText" class="text-2xl font-bold mb-2"></div>
+                            <div id="resultDetails" class="text-gray-600 mb-4"></div>
+                            <button id="backToLobbyBtn" class="px-8 py-3 bg-gold text-white font-bold rounded-xl hover:bg-yellow-600 transition">
+                                🏠 Terug naar Lobby
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-xl p-4 h-full flex flex-col">
+                        <h3 class="text-lg font-bold mb-3">💬 Chat</h3>
+
+                        <!-- Chat Messages -->
+                        <div id="chatMessages" class="flex-1 overflow-y-auto space-y-2 mb-3 max-h-96">
+                            <div class="text-center text-gray-400 text-sm py-4">
+                                Geen berichten nog
+                            </div>
+                        </div>
+
+                        <!-- Emote Picker -->
+                        <div class="mb-3">
+                            <div class="text-xs font-semibold mb-2 text-gray-600">Snelle reacties:</div>
+                            <div class="emote-picker">
+                                <button class="emote-btn" data-emote="👍">👍</button>
+                                <button class="emote-btn" data-emote="😄">😄</button>
+                                <button class="emote-btn" data-emote="😎">😎</button>
+                                <button class="emote-btn" data-emote="🔥">🔥</button>
+                                <button class="emote-btn" data-emote="💪">💪</button>
+                                <button class="emote-btn" data-emote="🎉">🎉</button>
+                                <button class="emote-btn" data-emote="😱">😱</button>
+                                <button class="emote-btn" data-emote="🤔">🤔</button>
+                                <button class="emote-btn" data-emote="👏">👏</button>
+                                <button class="emote-btn" data-emote="🎲">🎲</button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input -->
+                        <div class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Type een bericht..." maxlength="100"
+                                class="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:outline-none">
+                            <button id="sendChatBtn" class="px-4 py-2 bg-gold text-white rounded-lg hover:bg-yellow-600 transition">
+                                📤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script src="multiplayer.js"></script>
+</body>
+</html>
