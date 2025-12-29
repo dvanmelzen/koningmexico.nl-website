@@ -1,15 +1,307 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Speel Mexico online tegen echte spelers. Het klassieke dobbelspel in multiplayer versie met matchmaking.">
+    <meta name="theme-color" content="#0D5E3A">
     <title>🎲 Multiplayer - Koning Mexico</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        'gold-light': '#FFD700',
+                        'gold-dark': '#B8960F',
+                        green: '#0D5E3A',
+                        'green-light': '#1B7A4B',
+                        red: '#8B0000',
+                        'red-light': '#B22222',
+                        'brown-dark': '#3E2723',
+                        'brown-medium': '#5D4037',
+                        cream: '#F5E6D3',
+                        'cream-light': '#FFF8E7',
+                    },
+                    fontFamily: {
+                        'heading': ['Cinzel', 'serif'],
+                        'body': ['Open Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+    <!-- Apply dark mode immediately to prevent flash -->
+    <script>
+        (function() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
+
     <style>
+        /* Theme variables */
+        :root {
+            --bg-primary: #F5E6D3;
+            --bg-secondary: #FFF8E7;
+            --bg-card: #ffffff;
+            --text-primary: #3E2723;
+            --text-secondary: #5D4037;
+            --border-color: #D4AF37;
+            --color-gold: #D4AF37;
+            --color-gold-light: #FFD700;
+            --color-gold-dark: #B8960F;
+            --color-green: #0D5E3A;
+            --color-green-light: #1B7A4B;
+            --color-red: #8B0000;
+            --color-red-light: #B22222;
+            --color-brown-dark: #3E2723;
+            --color-brown-medium: #5D4037;
+            --color-cream: #F5E6D3;
+            --color-cream-light: #FFF8E7;
+        }
+
+        html.dark-mode,
+        html.dark-mode body {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-card: #333333;
+            --text-primary: #f0f0f0;
+            --text-secondary: #d0d0d0;
+            --border-color: #FFD700;
+            --color-green: #4CAF50;
+            --color-green-light: #66BB6A;
+            --color-red: #EF5350;
+            --color-red-light: #E57373;
+        }
+
+        body {
+            background: linear-gradient(to bottom right, var(--bg-primary), var(--bg-secondary));
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        /* Dark mode: improve contrast for green/red text on gray backgrounds */
+        html.dark-mode .text-green {
+            color: #4CAF50 !important;
+        }
+
+        html.dark-mode .text-red {
+            color: #EF5350 !important;
+        }
+
+        /* Revealed blind throw styling */
+        .bg-yellow-100 {
+            background-color: #FEF3C7;
+        }
+
+        html.dark-mode .bg-yellow-100 {
+            background-color: #854D0E;
+            color: #FEF3C7;
+        }
+
         .hidden { display: none !important; }
         .game-screen { min-height: 80vh; }
+
+        /* Player cards */
+        .player-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        html.dark-mode .player-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .player-card.active {
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+            border: 3px solid var(--color-gold);
+        }
+
+        .player-card.player {
+            border-left: 6px solid var(--color-green);
+        }
+
+        .player-card.opponent {
+            border-left: 6px solid var(--color-red);
+        }
+
+        /* Dice styling */
+        .dice {
+            width: 70px;
+            height: 70px;
+            background: white !important;
+            color: #000 !important;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        html.dark-mode .dice {
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .dice.rolling {
+            animation: diceRoll 0.5s ease;
+        }
+
+        @keyframes diceRoll {
+            0%, 100% { transform: rotateX(0) rotateY(0); }
+            25% { transform: rotateX(180deg) rotateY(0); }
+            50% { transform: rotateX(180deg) rotateY(180deg); }
+            75% { transform: rotateX(0) rotateY(180deg); }
+        }
+
+        /* Dice cup */
+        .dice-cup-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .dice-cup {
+            width: 160px;
+            height: 180px;
+            background: linear-gradient(180deg, #5D4037 0%, #3E2723 100%);
+            border-radius: 20px 20px 90px 90px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 3px solid var(--color-gold-dark);
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+        }
+
+        .dice-cup.flipped {
+            transform: rotateX(180deg);
+        }
+
+        .dice-cup.opponent-cup {
+            background: linear-gradient(180deg, #8B0000 0%, #5D0000 100%);
+            border-color: var(--color-red);
+        }
+
+        .dice-cup::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 35px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+        }
+
+        .dice-container {
+            display: flex;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dice.hidden {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: transparent;
+            user-select: none;
+            position: relative;
+        }
+
+        .dice.hidden::after {
+            content: '?';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-gold);
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        /* Buttons */
+        .btn-game {
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-game:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-game:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #666 !important;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+            color: var(--color-brown-dark);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--color-red) 0%, var(--color-red-light) 100%);
+            color: white;
+        }
+
+        /* Throw result display */
+        .throw-result {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .throw-result.mexico {
+            color: var(--color-gold-light);
+            animation: pulseMexico 1s ease infinite;
+        }
+
+        @keyframes pulseMexico {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
 
         /* Smooth transitions */
         .fade-in { animation: fadeIn 0.3s ease-in; }
@@ -27,23 +319,29 @@
             50% { opacity: .5; }
         }
 
-        /* Chat messages */
-        .chat-message {
-            animation: slideIn 0.2s ease-out;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        /* Shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
         }
 
-        /* Dice animation */
-        .dice-roll {
-            animation: diceRoll 0.5s ease-in-out;
+        .shaking {
+            animation: shake 0.5s ease;
         }
-        @keyframes diceRoll {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-10deg) scale(1.1); }
-            75% { transform: rotate(10deg) scale(0.9); }
+
+        /* Game info panel */
+        .game-info {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--color-gold);
+            color: var(--text-primary);
+        }
+
+        .game-info .text-brown-medium {
+            color: var(--text-secondary) !important;
         }
 
         /* Status indicators */
@@ -69,62 +367,71 @@
         .leaderboard-rank.top-2 { color: #C0C0C0; }
         .leaderboard-rank.top-3 { color: #CD7F32; }
 
-        /* Emote picker */
-        .emote-picker {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-        }
-        .emote-btn {
-            font-size: 1.5em;
-            padding: 8px;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .emote-btn:hover {
-            border-color: var(--gold);
-            transform: scale(1.2);
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .dice {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .dice-cup {
+                width: 160px;
+                height: 180px;
+            }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-yellow-50 to-orange-50 min-h-screen">
+<body class="font-body min-h-screen">
 
-    <!-- Navigation -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold" style="color: var(--gold);">🎲 Koning Mexico</a>
-            <div class="flex gap-4 items-center">
-                <a href="spelregels.html" class="hover:text-gold transition">Spelregels</a>
-                <a href="spel_vs_computer.html" class="hover:text-gold transition">Single Player</a>
-                <span id="userDisplay" class="hidden">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-2 text-white font-semibold hover:text-gold-light transition">
+                    <span>←</span>
+                    <span>Terug</span>
+                </a>
+                <h1 class="text-2xl font-heading font-bold text-white">
+                    🎲 Multiplayer Mexico
+                </h1>
+            </div>
+            <div class="flex gap-3 items-center">
+                <button id="darkModeToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white" title="Dark Mode Toggle">
+                    <span id="darkModeIcon">🌙</span>
+                </button>
+                <button id="debugToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white" title="Debug Log Toggle">
+                    🐛
+                </button>
+                <a href="spelregels.html" class="text-white hover:text-gold-light transition font-semibold">Spelregels</a>
+                <a href="spel_vs_computer.html" class="text-white hover:text-gold-light transition font-semibold">Single Player</a>
+                <span id="userDisplay" class="hidden text-white">
                     <span class="font-semibold" id="username"></span>
-                    <span class="text-sm text-gray-600" id="eloRating"></span>
+                    <span class="text-sm text-white text-opacity-80" id="eloRating"></span>
                 </span>
-                <button id="logoutBtn" class="hidden px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                <button id="logoutBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold shadow-md">
                     Uitloggen
                 </button>
             </div>
         </div>
-    </nav>
+    </header>
 
     <div class="container mx-auto px-4 py-8">
 
         <!-- Login/Register Screen -->
         <div id="authScreen" class="game-screen">
             <div class="max-w-md mx-auto">
-                <div class="bg-white rounded-2xl shadow-2xl p-8">
-                    <h1 class="text-3xl font-bold text-center mb-6" style="color: var(--gold);">
+                <div class="rounded-2xl shadow-2xl p-8" style="background: var(--bg-card);">
+                    <h1 class="text-3xl font-heading font-bold text-center mb-6" style="color: var(--color-gold);">
                         🎮 Multiplayer Mexico
                     </h1>
 
                     <!-- Tab Selector -->
-                    <div class="flex mb-6 border-b">
-                        <button id="loginTab" class="flex-1 py-3 font-semibold border-b-2 border-gold">
+                    <div class="flex mb-6 border-b" style="border-color: var(--border-color);">
+                        <button id="loginTab" class="flex-1 py-3 font-semibold border-b-2 transition" style="border-color: var(--color-gold); color: var(--text-primary);">
                             Inloggen
                         </button>
-                        <button id="registerTab" class="flex-1 py-3 font-semibold text-gray-500 hover:text-gold transition">
+                        <button id="registerTab" class="flex-1 py-3 font-semibold transition hover:opacity-80" style="color: var(--text-secondary);">
                             Registreren
                         </button>
                     </div>
@@ -132,18 +439,20 @@
                     <!-- Login Form -->
                     <form id="loginForm" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Gebruikersnaam</label>
+                            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Gebruikersnaam</label>
                             <input type="text" id="loginUsername" required
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition"
+                                style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);"
                                 placeholder="Jouw gebruikersnaam">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Wachtwoord</label>
+                            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Wachtwoord</label>
                             <input type="password" id="loginPassword" required
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition"
+                                style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);"
                                 placeholder="••••••••">
                         </div>
-                        <button type="submit" class="w-full py-3 bg-gold text-white font-bold rounded-lg hover:bg-yellow-600 transition">
+                        <button type="submit" class="btn-game btn-primary w-full py-3 font-bold rounded-lg">
                             Inloggen
                         </button>
                     </form>
@@ -151,24 +460,27 @@
                     <!-- Register Form -->
                     <form id="registerForm" class="space-y-4 hidden">
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Gebruikersnaam</label>
+                            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Gebruikersnaam</label>
                             <input type="text" id="registerUsername" required minlength="3" maxlength="50"
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition"
+                                style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);"
                                 placeholder="3-50 karakters">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Email</label>
+                            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Email</label>
                             <input type="email" id="registerEmail" required
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition"
+                                style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);"
                                 placeholder="jouw@email.com">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Wachtwoord</label>
+                            <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Wachtwoord</label>
                             <input type="password" id="registerPassword" required minlength="6"
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition"
+                                style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);"
                                 placeholder="Minimaal 6 karakters">
                         </div>
-                        <button type="submit" class="w-full py-3 bg-gold text-white font-bold rounded-lg hover:bg-yellow-600 transition">
+                        <button type="submit" class="btn-game btn-primary w-full py-3 font-bold rounded-lg">
                             Account Aanmaken
                         </button>
                     </form>
@@ -185,19 +497,19 @@
 
                 <!-- Main Lobby Area -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <h2 class="text-2xl font-bold mb-4" style="color: var(--gold);">🎮 Lobby</h2>
+                    <div class="rounded-2xl shadow-xl p-6" style="background: var(--bg-card);">
+                        <h2 class="text-2xl font-heading font-bold mb-4" style="color: var(--color-gold);">🎮 Lobby</h2>
 
                         <!-- User Stats -->
-                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-6">
+                        <div class="rounded-xl p-4 mb-6" style="background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold)); opacity: 0.2;">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <div class="text-2xl font-bold" id="lobbyUsername"></div>
-                                    <div class="text-sm text-gray-600">Elo Rating: <span id="lobbyElo" class="font-bold"></span></div>
+                                    <div class="text-2xl font-bold" id="lobbyUsername" style="color: var(--text-primary);"></div>
+                                    <div class="text-sm" style="color: var(--text-secondary);">Elo Rating: <span id="lobbyElo" class="font-bold"></span></div>
                                 </div>
                                 <div class="text-right">
                                     <div class="text-3xl" id="lobbyEmoji">👤</div>
-                                    <div class="text-xs text-gray-600">
+                                    <div class="text-xs" style="color: var(--text-secondary);">
                                         <span id="lobbyWins">0</span>W - <span id="lobbyLosses">0</span>L
                                     </div>
                                 </div>
@@ -207,51 +519,51 @@
                         <!-- Matchmaking Queue -->
                         <div id="queueIdle" class="text-center py-12">
                             <div class="text-6xl mb-4">🎯</div>
-                            <h3 class="text-xl font-bold mb-2">Klaar om te spelen?</h3>
-                            <p class="text-gray-600 mb-6">Zoek een tegenstander en begin met spelen!</p>
-                            <button id="joinQueueBtn" class="px-8 py-4 bg-gold text-white font-bold text-lg rounded-xl hover:bg-yellow-600 transition shadow-lg">
+                            <h3 class="text-xl font-heading font-bold mb-2" style="color: var(--text-primary);">Klaar om te spelen?</h3>
+                            <p class="mb-6" style="color: var(--text-secondary);">Zoek een tegenstander en begin met spelen!</p>
+                            <button id="joinQueueBtn" class="btn-game btn-primary px-8 py-4 text-lg rounded-xl shadow-lg">
                                 🔍 Zoek Tegenstander
                             </button>
                         </div>
 
                         <div id="queueSearching" class="hidden text-center py-12">
                             <div class="text-6xl mb-4 pulse-animation">⏳</div>
-                            <h3 class="text-xl font-bold mb-2">Zoeken naar tegenstander...</h3>
-                            <p class="text-gray-600 mb-4">We zoeken een speler met vergelijkbare Elo rating</p>
-                            <div class="text-sm text-gray-500 mb-6">
-                                Spelers in queue: <span id="queueCount" class="font-bold">1</span>
+                            <h3 class="text-xl font-heading font-bold mb-2" style="color: var(--text-primary);">Zoeken naar tegenstander...</h3>
+                            <p class="mb-4" style="color: var(--text-secondary);">We zoeken een speler met vergelijkbare Elo rating</p>
+                            <div class="text-sm mb-6" style="color: var(--text-secondary);">
+                                Spelers in queue: <span id="queueCount" class="font-bold" style="color: var(--color-gold);">1</span>
                             </div>
-                            <button id="leaveQueueBtn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                            <button id="leaveQueueBtn" class="btn-game btn-danger px-6 py-2 rounded-lg">
                                 ❌ Annuleren
                             </button>
                         </div>
 
                         <div id="matchFound" class="hidden text-center py-12">
                             <div class="text-6xl mb-4">🎉</div>
-                            <h3 class="text-xl font-bold mb-2">Tegenstander gevonden!</h3>
-                            <div class="text-lg mb-4">
-                                Je speelt tegen: <span id="opponentNameMatch" class="font-bold text-gold"></span>
+                            <h3 class="text-xl font-heading font-bold mb-2" style="color: var(--text-primary);">Tegenstander gevonden!</h3>
+                            <div class="text-lg mb-4" style="color: var(--text-primary);">
+                                Je speelt tegen: <span id="opponentNameMatch" class="font-bold" style="color: var(--color-gold);"></span>
                                 (Elo: <span id="opponentEloMatch"></span>)
                             </div>
-                            <p class="text-gray-600">Het spel begint zo...</p>
+                            <p style="color: var(--text-secondary);">Het spel begint zo...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Leaderboard Sidebar -->
                 <div>
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <div class="rounded-2xl shadow-xl p-6" style="background: var(--bg-card);">
+                        <h3 class="text-xl font-heading font-bold mb-4 flex items-center gap-2">
                             <span>🏆</span>
-                            <span style="color: var(--gold);">Top Spelers</span>
+                            <span style="color: var(--color-gold);">Top Spelers</span>
                         </h3>
                         <div id="leaderboardList" class="space-y-3">
-                            <div class="text-center text-gray-400 py-8">
+                            <div class="text-center py-8" style="color: var(--text-secondary);">
                                 <div class="text-4xl mb-2">📊</div>
                                 <div class="text-sm">Laden...</div>
                             </div>
                         </div>
-                        <button id="refreshLeaderboard" class="w-full mt-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                        <button id="refreshLeaderboard" class="w-full mt-4 py-2 text-sm rounded-lg transition" style="background: var(--bg-secondary); color: var(--text-primary);">
                             🔄 Ververs
                         </button>
                     </div>
@@ -261,124 +573,125 @@
 
         <!-- Game Screen -->
         <div id="gameScreen" class="game-screen hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="max-w-4xl mx-auto">
 
-                <!-- Game Board (3 columns) -->
-                <div class="lg:col-span-3">
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                <!-- Lives Display -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <!-- Player -->
+                    <div class="player-card player" id="playerCard">
+                        <div class="text-center">
+                            <div class="text-xs font-semibold mb-2" style="color: var(--color-green);">👤 JIJ</div>
+                            <div class="text-6xl" id="myLives">⚅</div>
+                            <div class="text-xs mt-2" style="color: var(--text-secondary);">Levens</div>
+                        </div>
+                    </div>
 
-                        <!-- Game Header -->
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="text-center flex-1">
-                                <div class="text-lg font-bold" id="playerName"></div>
-                                <div class="text-sm text-gray-600">Elo: <span id="playerElo"></span></div>
-                                <div class="text-xs mt-1">
-                                    Score: <span id="playerScore" class="font-bold text-gold">0</span>
-                                </div>
+                    <!-- Opponent -->
+                    <div class="player-card opponent" id="opponentCard">
+                        <div class="text-center">
+                            <div class="text-xs font-semibold mb-2" style="color: var(--color-red);">🎯 TEGENSTANDER</div>
+                            <div class="text-6xl" id="opponentLives">⚅</div>
+                            <div class="text-xs mt-2" style="color: var(--text-secondary);">Levens</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Board -->
+                <div>
+                    <div class="rounded-2xl shadow-xl p-6" style="background: var(--bg-card);">
+
+                        <!-- Game Info -->
+                        <div class="text-center mb-4">
+                            <div class="text-sm font-semibold" style="color: var(--text-secondary);">
+                                <span id="playerNameGame" style="color: var(--color-green);"></span> (Elo: <span id="playerEloGame"></span>)
+                                vs
+                                <span id="opponentNameGame" style="color: var(--color-red);"></span> (Elo: <span id="opponentEloGame"></span>)
                             </div>
-
-                            <div class="text-center px-6">
-                                <div class="text-3xl font-bold" style="color: var(--gold);">VS</div>
-                                <div class="text-xs text-gray-500 mt-1" id="gameStatus">Wachten...</div>
+                            <div class="text-xs mt-1" style="color: var(--text-secondary);">
+                                Ronde <span id="roundNumber">1</span> | Voorgooier: <span id="voorgooierName">-</span>
                             </div>
-
-                            <div class="text-center flex-1">
-                                <div class="text-lg font-bold" id="opponentName"></div>
-                                <div class="text-sm text-gray-600">Elo: <span id="opponentElo"></span></div>
-                                <div class="text-xs mt-1">
-                                    Score: <span id="opponentScore" class="font-bold text-gold">0</span>
-                                </div>
+                            <div class="text-xs mt-1" style="color: var(--color-gold);" id="throwCounter">
+                                <!-- Worp counter will be shown here -->
                             </div>
                         </div>
 
                         <!-- Turn Indicator -->
                         <div id="turnIndicator" class="text-center py-4 mb-6 rounded-xl font-bold text-lg"></div>
 
-                        <!-- Dice Display -->
-                        <div class="bg-cream rounded-xl p-6 mb-6">
-                            <div class="flex justify-center items-center gap-4 mb-4">
-                                <div id="dice1" class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center text-4xl font-bold border-2 border-gray-300">
-                                    ?
-                                </div>
-                                <div id="dice2" class="w-20 h-20 bg-white rounded-xl shadow-lg flex items-center justify-center text-4xl font-bold border-2 border-gray-300">
-                                    ?
+                        <!-- Dice Cups -->
+                        <div class="flex justify-center gap-6 mb-6">
+                            <!-- Player's Dice Cup -->
+                            <div class="dice-cup-wrapper">
+                                <div class="text-xs mb-2 text-center font-semibold" style="color: var(--color-green);">👤 Jij</div>
+                                <div class="dice-cup" id="playerDiceCup">
+                                    <div class="dice-container">
+                                        <div class="dice" id="myDice1">⚀</div>
+                                        <div class="dice" id="myDice2">⚀</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div id="currentThrowValue" class="text-center text-2xl font-bold mb-4" style="color: var(--gold);"></div>
+
+                            <!-- Opponent's Dice Cup -->
+                            <div class="dice-cup-wrapper">
+                                <div class="text-xs mb-2 text-center font-semibold" style="color: var(--color-red);"><span id="opponentDiceCupLabel">🎯 Tegenstander</span></div>
+                                <div class="dice-cup opponent-cup" id="opponentDiceCup">
+                                    <div class="dice-container">
+                                        <div class="dice" id="opponentDice1">⚀</div>
+                                        <div class="dice" id="opponentDice2">⚀</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
+                        <!-- Throw Value Display -->
+                        <div id="currentThrowValue" class="text-center text-2xl font-bold mb-4" style="color: var(--color-gold);"></div>
+
                         <!-- Action Buttons -->
-                        <div id="actionButtons" class="flex flex-wrap gap-3 justify-center mb-6">
-                            <button id="throwDiceBtn" class="px-6 py-3 bg-gold text-white font-bold rounded-xl hover:bg-yellow-600 transition shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed">
-                                🎲 Gooi Dobbelstenen
+                        <div id="actionButtons" class="space-y-3">
+                            <button type="button" class="btn-game btn-primary w-full hidden" id="throwOpenBtn">
+                                🎲 Gooi Open
                             </button>
-                            <button id="keepThrowBtn" class="hidden px-6 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition shadow-lg">
-                                ✅ Houd Worp
+                            <button type="button" class="btn-game btn-secondary w-full" id="throwBlindBtn">
+                                🙈 Gooi Blind
                             </button>
-                            <button id="continueThrowBtn" class="hidden px-6 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition shadow-lg">
-                                🔄 Gooi Opnieuw
+                            <button type="button" class="btn-game btn-secondary w-full hidden" id="keepBtn">
+                                ✓ Laten Staan
+                            </button>
+                            <button type="button" class="btn-game btn-primary w-full hidden" id="revealBtn">
+                                👁️ Laten Zien
+                            </button>
+                            <button type="button" class="btn-game btn-secondary w-full hidden" id="resultWonBtn">
+                                ✅ Ronde Gehaald
+                            </button>
+                            <button type="button" class="btn-game btn-primary w-full hidden" id="resultVastBtn">
+                                🤝 Vast
+                            </button>
+                            <button type="button" class="btn-game btn-danger w-full hidden" id="resultLostBtn">
+                                ❌ Verloren
+                            </button>
+                            <button type="button" class="btn-game btn-danger w-full hidden" id="giveUpBtn">
+                                ❌ Pas
                             </button>
                         </div>
 
                         <!-- Throw History -->
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-4 mt-6">
                             <div>
-                                <h4 class="font-semibold mb-2">🎯 Jouw worpen:</h4>
+                                <h4 class="font-semibold mb-2 text-sm" style="color: var(--text-primary);">🎯 Jouw worpen:</h4>
                                 <div id="playerHistory" class="space-y-1 text-sm"></div>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-2">👤 Tegenstander worpen:</h4>
+                                <h4 class="font-semibold mb-2 text-sm" style="color: var(--text-primary);"><span id="opponentHistoryLabel">👤 Tegenstander</span> worpen:</h4>
                                 <div id="opponentHistory" class="space-y-1 text-sm"></div>
                             </div>
                         </div>
 
                         <!-- Game Result -->
-                        <div id="gameResult" class="hidden mt-6 p-6 rounded-xl text-center">
-                            <div id="resultIcon" class="text-6xl mb-4"></div>
-                            <div id="resultText" class="text-2xl font-bold mb-2"></div>
-                            <div id="resultDetails" class="text-gray-600 mb-4"></div>
-                            <button id="backToLobbyBtn" class="px-8 py-3 bg-gold text-white font-bold rounded-xl hover:bg-yellow-600 transition">
+                        <div id="gameResult" class="hidden mt-6 p-6 rounded-xl text-center" style="background: var(--bg-secondary);">
+                            <h2 id="resultTitle" class="text-3xl font-heading font-bold mb-4"></h2>
+                            <p id="resultMessage" class="text-lg mb-6" style="color: var(--text-primary);"></p>
+                            <button id="returnLobbyBtn" class="btn-game btn-primary px-8 py-3 rounded-xl shadow-lg">
                                 🏠 Terug naar Lobby
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chat Sidebar -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-xl p-4 h-full flex flex-col">
-                        <h3 class="text-lg font-bold mb-3">💬 Chat</h3>
-
-                        <!-- Chat Messages -->
-                        <div id="chatMessages" class="flex-1 overflow-y-auto space-y-2 mb-3 max-h-96">
-                            <div class="text-center text-gray-400 text-sm py-4">
-                                Geen berichten nog
-                            </div>
-                        </div>
-
-                        <!-- Emote Picker -->
-                        <div class="mb-3">
-                            <div class="text-xs font-semibold mb-2 text-gray-600">Snelle reacties:</div>
-                            <div class="emote-picker">
-                                <button class="emote-btn" data-emote="👍">👍</button>
-                                <button class="emote-btn" data-emote="😄">😄</button>
-                                <button class="emote-btn" data-emote="😎">😎</button>
-                                <button class="emote-btn" data-emote="🔥">🔥</button>
-                                <button class="emote-btn" data-emote="💪">💪</button>
-                                <button class="emote-btn" data-emote="🎉">🎉</button>
-                                <button class="emote-btn" data-emote="😱">😱</button>
-                                <button class="emote-btn" data-emote="🤔">🤔</button>
-                                <button class="emote-btn" data-emote="👏">👏</button>
-                                <button class="emote-btn" data-emote="🎲">🎲</button>
-                            </div>
-                        </div>
-
-                        <!-- Chat Input -->
-                        <div class="flex gap-2">
-                            <input type="text" id="chatInput" placeholder="Type een bericht..." maxlength="100"
-                                class="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:outline-none">
-                            <button id="sendChatBtn" class="px-4 py-2 bg-gold text-white rounded-lg hover:bg-yellow-600 transition">
-                                📤
                             </button>
                         </div>
                     </div>
@@ -390,6 +703,17 @@
 
     <!-- Toast Notifications -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Debug Log Panel -->
+    <div id="debugPanel" class="fixed bottom-4 left-4 z-50 hidden bg-black bg-opacity-90 text-green-400 font-mono text-xs p-4 rounded-lg shadow-2xl max-w-lg" style="max-height: 400px; width: 500px;">
+        <div class="flex justify-between items-center mb-2 border-b border-green-600 pb-2">
+            <span class="font-bold text-green-300">🐛 Debug Log</span>
+            <button id="clearDebugBtn" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">
+                Clear
+            </button>
+        </div>
+        <div id="debugLog" class="overflow-y-auto space-y-1" style="max-height: 340px;"></div>
+    </div>
 
     <script src="multiplayer.js"></script>
 </body>
