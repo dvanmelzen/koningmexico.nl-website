@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentUser) {
         updateHeaderUserDisplay();
     }
+
+    // Fetch initial live stats
+    fetchLiveStats();
 });
 
 // ============================================
@@ -378,6 +381,11 @@ function initializeSocket() {
     socket.on('disconnect', () => debugLog('❌ Disconnected'));
     socket.on('authenticated', (data) => debugLog('✅ Authenticated:', data));
 
+    // Live stats updates
+    socket.on('statsUpdate', (stats) => {
+        updateLiveStats(stats);
+    });
+
     // Matchmaking
     socket.on('queue_joined', (data) => debugLog('🔍 Queue joined:', data));
     socket.on('match_found', (data) => {
@@ -482,6 +490,30 @@ function updateUserStats() {
     document.getElementById('lobbyWins').textContent = currentUser.stats?.wins || 0;
     document.getElementById('lobbyLosses').textContent = currentUser.stats?.losses || 0;
     document.getElementById('lobbyUsername').textContent = currentUser.username || '';
+}
+
+// Update live stats display
+function updateLiveStats(stats) {
+    const onlineEl = document.getElementById('onlinePlayers');
+    const queueEl = document.getElementById('queuePlayers');
+    const gamesEl = document.getElementById('activeGames');
+
+    if (onlineEl) onlineEl.textContent = stats.onlinePlayers || 0;
+    if (queueEl) queueEl.textContent = stats.playersInQueue || 0;
+    if (gamesEl) gamesEl.textContent = stats.activeGames || 0;
+}
+
+// Fetch initial stats on page load
+async function fetchLiveStats() {
+    try {
+        const response = await fetch(`${API_URL}/api/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            updateLiveStats(stats);
+        }
+    } catch (error) {
+        debugLog('Error fetching live stats:', error);
+    }
 }
 
 // ============================================
