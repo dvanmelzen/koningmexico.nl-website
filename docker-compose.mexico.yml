@@ -8,8 +8,8 @@ services:
       dockerfile: Dockerfile.backend
     container_name: mexico-backend
     restart: unless-stopped
-    expose:
-      - "3001"  # Only expose to Docker network (Caddy will proxy)
+    ports:
+      - "127.0.0.1:3001:3001"  # Expose to localhost only (Caddy on host will proxy)
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -18,8 +18,6 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-https://dev.koningmexico.nl}
     volumes:
       - mexico_data:/app/data  # SQLite database persistence
-    networks:
-      - caddy-network  # Connect to Caddy network
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
       interval: 30s
@@ -34,10 +32,8 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: mexico-frontend
     restart: unless-stopped
-    expose:
-      - "8080"  # Only expose to Docker network (Caddy will proxy)
-    networks:
-      - caddy-network  # Connect to Caddy network
+    ports:
+      - "127.0.0.1:8080:8080"  # Expose to localhost only (Caddy on host will proxy)
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -48,7 +44,3 @@ services:
 volumes:
   mexico_data:
     driver: local
-
-networks:
-  caddy-network:
-    external: true  # Use external Caddy network
