@@ -2,7 +2,9 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 // Initialize database
-const db = new Database(path.join(__dirname, 'mexico.db'));
+// Use /app/data directory which is mounted as a Docker volume for persistence
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'data', 'mexico.db');
+const db = new Database(dbPath);
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
