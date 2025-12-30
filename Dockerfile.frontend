@@ -15,6 +15,7 @@ COPY multiplayer.html /usr/share/nginx/html/
 COPY script.js /usr/share/nginx/html/
 COPY game.js /usr/share/nginx/html/
 COPY game_vs_computer.js /usr/share/nginx/html/
+COPY multiplayer.js /usr/share/nginx/html/
 COPY styles.css /usr/share/nginx/html/
 COPY assets/ /usr/share/nginx/html/assets/
 

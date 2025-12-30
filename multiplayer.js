@@ -1,6 +1,7 @@
 // Multiplayer Mexico Game - Client (CORRECTE SPELREGELS)
-const API_URL = 'http://localhost:3001';
-const SOCKET_URL = 'http://localhost:3001';
+// Use relative URLs so it works in any environment (localhost, dev, production)
+const API_URL = window.location.origin;
+const SOCKET_URL = window.location.origin;
 
 // Global state
 let socket = null;
