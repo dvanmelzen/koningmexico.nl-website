@@ -1,0 +1,53 @@
+# Caddy Reverse Proxy Configuration
+# Automatic HTTPS for all domains
+
+# Koning Mexico - Development subdomain
+dev.koningmexico.nl {
+    # Frontend (static files)
+    handle /socket.io/* {
+        reverse_proxy mexico-backend:3001
+    }
+
+    handle /api/* {
+        reverse_proxy mexico-backend:3001
+    }
+
+    handle /health {
+        reverse_proxy mexico-backend:3001
+    }
+
+    # All other requests go to frontend
+    handle {
+        reverse_proxy mexico-frontend:8080
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/koningmexico_access.log
+    }
+}
+
+# CFDS Financial System (add your domain here)
+# cfds.yourdomain.nl {
+#     reverse_proxy cfds-web:3000
+#
+#     header {
+#         Strict-Transport-Security "max-age=31536000; includeSubDomains"
+#         X-Content-Type-Options "nosniff"
+#         X-Frame-Options "DENY"
+#         X-XSS-Protection "1; mode=block"
+#     }
+#
+#     log {
+#         output file /var/log/caddy/cfds_access.log
+#     }
+# }

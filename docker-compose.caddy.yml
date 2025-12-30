@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  # Caddy Reverse Proxy with automatic HTTPS
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      # Caddyfile configuration
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
+      # Persistent data (SSL certificates, etc.)
+      - caddy_data:/data
+      - caddy_config:/config
+
+      # Logs directory
+      - ./logs:/var/log/caddy
+    networks:
+      - caddy-network
+    environment:
+      - ACME_AGREE=true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:2019/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  caddy-network:
+    name: caddy-network
+    driver: bridge
