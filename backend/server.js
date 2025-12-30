@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
+const db = require('./database');
 require('dotenv').config();
 
 // Configuration
@@ -28,12 +29,14 @@ app.use(express.json());
 app.use(express.static('../')); // Serve frontend files
 
 // ============================================
-// IN-MEMORY DATABASE
+// DATABASE & IN-MEMORY STATE
 // ============================================
 
-const users = new Map(); // userId -> user object
-const usersByUsername = new Map(); // username (lowercase) -> userId
-const usersByEmail = new Map(); // email (lowercase) -> userId
+// Initialize database
+db.initializeDatabase();
+
+// In-memory caches (for active sessions)
+const userCache = new Map(); // userId -> user object (cached from DB)
 const games = new Map(); // gameId -> game object
 const matchmakingQueue = []; // Array of { userId, eloRating, socketId }
 const activeSockets = new Map(); // socketId -> userId
@@ -70,9 +73,9 @@ function calculateEloChange(winnerElo, loserElo, K = 32) {
 
 // Mexico throw value calculation (EXACT volgens spelregels)
 function calculateThrowValue(dice1, dice2) {
-    // Mexico (2-1 or 1-2) = 21 (hoogste waarde)
+    // Mexico (2-1 or 1-2) = 1000 (hoogste waarde, display als 21)
     if ((dice1 === 2 && dice2 === 1) || (dice1 === 1 && dice2 === 2)) {
-        return { value: 21, name: 'Mexico', isMexico: true };
+        return { value: 1000, name: 'Mexico', isMexico: true };
     }
 
     // Pairs (dubbelen) = dobbelsteenwaarde × 100
@@ -92,7 +95,7 @@ function calculateThrowValue(dice1, dice2) {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', players: users.size, games: games.size });
+    res.json({ status: 'OK', players: db.getUserCount(), games: games.size });
 });
 
 // Register
@@ -131,12 +134,12 @@ app.post('/api/auth/register', async (req, res) => {
         }
 
         // Check if username exists (case-insensitive)
-        if (usersByUsername.has(username.toLowerCase())) {
+        if (db.findUserByUsername(username)) {
             return res.status(400).json({ message: 'Gebruikersnaam bestaat al' });
         }
 
         // Check if email exists (always lowercase)
-        if (usersByEmail.has(email)) {
+        if (db.findUserByEmail(email)) {
             return res.status(400).json({ message: 'Email bestaat al' });
         }
 
@@ -144,24 +147,23 @@ app.post('/api/auth/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const user = {
+        const userData = {
             id: uuidv4(),
             username, // Keep original case for display
             email, // Already lowercase
             password: hashedPassword,
             eloRating: 1200,
-            avatarEmoji: '👤',
-            stats: {
-                wins: 0,
-                losses: 0,
-                gamesPlayed: 0
-            },
-            createdAt: new Date()
+            avatarEmoji: '👤'
         };
 
-        users.set(user.id, user);
-        usersByUsername.set(username.toLowerCase(), user.id);
-        usersByEmail.set(email, user.id); // Email is already lowercase
+        // Save to database
+        db.createUser(userData);
+
+        // Load from database to get full user object with stats
+        const user = db.findUserById(userData.id);
+
+        // Cache user
+        userCache.set(user.id, user);
 
         // Generate token
         const accessToken = generateToken(user);
@@ -194,18 +196,19 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         // Find user (case-insensitive username lookup)
-        const userId = usersByUsername.get(username.toLowerCase());
-        if (!userId) {
+        const user = db.findUserByUsername(username);
+        if (!user) {
             return res.status(401).json({ message: 'Ongeldige inloggegevens' });
         }
-
-        const user = users.get(userId);
 
         // Check password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return res.status(401).json({ message: 'Ongeldige inloggegevens' });
         }
+
+        // Cache user
+        userCache.set(user.id, user);
 
         // Generate token
         const accessToken = generateToken(user);
@@ -225,10 +228,8 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Leaderboard
 app.get('/api/leaderboard', (req, res) => {
-    const players = Array.from(users.values())
-        .map(({ password, ...user }) => user)
-        .sort((a, b) => b.eloRating - a.eloRating)
-        .slice(0, 100);
+    const players = db.getAllUsers()
+        .slice(0, 100); // Top 100
 
     res.json({ players });
 });
@@ -254,7 +255,15 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
     const userId = socket.userId;
-    const user = users.get(userId);
+
+    // Get user from cache or database
+    let user = userCache.get(userId);
+    if (!user) {
+        user = db.findUserById(userId);
+        if (user) {
+            userCache.set(userId, user);
+        }
+    }
 
     if (!user) {
         socket.disconnect();
@@ -313,8 +322,9 @@ io.on('connection', (socket) => {
         }
 
         // Ronde 1: Simultaan (geen turn check)
+        // Vastgooier: Simultaan (geen turn check)
         // Ronde 2+: Turn-based (wel turn check)
-        if (!game.isFirstRound && game.currentTurn !== userId) {
+        if (!game.isFirstRound && !game.isVastgooier && game.currentTurn !== userId) {
             return socket.emit('error', { message: 'Not your turn' });
         }
 
@@ -339,14 +349,7 @@ io.on('connection', (socket) => {
         handleKeep(game, userId);
     });
 
-    socket.on('choose_result', ({ gameId, result }) => {
-        const game = games.get(gameId);
-        if (!game || game.currentTurn !== userId) {
-            return socket.emit('error', { message: 'Not your turn' });
-        }
-
-        handleResultChoice(game, userId, result);
-    });
+    // choose_result systeem VERWIJDERD - automatische vergelijking via compareThrows()
 
     socket.on('return_to_lobby', ({ gameId }) => {
         const game = games.get(gameId);
@@ -399,8 +402,8 @@ function tryMatchmaking() {
 function createGame(player1Data, player2Data) {
     const gameId = uuidv4();
 
-    const player1 = users.get(player1Data.userId);
-    const player2 = users.get(player2Data.userId);
+    const player1 = userCache.get(player1Data.userId);
+    const player2 = userCache.get(player2Data.userId);
 
     const game = {
         gameId,
@@ -460,8 +463,8 @@ function createGame(player1Data, player2Data) {
 }
 
 function startGame(game) {
-    const player1 = users.get(game.player1Id);
-    const player2 = users.get(game.player2Id);
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
 
     const gameStartData = {
         gameId: game.gameId,
@@ -504,8 +507,8 @@ function handleThrow(game, userId, isBlind) {
     const isPlayer1 = userId === game.player1Id;
     const currentPlayer = isPlayer1 ? 'Player1' : 'Player2';
     const playerKey = isPlayer1 ? 'player1' : 'player2';
-    const player1 = users.get(game.player1Id);
-    const player2 = users.get(game.player2Id);
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
     const currentPlayerName = isPlayer1 ? player1.username : player2.username;
 
     // ==========================================
@@ -576,7 +579,79 @@ function handleThrow(game, userId, isBlind) {
     }
 
     // ==========================================
-    // RONDE 2+: INTERLEAVED TURN-BASED (OM DE BEURT!)
+    // VASTGOOIER: SIMULTANEOUS OVERGOOIEN (1x blind, hoogste wint)
+    // ==========================================
+
+    if (game.isVastgooier) {
+        const playerKey = isPlayer1 ? 'player1' : 'player2';
+
+        // Check if player already threw in vastgooier
+        if (game.vastgooierThrows[playerKey] !== null) {
+            const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
+            return io.to(playerSocketId).emit('error', {
+                message: 'Je hebt al gegooid in deze overgooien ronde!'
+            });
+        }
+
+        // Must be blind in vastgooier
+        if (!isBlind) {
+            const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
+            return io.to(playerSocketId).emit('error', {
+                message: 'Overgooien moet blind zijn!'
+            });
+        }
+
+        console.log(`🎲 ${currentPlayer} (${currentPlayerName}) throws BLIND in VASTGOOIER`);
+
+        // Roll dice
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        const throwResult = calculateThrowValue(dice1, dice2);
+
+        // Store throw
+        game.vastgooierThrows[playerKey] = {
+            dice1,
+            dice2,
+            ...throwResult,
+            userId,
+            username: currentPlayerName
+        };
+
+        // Send confirmation to player (hidden result)
+        const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
+        io.to(playerSocketId).emit('throw_result', {
+            isBlind: true,
+            throwCount: 1,
+            maxThrows: 1,
+            canKeep: false, // No keep option in vastgooier
+            canThrowAgain: false,
+            message: 'Overgooien worp verborgen - wachten op tegenstander...'
+        });
+
+        // Notify opponent
+        const opponentSocketId = isPlayer1 ? game.player2SocketId : game.player1SocketId;
+        io.to(opponentSocketId).emit('opponent_throw', {
+            isBlind: true,
+            message: `${currentPlayerName} heeft gegooid (verborgen)`
+        });
+
+        console.log(`   Result verborgen: ${throwResult.value} (${throwResult.name})`);
+
+        // Check if both players have thrown
+        if (game.vastgooierThrows.player1 !== null && game.vastgooierThrows.player2 !== null) {
+            console.log(`   ✅ Beide spelers hebben overgegood!`);
+            console.log(`   Player1 (${player1.username}): ${game.vastgooierThrows.player1.value} (${game.vastgooierThrows.player1.name})`);
+            console.log(`   Player2 (${player2.username}): ${game.vastgooierThrows.player2.value} (${game.vastgooierThrows.player2.name})`);
+
+            // Auto-reveal and compare after 1 second
+            setTimeout(() => compareVastgooierThrows(game), 1000);
+        }
+
+        return;
+    }
+
+    // ==========================================
+    // RONDE 2+: SEQUENTIAL (VOORGOOIER EERST ALLE WORPEN, DAN ACHTERLIGGER)
     // ==========================================
 
     const isVoorgooier = game.voorgooier === userId;
@@ -595,6 +670,15 @@ function handleThrow(game, userId, isBlind) {
 
     // ACHTERLIGGER: moet patroon volgen
     if (isAchterligger) {
+        // BELANGRIJKE REGEL: Achterligger mag MAXIMAAL evenveel worpen doen als voorgooier
+        const maxThrowsAllowed = game.voorgooierThrowCount; // Voorgooier heeft X worpen gedaan
+        if (game.achterliggerThrowCount >= maxThrowsAllowed) {
+            const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
+            return io.to(playerSocketId).emit('error', {
+                message: `Je hebt al ${maxThrowsAllowed}x gegooid (max aantal worpen van voorgooier)`
+            });
+        }
+
         // Check if must follow pattern
         const patternIndex = game.achterliggerThrowCount;
         if (patternIndex < game.voorgooierPattern.length) {
@@ -636,21 +720,28 @@ function handleThrow(game, userId, isBlind) {
 
     // Handle blind throw
     if (isBlind) {
-        // Player sees hidden result
+        // For achterligger: max throws = voorgooier's throw count
+        // For voorgooier: max throws = game.maxThrows (3 by default)
+        const effectiveMaxThrows = isAchterligger ? game.voorgooierThrowCount : game.maxThrows;
+        const currentThrowCount = isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount;
+
+        // Player sees hidden result (? marks)
+        // BELANGRIJK: Geen "Laten Zien" knop! Alleen "Laten Staan" en eventueel "Gooi Opnieuw"
         io.to(playerSocketId).emit('throw_result', {
             isBlind: true,
             dice1,
             dice2,
-            throwCount: isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount,
-            maxThrows: game.maxThrows,
-            canReveal: true,
-            message: 'Worp verborgen - klik "Laten Zien" om te onthullen'
+            throwCount: currentThrowCount,
+            maxThrows: effectiveMaxThrows,
+            canKeep: true, // Altijd mogelijk om blind worp te houden
+            canThrowAgain: currentThrowCount < effectiveMaxThrows, // Alleen als nog niet max bereikt
+            message: 'Blinde worp - kies "Laten Staan" of "Gooi Opnieuw"'
         });
 
         // Opponent sees BLIND (no values)
         io.to(opponentSocketId).emit('opponent_throw', {
             isBlind: true,
-            throwCount: isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount,
+            throwCount: currentThrowCount,
             message: `${currentPlayerName} gooit BLIND (verborgen)`
         });
 
@@ -658,13 +749,18 @@ function handleThrow(game, userId, isBlind) {
 
     } else {
         // Open throw - BOTH players see values!
+        // For achterligger: max throws = voorgooier's throw count
+        // For voorgooier: max throws = game.maxThrows (3 by default)
+        const effectiveMaxThrows = isAchterligger ? game.voorgooierThrowCount : game.maxThrows;
+        const currentThrowCount = isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount;
+
         io.to(playerSocketId).emit('throw_result', {
             ...throwData,
             isBlind: false,
-            throwCount: isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount,
-            maxThrows: game.maxThrows,
+            throwCount: currentThrowCount,
+            maxThrows: effectiveMaxThrows,
             canKeep: true,
-            canThrowAgain: (isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount) < game.maxThrows
+            canThrowAgain: currentThrowCount < effectiveMaxThrows
         });
 
         // Opponent SEES the dice values!
@@ -678,27 +774,19 @@ function handleThrow(game, userId, isBlind) {
         console.log(`   Open worp: ${throwResult.value} (${throwResult.name}) - BEIDE SPELERS ZIEN DIT!`);
     }
 
-    // Switch turn to opponent
-    const opponentId = isPlayer1 ? game.player2Id : game.player1Id;
-    game.currentTurn = opponentId;
+    // BELANGRIJK: GEEN turn switch hier!
+    // Turn blijft bij huidige speler totdat die "laten staan" kiest
+    // Turn switch gebeurt in handleResultChoice() wanneer voorgooier klaar is
 
-    const opponentUser = users.get(opponentId);
-    console.log(`   🔄 Turn switched to: ${opponentUser.username}`);
-
-    // Notify opponent it's their turn
-    io.to(opponentSocketId).emit('your_turn', {
-        message: `Jouw beurt! (${currentPlayerName} heeft gegooid)`,
-        mustFollowPattern: isVoorgooier, // If voorgooier just threw, achterligger must follow
-        voorgooierPattern: game.voorgooierPattern
-    });
+    console.log(`   ⏸️  Turn blijft bij ${currentPlayerName} (moet alle worpen afmaken)`);
 }
 
 // ==========================================
 // EERSTE RONDE VERGELIJKING (AUTOMATISCH)
 // ==========================================
 function compareFirstRoundThrows(game) {
-    const player1 = users.get(game.player1Id);
-    const player2 = users.get(game.player2Id);
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
     const throw1 = game.firstRoundThrows.player1;
     const throw2 = game.firstRoundThrows.player2;
 
@@ -756,8 +844,8 @@ function compareFirstRoundThrows(game) {
             loserThrow = throw1;
         }
 
-        const winner = users.get(winnerId);
-        const loser = users.get(loserId);
+        const winner = userCache.get(winnerId);
+        const loser = userCache.get(loserId);
 
         console.log(`   🏆 WINNAAR: ${winner.username} (${winnerThrow.value})`);
         console.log(`   💔 VERLIEZER: ${loser.username} (${loserThrow.value})`);
@@ -836,6 +924,158 @@ function compareFirstRoundThrows(game) {
     }, 2000);
 }
 
+// ==========================================
+// VASTGOOIER VERGELIJKING (AUTOMATISCH)
+// ==========================================
+function compareVastgooierThrows(game) {
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
+    const throw1 = game.vastgooierThrows.player1;
+    const throw2 = game.vastgooierThrows.player2;
+
+    console.log(`\n🔍 AUTOMATISCHE VERGELIJKING VASTGOOIER:`);
+    console.log(`   ${player1.username}: ${throw1.value} (${throw1.name})`);
+    console.log(`   ${player2.username}: ${throw2.value} (${throw2.name})`);
+
+    // Reveal both throws to both players
+    io.to(game.player1SocketId).emit('vastgooier_reveal', {
+        yourThrow: throw1,
+        opponentThrow: throw2,
+        yourName: player1.username,
+        opponentName: player2.username
+    });
+
+    io.to(game.player2SocketId).emit('vastgooier_reveal', {
+        yourThrow: throw2,
+        opponentThrow: throw1,
+        yourName: player2.username,
+        opponentName: player1.username
+    });
+
+    // Wait 2 seconds then determine result
+    setTimeout(() => {
+        // Check for tie AGAIN
+        if (throw1.value === throw2.value) {
+            console.log(`   ⚔️ OPNIEUW VAST! Herhaal overgooien!`);
+
+            // Reset vastgooier throws for another round
+            game.vastgooierThrows.player1 = null;
+            game.vastgooierThrows.player2 = null;
+
+            // Notify both players to throw again
+            io.to(game.player1SocketId).emit('vastgooier', {
+                message: 'Opnieuw gelijkspel! Gooi nog een keer blind.',
+                voorgooierValue: throw1.value,
+                achterliggerValue: throw2.value
+            });
+            io.to(game.player2SocketId).emit('vastgooier', {
+                message: 'Opnieuw gelijkspel! Gooi nog een keer blind.',
+                voorgooierValue: throw1.value,
+                achterliggerValue: throw2.value
+            });
+
+            return;
+        }
+
+        // Determine winner and loser
+        let winnerId, loserId, winnerThrow, loserThrow;
+        if (throw1.value > throw2.value) {
+            winnerId = game.player1Id;
+            loserId = game.player2Id;
+            winnerThrow = throw1;
+            loserThrow = throw2;
+        } else {
+            winnerId = game.player2Id;
+            loserId = game.player1Id;
+            winnerThrow = throw2;
+            loserThrow = throw1;
+        }
+
+        const winner = userCache.get(winnerId);
+        const loser = userCache.get(loserId);
+
+        console.log(`   🏆 WINNAAR: ${winner.username} (${winnerThrow.value})`);
+        console.log(`   💔 VERLIEZER: ${loser.username} (${loserThrow.value})`);
+
+        // BELANGRIJK: Bij vastgooier is penalty ALTIJD -1 (geen Mexico penalty!)
+        const penalty = 1;
+
+        // Apply penalty
+        if (loserId === game.player1Id) {
+            game.player1Lives -= penalty;
+        } else {
+            game.player2Lives -= penalty;
+        }
+
+        const loserLivesLeft = loserId === game.player1Id ? game.player1Lives : game.player2Lives;
+
+        console.log(`   Penalty: -${penalty} (geen Mexico penalty bij overgooien)`);
+        console.log(`   ${loser.username} lives left: ${loserLivesLeft}`);
+
+        // Check if game over
+        if (loserLivesLeft <= 0) {
+            console.log(`   💀 ${loser.username} is OUT - game over!`);
+
+            // Notify both players
+            io.to(game.player1SocketId).emit('vastgooier_result', {
+                winnerId,
+                loserId,
+                winnerThrow,
+                loserThrow,
+                penalty,
+                loserLivesLeft: 0,
+                gameOver: true
+            });
+            io.to(game.player2SocketId).emit('vastgooier_result', {
+                winnerId,
+                loserId,
+                winnerThrow,
+                loserThrow,
+                penalty,
+                loserLivesLeft: 0,
+                gameOver: true
+            });
+
+            setTimeout(() => endGame(game, winnerId, 'vastgooier_knockout'), 2000);
+            return;
+        }
+
+        // Loser becomes voorgooier
+        game.voorgooier = loserId;
+        console.log(`   👑 ${loser.username} wordt voorgooier voor volgende ronde`);
+
+        // Reset vastgooier mode
+        game.isVastgooier = false;
+        game.vastgooierThrows = null;
+        game.vastgooierOriginalVoorgooier = null;
+
+        // Notify both players
+        io.to(game.player1SocketId).emit('vastgooier_result', {
+            winnerId,
+            loserId,
+            winnerThrow,
+            loserThrow,
+            penalty,
+            loserLivesLeft,
+            newVoorgooier: loserId,
+            gameOver: false
+        });
+        io.to(game.player2SocketId).emit('vastgooier_result', {
+            winnerId,
+            loserId,
+            winnerThrow,
+            loserThrow,
+            penalty,
+            loserLivesLeft,
+            newVoorgooier: loserId,
+            gameOver: false
+        });
+
+        // Start next round after delay
+        setTimeout(() => startNextRound(game), 3000);
+    }, 2000);
+}
+
 function handleReveal(game, userId) {
     if (!game.currentThrowHidden) {
         return; // Al revealed
@@ -872,258 +1112,327 @@ function handleReveal(game, userId) {
         throwCount: game.currentPlayerThrowCount
     });
 
-    // Als eerste worp blind in eerste ronde: Direct naar resultaat keuze!
-    if (game.isFirstRound && isFirstThrow) {
-        console.log(`   🔒 EERSTE RONDE REGEL: Direct naar resultaat keuze (geen hergooien)`);
-        game.waitingForResult = true;
-
-        setTimeout(() => {
-            io.to(playerSocketId).emit('choose_result_prompt', {
-                message: 'Eerste ronde - kies het resultaat van deze worp'
-            });
-        }, 1000);
-    }
+    // Eerste ronde: Automatische vergelijking gebeurt in compareFirstRoundThrows()
+    // Normale rondes: Speler kan keep/reveal/rethrow kiezen
 }
 
 function handleKeep(game, userId) {
     const isPlayer1 = userId === game.player1Id;
     const currentPlayer = isPlayer1 ? 'Player1' : 'Player2';
+    const isVoorgooier = game.voorgooier === userId;
 
     console.log(`✓ ${currentPlayer} keeps their throw`);
 
-    // Speler heeft gegooid en wil laten staan - nu resultaat kiezen!
-    game.waitingForResult = true;
+    // SEQUENTIAL FLOW:
+    // - Voorgooier keeps → Switch turn to achterligger
+    // - Achterligger keeps → Compare results automatically
 
-    const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
-    io.to(playerSocketId).emit('choose_result_prompt', {
-        message: 'Kies het resultaat van deze ronde'
-    });
+    if (isVoorgooier) {
+        console.log(`   👑 Voorgooier keeps throw - switching to achterligger`);
+
+        // BELANGRIJKE REGEL: Blinde worpen blijven VERBORGEN tot einde van ronde!
+        // Pas in compareThrows() worden ALLE blinde worpen tegelijk onthuld aan beide spelers.
+
+        // Switch turn to achterligger
+        const achterliggerId = isPlayer1 ? game.player2Id : game.player1Id;
+        const achterliggerSocketId = isPlayer1 ? game.player2SocketId : game.player1SocketId;
+        const achterligger = userCache.get(achterliggerId);
+
+        game.currentTurn = achterliggerId;
+        console.log(`   🔄 Turn switched to achterligger: ${achterligger.username}`);
+
+        // Notify voorgooier to wait
+        const voorgooierSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
+        io.to(voorgooierSocketId).emit('waiting_for_opponent', {
+            message: 'Wachten op tegenstander...'
+        });
+
+        // Notify achterligger it's their turn
+        io.to(achterliggerSocketId).emit('your_turn', {
+            message: `Jouw beurt! Volg het patroon van de voorgooier (max ${game.voorgooierThrowCount} worpen)`,
+            mustFollowPattern: true,
+            voorgooierPattern: game.voorgooierPattern,
+            achterliggerThrowCount: game.achterliggerThrowCount,
+            maxThrows: game.voorgooierThrowCount // Achterligger mag max evenveel worpen als voorgooier
+        });
+
+    } else {
+        console.log(`   🎯 Achterligger keeps throw - both have thrown, comparing...`);
+
+        // BELANGRIJKE REGEL: Blinde worpen blijven VERBORGEN tot einde van ronde!
+        // Pas in compareThrows() worden ALLE blinde worpen tegelijk onthuld aan beide spelers.
+
+        // Both players have now thrown - compare results automatically
+        compareThrows(game);
+    }
 }
 
-function handleResultChoice(game, userId, result) {
-    // result = 'won', 'vast', of 'lost'
-    const isPlayer1 = userId === game.player1Id;
-    const currentPlayer = isPlayer1 ? 'Player1' : 'Player2';
-    const isVoorgooier = game.voorgooier === userId;
+function compareThrows(game) {
+    console.log(`\n🔍 AUTOMATISCHE VERGELIJKING:`);
 
-    console.log(`📊 ${currentPlayer} chooses: ${result.toUpperCase()} (Voorgooier: ${isVoorgooier})`);
-
-    // Get last throw from correct array
-    const throwArray = isVoorgooier ? game.voorgooierThrows : game.achterliggerThrows;
-    const lastThrow = throwArray[throwArray.length - 1];
-
-    // Special case: VAST gives extra throw (current player continues)
-    if (result === 'vast') {
-        console.log(`   ⚔️  ${currentPlayer} chooses VAST - gets +1 extra worp`);
-
-        // Increase max throws for this player
-        game.maxThrows++;
-
-        // Notify player
-        const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
-        const currentThrowCount = isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount;
-        io.to(playerSocketId).emit('vast_extra_throw', {
-            message: 'Je krijgt 1 extra worp!',
-            throwCount: currentThrowCount,
-            maxThrows: game.maxThrows
-        });
-
-        // Notify opponent
-        const opponentSocketId = isPlayer1 ? game.player2SocketId : game.player1SocketId;
-        io.to(opponentSocketId).emit('opponent_vast', {
-            playerId: userId,
-            message: 'Tegenstander koos VAST - krijgt 1 extra worp'
-        });
-
-        // Turn stays with current player (no turn switch!)
-        return;
-    }
-
-    // === INTERLEAVED RESULT CHOICE ===
-    // Store result for this player
-    if (isVoorgooier) {
-        game.voorgooierResult = result;
-        console.log(`   👑 Voorgooier chooses: ${result}`);
-    } else {
-        game.achterliggerResult = result;
-        console.log(`   🎯 Achterligger chooses: ${result}`);
-    }
-
-    // Check if BOTH players have chosen
-    if (!game.voorgooierResult || !game.achterliggerResult) {
-        console.log(`   ⏳ Waiting for other player to choose result...`);
-
-        // Notify player that their choice is registered
-        const playerSocketId = isPlayer1 ? game.player1SocketId : game.player2SocketId;
-        io.to(playerSocketId).emit('waiting_for_opponent', {
-            message: 'Keuze geregistreerd - wachten op tegenstander...'
-        });
-
-        return; // Wait for other player
-    }
-
-    // === BOTH PLAYERS HAVE CHOSEN - COMPARE RESULTS ===
-    console.log(`\n🔍 COMPARING RESULTS:`);
-    console.log(`   Voorgooier: ${game.voorgooierResult}`);
-    console.log(`   Achterligger: ${game.achterliggerResult}`);
-
-    const voorgooierResult = game.voorgooierResult;
-    const achterliggerResult = game.achterliggerResult;
-    const voorgooierId = game.voorgooier;
-    const achterliggerId = isVoorgooier ? (isPlayer1 ? game.player2Id : game.player1Id) : userId;
-    const voorgooierIsPlayer1 = voorgooierId === game.player1Id;
-
-    // Get last throws for comparison
+    // Get both players' final throws
     const voorgooierThrowData = game.voorgooierThrows[game.voorgooierThrows.length - 1];
     const achterliggerThrowData = game.achterliggerThrows[game.achterliggerThrows.length - 1];
 
-        // === RESULT COMPARISON ===
-        let loserId = null;
-        let loserLives = null;
-        let newVoorgooier = null;
+    if (!voorgooierThrowData || !achterliggerThrowData) {
+        console.log(`   ⚠️  ERROR: Missing throw data!`);
+        return;
+    }
 
-        if (voorgooierResult === 'won' && achterliggerResult === 'won') {
-            // Both won → nobody loses, voorgooier stays OFF
-            console.log(`   ✅ Both won - no lives lost, voorgooier = OFF`);
-            newVoorgooier = null;
+    const voorgooierId = game.voorgooier;
+    const achterliggerId = voorgooierId === game.player1Id ? game.player2Id : game.player1Id;
+    const voorgooierIsPlayer1 = voorgooierId === game.player1Id;
 
-        } else if (voorgooierResult === 'won' && achterliggerResult === 'lost') {
-            // Voorgooier won, achterligger lost → achterligger loses life
-            console.log(`   ❌ Achterligger lost - loses 1 life`);
-            loserId = userId;
-            if (isPlayer1) {
-                game.player1Lives--;
-                loserLives = game.player1Lives;
-            } else {
-                game.player2Lives--;
-                loserLives = game.player2Lives;
-            }
-            newVoorgooier = userId; // Loser becomes voorgooier
+    const voorgooierSocketId = voorgooierIsPlayer1 ? game.player1SocketId : game.player2SocketId;
+    const achterliggerSocketId = voorgooierIsPlayer1 ? game.player2SocketId : game.player1SocketId;
 
-        } else if (voorgooierResult === 'lost' && achterliggerResult === 'won') {
-            // Voorgooier lost, achterligger won → voorgooier loses life
-            console.log(`   ❌ Voorgooier lost - loses 1 life`);
-            loserId = voorgooierId;
-            if (voorgooierIsPlayer1) {
-                game.player1Lives--;
-                loserLives = game.player1Lives;
-            } else {
-                game.player2Lives--;
-                loserLives = game.player2Lives;
-            }
-            newVoorgooier = voorgooierId; // Loser stays voorgooier
+    // BELANGRIJKE REGEL: Onthul ALLE blinde worpen VOORDAT vergelijking plaatsvindt!
+    console.log(`\n👁️  ONTHULLEN BLINDE WORPEN:`);
 
-        } else if (voorgooierResult === 'lost' && achterliggerResult === 'lost') {
-            // Both lost → compare throw values (lower value loses)
-            const voorgooierValue = voorgooierThrowData.value;
-            const achterliggerValue = achterliggerThrowData.value;
+    // Voorgooier's throw onthullen (als blind)
+    if (voorgooierThrowData.isBlind) {
+        console.log(`   Voorgooier worp was blind → onthuld: ${voorgooierThrowData.value} (${voorgooierThrowData.name})`);
 
-            console.log(`   ⚔️  Both lost - comparing values: Voorgooier ${voorgooierValue} vs Achterligger ${achterliggerValue}`);
+        // Toon aan voorgooier zelf
+        io.to(voorgooierSocketId).emit('throw_revealed', {
+            dice1: voorgooierThrowData.dice1,
+            dice2: voorgooierThrowData.dice2,
+            value: voorgooierThrowData.value,
+            name: voorgooierThrowData.name,
+            message: `Jouw blinde worp: ${voorgooierThrowData.name}`
+        });
 
-            if (voorgooierValue < achterliggerValue) {
-                // Voorgooier has lower value → voorgooier loses
-                console.log(`   ❌ Voorgooier has lower value - loses 1 life`);
-                loserId = voorgooierId;
-                if (voorgooierIsPlayer1) {
-                    game.player1Lives--;
-                    loserLives = game.player1Lives;
-                } else {
-                    game.player2Lives--;
-                    loserLives = game.player2Lives;
-                }
-                newVoorgooier = voorgooierId;
+        // Toon aan achterligger
+        io.to(achterliggerSocketId).emit('opponent_throw_revealed', {
+            dice1: voorgooierThrowData.dice1,
+            dice2: voorgooierThrowData.dice2,
+            value: voorgooierThrowData.value,
+            name: voorgooierThrowData.name,
+            message: `Tegenstander blinde worp: ${voorgooierThrowData.name}`
+        });
+    }
 
-            } else if (achterliggerValue < voorgooierValue) {
-                // Achterligger has lower value → achterligger loses
-                console.log(`   ❌ Achterligger has lower value - loses 1 life`);
-                loserId = userId;
-                if (isPlayer1) {
-                    game.player1Lives--;
-                    loserLives = game.player1Lives;
-                } else {
-                    game.player2Lives--;
-                    loserLives = game.player2Lives;
-                }
-                newVoorgooier = userId;
+    // Achterligger's throw onthullen (als blind)
+    if (achterliggerThrowData.isBlind) {
+        console.log(`   Achterligger worp was blind → onthuld: ${achterliggerThrowData.value} (${achterliggerThrowData.name})`);
 
-            } else {
-                // Equal values → nobody loses (tie)
-                console.log(`   🤝 Equal values - tie, no lives lost`);
-                newVoorgooier = null;
-            }
+        // Toon aan achterligger zelf
+        io.to(achterliggerSocketId).emit('throw_revealed', {
+            dice1: achterliggerThrowData.dice1,
+            dice2: achterliggerThrowData.dice2,
+            value: achterliggerThrowData.value,
+            name: achterliggerThrowData.name,
+            message: `Jouw blinde worp: ${achterliggerThrowData.name}`
+        });
+
+        // Toon aan voorgooier
+        io.to(voorgooierSocketId).emit('opponent_throw_revealed', {
+            dice1: achterliggerThrowData.dice1,
+            dice2: achterliggerThrowData.dice2,
+            value: achterliggerThrowData.value,
+            name: achterliggerThrowData.name,
+            message: `Tegenstander blinde worp: ${achterliggerThrowData.name}`
+        });
+    }
+
+    console.log(``);
+
+    const voorgooier = userCache.get(voorgooierId);
+    const achterligger = userCache.get(achterliggerId);
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
+
+    const voorgooierValue = voorgooierThrowData.value;
+    const achterliggerValue = achterliggerThrowData.value;
+
+    console.log(`   ${voorgooier.username}: ${voorgooierValue} (${voorgooierThrowData.name})`);
+    console.log(`   ${achterligger.username}: ${achterliggerValue} (${achterliggerThrowData.name})`);
+
+    // === DIRECT VALUE COMPARISON ===
+    // Higher value wins, lower value loses
+    // BELANGRIJK: De VERLIEZER krijgt de penalty, NIET de Mexico gooier!
+    // Als verliezer Mexico heeft: -2, anders -1
+    let winnerId = null;
+    let loserId = null;
+    let loserLives = null;
+    let penalty = -1; // Default penalty
+
+    // Check for Mexico (special case: value 21, penalty -2)
+    const voorgooierIsMexico = voorgooierThrowData.isMexico;
+    const achterliggerIsMexico = achterliggerThrowData.isMexico;
+
+    if (voorgooierValue > achterliggerValue) {
+        // Voorgooier wins, achterligger loses
+        winnerId = voorgooierId;
+        loserId = achterliggerId;
+        console.log(`   🏆 WINNAAR: ${voorgooier.username} (${voorgooierValue})`);
+        console.log(`   💔 VERLIEZER: ${achterligger.username} (${achterliggerValue})`);
+
+        // VERLIEZER bepaalt penalty (achterligger verliest)
+        if (achterliggerIsMexico) {
+            penalty = -2;
+            console.log(`   Penalty: -2 (VERLIEZER gooide MEXICO!)`);
+        } else {
+            penalty = -1;
+            console.log(`   Penalty: -1`);
         }
 
-        // Check game over
-        if (loserLives !== null && loserLives <= 0) {
-            const winnerId = loserId === game.player1Id ? game.player2Id : game.player1Id;
-            console.log(`   💀 ${loserId === game.player1Id ? 'Player1' : 'Player2'} is OUT - game over!`);
-
-            // Notify both players with full results
-            io.to(game.player1SocketId).emit('round_result', {
-                voorgooierResult: voorgooierResult,
-                voorgooierThrow: voorgooierThrowData,
-                voorgooierId: voorgooierId,
-                achterliggerResult: achterliggerResult,
-                achterliggerThrow: achterliggerThrowData,
-                achterliggerId: userId,
-                loserId: loserId,
-                livesLeft: loserLives,
-                gameOver: true
-            });
-            io.to(game.player2SocketId).emit('round_result', {
-                voorgooierResult: voorgooierResult,
-                voorgooierThrow: voorgooierThrowData,
-                voorgooierId: voorgooierId,
-                achterliggerResult: achterliggerResult,
-                achterliggerThrow: achterliggerThrowData,
-                achterliggerId: userId,
-                loserId: loserId,
-                livesLeft: loserLives,
-                gameOver: true
-            });
-
-            setTimeout(() => endGame(game, winnerId, 'lives_depleted'), 2000);
-            return;
+        // Pas penalty toe op VERLIEZER (achterligger)
+        if (voorgooierIsPlayer1) {
+            // Achterligger is player2
+            game.player2Lives += penalty;
+            loserLives = game.player2Lives;
+        } else {
+            // Achterligger is player1
+            game.player1Lives += penalty;
+            loserLives = game.player1Lives;
         }
 
-        // Update voorgooier for next round
-        game.voorgooier = newVoorgooier;
-        console.log(`   👑 Next voorgooier: ${newVoorgooier ? (newVoorgooier === game.player1Id ? 'Player1' : 'Player2') : 'NONE'}`);
+    } else if (achterliggerValue > voorgooierValue) {
+        // Achterligger wins, voorgooier loses
+        winnerId = achterliggerId;
+        loserId = voorgooierId;
+        console.log(`   🏆 WINNAAR: ${achterligger.username} (${achterliggerValue})`);
+        console.log(`   💔 VERLIEZER: ${voorgooier.username} (${voorgooierValue})`);
 
-        // Notify both players with full results
+        // VERLIEZER bepaalt penalty (voorgooier verliest)
+        if (voorgooierIsMexico) {
+            penalty = -2;
+            console.log(`   Penalty: -2 (VERLIEZER gooide MEXICO!)`);
+        } else {
+            penalty = -1;
+            console.log(`   Penalty: -1`);
+        }
+
+        // Pas penalty toe op VERLIEZER (voorgooier)
+        if (voorgooierIsPlayer1) {
+            // Voorgooier is player1
+            game.player1Lives += penalty;
+            loserLives = game.player1Lives;
+        } else {
+            // Voorgooier is player2
+            game.player2Lives += penalty;
+            loserLives = game.player2Lives;
+        }
+
+    } else {
+        // Equal values - VASTGOOIER! (overgooien)
+        console.log(`   🤝 GELIJKSPEL (${voorgooierValue}) - VASTGOOIER!`);
+        console.log(`   ⚔️  Overgooien: beide spelers gooien 1x, hoogste wint`);
+
+        // Mark game as in vastgooier mode
+        game.isVastgooier = true;
+        game.vastgooierOriginalVoorgooier = voorgooierId; // Remember who was voorgooier
+
+        // Emit vastgooier event to both players
+        io.to(game.player1SocketId).emit('vastgooier', {
+            message: 'Gelijkspel! Overgooien - beide spelers gooien 1x blind',
+            voorgooierValue: voorgooierValue,
+            achterliggerValue: achterliggerValue
+        });
+        io.to(game.player2SocketId).emit('vastgooier', {
+            message: 'Gelijkspel! Overgooien - beide spelers gooien 1x blind',
+            voorgooierValue: voorgooierValue,
+            achterliggerValue: achterliggerValue
+        });
+
+        // Reset for vastgooier round (similar to first round but both already threw)
+        game.voorgooierPattern = [];
+        game.voorgooierThrows = [];
+        game.achterliggerThrows = [];
+        game.voorgooierThrowCount = 0;
+        game.achterliggerThrowCount = 0;
+
+        // Start vastgooier - both players throw blind simultaneously
+        game.vastgooierThrows = {
+            player1: null,
+            player2: null
+        };
+
+        return; // Don't continue to next round, wait for vastgooier throws
+    }
+
+    // CORRECTE LOGS: toon elke speler met hun eigen lives
+    console.log(`   ${player1.username} lives left: ${game.player1Lives}`);
+    console.log(`   ${player2.username} lives left: ${game.player2Lives}`);
+
+    // Set loser as new voorgooier (if there's a loser)
+    const newVoorgooier = loserId;
+    if (newVoorgooier) {
+        const newVoorgooierPlayer = userCache.get(newVoorgooier);
+        console.log(`   👑 ${newVoorgooierPlayer.username} wordt voorgooier voor volgende ronde`);
+    }
+
+    // Check game over
+    if (loserLives !== null && loserLives <= 0) {
+        const loserName = userCache.get(loserId).username;
+        console.log(`   💀 ${loserName} is uitgeschakeld - game over!`);
+
+        // Emit round results
         io.to(game.player1SocketId).emit('round_result', {
-            voorgooierResult: voorgooierResult,
             voorgooierThrow: voorgooierThrowData,
             voorgooierId: voorgooierId,
-            achterliggerResult: achterliggerResult,
             achterliggerThrow: achterliggerThrowData,
-            achterliggerId: userId,
+            achterliggerId: achterliggerId,
+            winnerId: winnerId,
             loserId: loserId,
-            player1Lives: game.player1Lives,
-            player2Lives: game.player2Lives,
-            newVoorgooier: newVoorgooier
+            livesLeft: loserLives,
+            penalty: penalty,
+            gameOver: true
         });
         io.to(game.player2SocketId).emit('round_result', {
-            voorgooierResult: voorgooierResult,
             voorgooierThrow: voorgooierThrowData,
             voorgooierId: voorgooierId,
-            achterliggerResult: achterliggerResult,
             achterliggerThrow: achterliggerThrowData,
-            achterliggerId: userId,
+            achterliggerId: achterliggerId,
+            winnerId: winnerId,
             loserId: loserId,
-            player1Lives: game.player1Lives,
-            player2Lives: game.player2Lives,
-            newVoorgooier: newVoorgooier
+            livesLeft: loserLives,
+            penalty: penalty,
+            gameOver: true
         });
 
-        // Clear voorgooier tracking
-        game.voorgooierResult = null;
-        game.voorgooierThrowData = null;
-
-        // Start next round
-        setTimeout(() => startNextRound(game), 2000);
+        setTimeout(() => endGame(game, winnerId, 'lives_depleted'), 2000);
+        return;
     }
+
+    // Update voorgooier for next round
+    game.voorgooier = newVoorgooier;
+
+    // Emit round results
+    io.to(game.player1SocketId).emit('round_result', {
+        voorgooierThrow: voorgooierThrowData,
+        voorgooierId: voorgooierId,
+        achterliggerThrow: achterliggerThrowData,
+        achterliggerId: achterliggerId,
+        winnerId: winnerId,
+        loserId: loserId,
+        livesLeft: loserLives,
+        penalty: penalty,
+        gameOver: false
+    });
+    io.to(game.player2SocketId).emit('round_result', {
+        voorgooierThrow: voorgooierThrowData,
+        voorgooierId: voorgooierId,
+        achterliggerThrow: achterliggerThrowData,
+        achterliggerId: achterliggerId,
+        winnerId: winnerId,
+        loserId: loserId,
+        livesLeft: loserLives,
+        penalty: penalty,
+        gameOver: false
+    });
+
+    // Start next round after delay
+    setTimeout(() => startNextRound(game), 3000);
 }
+
+// ============================================
+// OUDE CODE VERWIJDERD: handleResultChoice()
+// ============================================
+// Deze functie is verwijderd omdat spelers NIET zelf moeten kiezen of ze gewonnen/verloren hebben.
+// In plaats daarvan vergelijkt compareThrows() automatisch de dobbelsteenwaarden.
+// Dit was het grootste probleem in de multiplayer versie!
 
 function startNextRound(game) {
     game.roundNumber++;
@@ -1152,8 +1461,8 @@ function startNextRound(game) {
     game.waitingForResult = false;
     game.maxThrows = 3; // Reset to default
 
-    const player1 = users.get(game.player1Id);
-    const player2 = users.get(game.player2Id);
+    const player1 = userCache.get(game.player1Id);
+    const player2 = userCache.get(game.player2Id);
 
     const currentPlayerName = game.currentTurn === game.player1Id ? player1.username : player2.username;
     const isVoorgooier = game.voorgooier === game.currentTurn;
@@ -1172,6 +1481,7 @@ function startNextRound(game) {
         maxThrows: game.maxThrows,
         player1Lives: game.player1Lives,
         player2Lives: game.player2Lives,
+        resetDice: true, // Reset dice displays for new round
         players: [
             { id: player1.id, username: player1.username, eloRating: player1.eloRating, lives: game.player1Lives },
             { id: player2.id, username: player2.username, eloRating: player2.eloRating, lives: game.player2Lives }
@@ -1186,8 +1496,8 @@ function endGame(game, winnerId, reason) {
     console.log(`🏁 Game over - Winner: ${winnerId === game.player1Id ? 'Player1' : 'Player2'} (${reason})`);
 
     const loserId = winnerId === game.player1Id ? game.player2Id : game.player1Id;
-    const winner = users.get(winnerId);
-    const loser = users.get(loserId);
+    const winner = userCache.get(winnerId);
+    const loser = userCache.get(loserId);
 
     // Update stats
     winner.stats.wins++;
@@ -1202,6 +1512,19 @@ function endGame(game, winnerId, reason) {
 
     console.log(`  Elo changes: Winner +${winnerChange}, Loser ${loserChange}`);
     console.log(`  New Elos: ${winner.username}=${winner.eloRating}, ${loser.username}=${loser.eloRating}`);
+
+    // Save to database
+    db.updateUserStats(winnerId, {
+        eloRating: winner.eloRating,
+        wins: winner.stats.wins,
+        gamesPlayed: winner.stats.gamesPlayed
+    });
+
+    db.updateUserStats(loserId, {
+        eloRating: loser.eloRating,
+        losses: loser.stats.losses,
+        gamesPlayed: loser.stats.gamesPlayed
+    });
 
     // Send game over
     const gameOverData = {
@@ -1234,5 +1557,5 @@ server.listen(PORT, () => {
     console.log(`\n🎲 Multiplayer Mexico Backend Server - CORRECTE SPELREGELS`);
     console.log(`✅ Server running on http://localhost:${PORT}`);
     console.log(`✅ Socket.io ready for connections`);
-    console.log(`\n📊 Stats: ${users.size} users, ${games.size} active games\n`);
+    console.log(`\n📊 Stats: ${db.getUserCount()} users, ${games.size} active games\n`);
 });

@@ -11,6 +11,10 @@ let isMyTurn = false;
 let currentThrowData = null;
 let debugMode = true;
 
+// Throw history tracking (per round)
+let playerThrowHistory = [];
+let opponentThrowHistory = [];
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -221,6 +225,32 @@ function setupUIListeners() {
         const debugLog = document.getElementById('debugLog');
         if (debugLog) debugLog.innerHTML = '';
     });
+
+    // Copy debug log to clipboard
+    document.getElementById('copyDebugBtn')?.addEventListener('click', () => {
+        const debugLog = document.getElementById('debugLog');
+        if (!debugLog) return;
+
+        // Extract all log text
+        const logText = Array.from(debugLog.children)
+            .map(entry => entry.textContent)
+            .join('\n');
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(logText).then(() => {
+            showToast('📋 Debug logs gekopieerd!', 'success', 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('❌ Kopiëren mislukt', 'error', 2000);
+        });
+    });
+
+    // Reset UI button - helps if UI gets stuck
+    document.getElementById('resetUIBtn')?.addEventListener('click', () => {
+        debugLog('🔄 UI Reset aangeroepen');
+        resetGameUI();
+        showToast('🔄 UI gereset!', 'info', 2000);
+    });
 }
 
 // Update header user display (username and ELO)
@@ -358,13 +388,18 @@ function initializeSocket() {
     socket.on('game_start', handleGameStart);
     socket.on('throw_result', handleThrowResult);
     socket.on('dice_revealed', handleDiceRevealed);
-    socket.on('choose_result_prompt', handleChooseResultPrompt);
+    socket.on('throw_revealed', handleThrowRevealed); // Auto-reveal blind throw when kept
+    socket.on('opponent_throw_revealed', handleOpponentThrowRevealed); // Auto-reveal opponent blind throw
+    // choose_result_prompt VERWIJDERD - automatische vergelijking!
     socket.on('opponent_throw', handleOpponentThrow);
     socket.on('opponent_dice_revealed', handleOpponentDiceRevealed);
     socket.on('round_result', handleRoundResult);
     socket.on('new_round', handleNewRound);
     socket.on('your_turn', handleYourTurn);
     socket.on('waiting_for_opponent', handleWaitingForOpponent);
+    socket.on('vastgooier', handleVastgooier); // Overgooien bij gelijkspel
+    socket.on('vastgooier_reveal', handleVastgooierReveal); // Toon beide worpen
+    socket.on('vastgooier_result', handleVastgooierResult); // Resultaat van vastgooier
     socket.on('vast_extra_throw', handleVastExtraThrow);
     socket.on('opponent_vast', handleOpponentVast);
     socket.on('game_over', handleGameOver);
@@ -458,9 +493,7 @@ function setupGameListeners() {
     document.getElementById('revealBtn')?.addEventListener('click', revealDice);
     document.getElementById('keepBtn')?.addEventListener('click', keepThrow);
 
-    document.getElementById('resultWonBtn')?.addEventListener('click', () => chooseResult('won'));
-    document.getElementById('resultVastBtn')?.addEventListener('click', () => chooseResult('vast'));
-    document.getElementById('resultLostBtn')?.addEventListener('click', () => chooseResult('lost'));
+    // Result button listeners VERWIJDERD - automatische vergelijking!
 
     document.getElementById('returnLobbyBtn')?.addEventListener('click', returnToLobby);
 }
@@ -482,6 +515,16 @@ function handleGameStart(data) {
 
     showGame();
     updateGameUI();
+
+    // Reset dice displays for new game
+    showDice('', '', false, false); // No animation - just clear
+    showOpponentDice('', '', false, false); // No animation - just clear
+
+    // Clear throw history for new game
+    playerThrowHistory = [];
+    opponentThrowHistory = [];
+    // Show empty throw history from start
+    updateThrowHistory();
 
     if (data.isSimultaneous) {
         // Eerste ronde - beide spelers gooien tegelijk
@@ -533,23 +576,105 @@ function throwDice(isBlind) {
 
 function handleThrowResult(data) {
     debugLog('🎲 Throw result:', data);
+    debugLog(`📊 Player throw count: ${playerThrowHistory.length + 1}, dice: ${data.dice1}-${data.dice2}, blind: ${data.isBlind}`);
 
     currentThrowData = data;
 
     // Update throw counter
     updateThrowCounter(data.throwCount || 1, data.maxThrows || 3);
 
+    // Add throw to player history
+    if (data.dice1 && data.dice2) {
+        const throwInfo = calculateThrowDisplay(data.dice1, data.dice2);
+        playerThrowHistory.push({
+            displayValue: throwInfo.displayValue,
+            isMexico: throwInfo.isMexico,
+            isBlind: data.isBlind, // Currently blind (may be revealed later)
+            wasBlind: data.isBlind  // Originally blind
+        });
+        debugLog(`✅ Added to player history. Total: ${playerThrowHistory.length} throws`);
+        updateThrowHistory();
+    }
+
+    // AUTO-KEEP op laatste worp (geen bevestiging nodig)
+    const isLastThrow = data.throwCount >= data.maxThrows;
+    if (isLastThrow) {
+        debugLog(`🎯 Laatste worp (${data.throwCount}/${data.maxThrows}) - AUTO-KEEP`);
+        showWaitingMessage('Laatste worp - wacht op tegenstander...');
+
+        // Auto-keep na korte delay (zodat speler de worp ziet)
+        setTimeout(() => {
+            keepThrow();
+        }, data.isBlind ? 800 : 1200); // Korter voor blind, langer voor open
+        return; // Stop hier - geen knoppen tonen
+    }
+
     if (data.isBlind) {
+        // Show dice as hidden (? marks)
         showDice('?', '?', true);
-        showRevealButton();
+
+        // BELANGRIJK: Geen "Laten Zien" knop bij blind worp!
+        // Speler kan alleen kiezen: "Laten Staan" of "Gooi Opnieuw"
+        if (data.canKeep && data.canThrowAgain) {
+            showKeepAndThrowAgainButtonsWithPattern(data.throwCount);
+        } else if (data.canKeep) {
+            showKeepButton();
+        } else if (data.canThrowAgain) {
+            // Only throw again option
+            showThrowButtons(data.mustBlind || false);
+        } else {
+            // No options - waiting for server
+            showWaitingMessage('Wachten op server...');
+            debugLog('⚠️ No action buttons available after blind throw');
+        }
     } else {
+        // Open throw - show dice values
         showDice(data.dice1, data.dice2, false);
 
         if (data.canKeep && data.canThrowAgain) {
-            showKeepAndThrowAgainButtons();
+            showKeepAndThrowAgainButtonsWithPattern(data.throwCount);
         } else if (data.canKeep) {
             showKeepButton();
+        } else if (data.canThrowAgain) {
+            // Only throw again option
+            showThrowButtons(data.mustBlind || false);
+        } else {
+            // No options - waiting for server
+            showWaitingMessage('Wachten op server...');
+            debugLog('⚠️ No action buttons available after open throw');
         }
+    }
+}
+
+// Helper functie om knoppen te tonen met patroon respect
+function showKeepAndThrowAgainButtonsWithPattern(currentThrowCount) {
+    // Check if we're following a pattern (achterligger)
+    if (currentGame && currentGame.mustFollowPattern && currentGame.voorgooierPattern) {
+        // We're achterligger - must follow pattern
+        // currentThrowCount tells us how many throws we've made
+        // Next throw index = currentThrowCount (0-indexed)
+        const nextThrowIndex = currentThrowCount;
+
+        if (nextThrowIndex < currentGame.voorgooierPattern.length) {
+            // There's a pattern to follow for the next throw
+            const mustBeBlind = currentGame.voorgooierPattern[nextThrowIndex];
+
+            // Show keep button + only the required throw button
+            hideAllActionButtons();
+            document.getElementById('keepBtn')?.classList.remove('hidden');
+
+            if (mustBeBlind) {
+                document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+            } else {
+                document.getElementById('throwOpenBtn')?.classList.remove('hidden');
+            }
+        } else {
+            // No more pattern (shouldn't happen, but fallback)
+            showKeepAndThrowAgainButtons();
+        }
+    } else {
+        // Voorgooier - show all options
+        showKeepAndThrowAgainButtons();
     }
 }
 
@@ -577,16 +702,21 @@ function revealDice() {
 function handleDiceRevealed(data) {
     debugLog('👁️  Dice revealed:', data);
 
-    showDice(data.dice1, data.dice2, false);
+    showDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+
+    // Update last throw in player history to not blind anymore
+    if (playerThrowHistory.length > 0) {
+        playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+        updateThrowHistory();
+    }
 
     if (data.isMexico) {
         showToast('🎉 MEXICO!!! 🎉', 'success', 5000);
         showInlineMessage('🏆 MEXICO! 2-1!', 'success');
     }
 
-    if (data.mustChooseResult) {
-        // Wait for choose_result_prompt
-    } else if (data.canKeep && data.canThrowAgain) {
+    // mustChooseResult VERWIJDERD - automatische vergelijking!
+    if (data.canKeep && data.canThrowAgain) {
         showKeepAndThrowAgainButtons();
     } else if (data.canKeep) {
         showKeepButton();
@@ -606,29 +736,39 @@ function keepThrow() {
     showWaitingMessage('Wachten op resultaat keuze...');
 }
 
-function handleChooseResultPrompt(data) {
-    debugLog('📊 Choose result prompt:', data);
-
-    showInlineMessage(data.message || 'Kies het resultaat van je beurt', 'info');
-    showResultChoiceButtons();
-}
-
-function chooseResult(result) {
-    if (!currentGame) return;
-
-    debugLog(`📊 Choosing result: ${result}`);
-
-    socket.emit('choose_result', {
-        gameId: currentGame.gameId,
-        result
-    });
-
-    hideAllActionButtons();
-    showWaitingMessage('Resultaat verwerken...');
-}
+// handleChooseResultPrompt en chooseResult VERWIJDERD - automatische vergelijking!
 
 function handleOpponentThrow(data) {
     debugLog('🎲 Opponent threw:', data);
+    debugLog(`📊 Opponent throw count: ${opponentThrowHistory.length + 1}, dice: ${data.dice1}-${data.dice2}, blind: ${data.isBlind}`);
+
+    // Add throw to opponent history
+    if (data.dice1 && data.dice2) {
+        // Normal throw with dice values
+        const throwInfo = calculateThrowDisplay(data.dice1, data.dice2);
+        opponentThrowHistory.push({
+            displayValue: throwInfo.displayValue,
+            isMexico: throwInfo.isMexico,
+            isBlind: data.isBlind, // Currently blind (may be revealed later)
+            wasBlind: data.isBlind  // Originally blind
+        });
+        debugLog(`✅ Added to opponent history. Total: ${opponentThrowHistory.length} throws`);
+        updateThrowHistory();
+    } else if (data.isBlind) {
+        // Blind throw - dice values not sent yet (will be revealed later)
+        opponentThrowHistory.push({
+            displayValue: '???', // Placeholder until revealed
+            isMexico: false,
+            isBlind: true, // Currently blind
+            wasBlind: true, // Originally blind
+            dice1: null,    // Will be set when revealed
+            dice2: null     // Will be set when revealed
+        });
+        debugLog(`✅ Added blind throw to opponent history (placeholder). Total: ${opponentThrowHistory.length} throws`);
+        updateThrowHistory();
+    } else {
+        debugLog(`⚠️ WARNING: Missing dice values in opponent throw! dice1: ${data.dice1}, dice2: ${data.dice2}`);
+    }
 
     if (data.isBlind) {
         showOpponentDice('?', '?', true);
@@ -639,11 +779,80 @@ function handleOpponentThrow(data) {
 
 function handleOpponentDiceRevealed(data) {
     debugLog('👁️  Opponent revealed:', data);
-    showOpponentDice(data.dice1, data.dice2, false);
+    showOpponentDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+
+    // Update last throw in opponent history to not blind anymore
+    if (opponentThrowHistory.length > 0) {
+        const lastThrow = opponentThrowHistory[opponentThrowHistory.length - 1];
+        lastThrow.isBlind = false;
+
+        // If this was a placeholder (blind throw without dice values), update it now
+        if (data.dice1 && data.dice2 && (!lastThrow.dice1 || !lastThrow.dice2)) {
+            const throwInfo = calculateThrowDisplay(data.dice1, data.dice2);
+            lastThrow.displayValue = throwInfo.displayValue;
+            lastThrow.isMexico = throwInfo.isMexico;
+            lastThrow.dice1 = data.dice1;
+            lastThrow.dice2 = data.dice2;
+            debugLog(`✅ Updated placeholder with actual dice values: ${data.dice1}-${data.dice2}`);
+        }
+
+        updateThrowHistory();
+    }
+}
+
+function handleThrowRevealed(data) {
+    debugLog('👁️  Blind throw auto-revealed:', data);
+
+    // Show the dice values (no longer hidden)
+    showDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+
+    // Update last throw in player history to not blind anymore
+    if (playerThrowHistory.length > 0) {
+        playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+        updateThrowHistory();
+    }
+
+    // Show message
+    if (data.message) {
+        showInlineMessage(data.message, 'info');
+    }
+}
+
+function handleOpponentThrowRevealed(data) {
+    debugLog('👁️  Opponent blind throw auto-revealed:', data);
+
+    // Show the opponent's dice values (no longer hidden)
+    showOpponentDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+
+    // Update last throw in opponent history to not blind anymore
+    if (opponentThrowHistory.length > 0) {
+        const lastThrow = opponentThrowHistory[opponentThrowHistory.length - 1];
+        lastThrow.isBlind = false;
+
+        // If this was a placeholder (blind throw without dice values), update it now
+        if (data.dice1 && data.dice2 && (!lastThrow.dice1 || !lastThrow.dice2)) {
+            const throwInfo = calculateThrowDisplay(data.dice1, data.dice2);
+            lastThrow.displayValue = throwInfo.displayValue;
+            lastThrow.isMexico = throwInfo.isMexico;
+            lastThrow.dice1 = data.dice1;
+            lastThrow.dice2 = data.dice2;
+            debugLog(`✅ Updated placeholder with actual dice values: ${data.dice1}-${data.dice2}`);
+        }
+
+        updateThrowHistory();
+    }
+
+    // Show message
+    if (data.message) {
+        showInlineMessage(data.message, 'info');
+    }
 }
 
 function handleRoundResult(data) {
     debugLog('📊 Round result:', data);
+
+    // Update last round summary (NEW!)
+    updateLastRoundSummary(data);
 
     // New format: includes voorgooier and achterligger results
     if (data.voorgooierResult && data.achterliggerResult) {
@@ -695,26 +904,108 @@ function handleRoundResult(data) {
 function handleNewRound(data) {
     debugLog('⚡ New round:', data);
 
-    currentGame = { ...currentGame, ...data };
-    updateGameUI();
+    try {
+        currentGame = { ...currentGame, ...data };
+        debugLog('✅ Step 1: Game state updated');
 
-    showToast(`Ronde ${data.roundNumber} begint!`, 'info', 2000);
+        updateGameUI();
+        debugLog('✅ Step 2: UI updated');
 
-    if (data.voorgooier) {
-        const isVoorgooier = data.voorgooier === currentUser.id;
-        if (isVoorgooier) {
-            showInlineMessage('👑 Jij bent de voorgooier!', 'warning');
-        } else {
-            showInlineMessage(`${currentGame.opponent.username} is de voorgooier`, 'info');
-        }
+        // IMPORTANT: Explicitly reset BOTH players' dice displays
+        showDice('', '', false, false); // Reset own dice to default (⚀⚀) - no animation
+        debugLog('✅ Step 3: Own dice reset');
+
+        showOpponentDice('', '', false, false); // Reset opponent dice to default (⚀⚀) - no animation
+        debugLog('✅ Step 4: Opponent dice reset');
+
+        debugLog('🔄 Dice reset for new round');
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 1-4:', error.message);
+        console.error('Full error:', error);
     }
 
-    if (data.currentTurn === currentUser.id) {
-        isMyTurn = true;
-        showThrowButtons(data.mustBlind);
-    } else {
-        isMyTurn = false;
-        showWaitingMessage('Wachten op tegenstander...');
+    try {
+        // Clear throw history for new round
+        playerThrowHistory = [];
+        opponentThrowHistory = [];
+        debugLog('✅ Step 5: History arrays cleared');
+
+        // Keep history visible, just empty
+        updateThrowHistory();
+        debugLog('✅ Step 6: History UI updated');
+
+        debugLog('🗑️ Throw history cleared for new round');
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 5-6:', error.message);
+        console.error('Full error:', error);
+    }
+
+    try {
+        showToast(`Ronde ${data.roundNumber} begint!`, 'info', 2000);
+        debugLog('✅ Step 7: Toast shown');
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 7:', error.message);
+        console.error('Full error:', error);
+    }
+
+    try {
+        // Check if it's my turn (voorgooier starts)
+        debugLog(`🔍 Checking turn: currentTurn=${data.currentTurn}, myId=${currentUser.id}, voorgooier=${data.voorgooier}`);
+
+        if (data.currentTurn && data.currentTurn === currentUser.id) {
+            isMyTurn = true;
+            const isVoorgooier = data.voorgooier === currentUser.id;
+            debugLog(`✅ Step 8a: It's my turn! isVoorgooier=${isVoorgooier}`);
+
+            if (isVoorgooier) {
+                showInlineMessage('🎯 Jouw beurt als voorgooier! Gooi de dobbelstenen', 'info');
+                showThrowButtons(false); // Both open and blind buttons
+                debugLog('✅ Voorgooier buttons shown');
+            } else {
+                // Shouldn't happen but fallback
+                showThrowButtons(false);
+                debugLog('✅ Fallback buttons shown');
+            }
+        } else {
+            isMyTurn = false;
+            showWaitingMessage('Wachten op voorgooier...');
+            debugLog('✅ Step 8a: Not my turn, waiting');
+        }
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 8a (button logic):', error.message);
+        console.error('Full error:', error);
+    }
+
+    try {
+        if (data.voorgooier) {
+            const isVoorgooier = data.voorgooier === currentUser.id;
+            if (isVoorgooier) {
+                showInlineMessage('👑 Jij bent de voorgooier!', 'warning');
+            } else {
+                showInlineMessage(`${currentGame.opponent.username} is de voorgooier`, 'info');
+            }
+            debugLog('✅ Step 8b: Voorgooier message shown');
+        }
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 8b (voorgooier message):', error.message);
+        console.error('Full error:', error);
+    }
+
+    try {
+        // Fallback button logic (old code, may be redundant)
+        debugLog('🔍 Step 9: Fallback button check');
+        if (data.currentTurn === currentUser.id) {
+            isMyTurn = true;
+            showThrowButtons(data.mustBlind);
+            debugLog('✅ Step 9: Fallback buttons shown');
+        } else {
+            isMyTurn = false;
+            showWaitingMessage('Wachten op tegenstander...');
+            debugLog('✅ Step 9: Fallback waiting');
+        }
+    } catch (error) {
+        debugLog('❌ ERROR in handleNewRound step 9 (fallback):', error.message);
+        console.error('Full error:', error);
     }
 }
 
@@ -725,9 +1016,28 @@ function handleYourTurn(data) {
 
     showInlineMessage(data.message || 'Jouw beurt!', 'info');
 
-    // Show throw buttons (achterligger follows voorgooier pattern)
-    const mustFollowPattern = data.voorgooierPattern && data.voorgooierPattern.length > 0;
-    showThrowButtons(mustFollowPattern);
+    // Store pattern info in currentGame for later use
+    if (data.mustFollowPattern && data.voorgooierPattern) {
+        currentGame.mustFollowPattern = true;
+        currentGame.voorgooierPattern = data.voorgooierPattern;
+        currentGame.achterliggerThrowCount = data.achterliggerThrowCount || 0;
+    } else {
+        currentGame.mustFollowPattern = false;
+        currentGame.voorgooierPattern = null;
+    }
+
+    // Show throw buttons
+    // If voorgooierPattern is provided, check what the CURRENT throw should be
+    if (data.mustFollowPattern && data.voorgooierPattern && data.voorgooierPattern.length > 0) {
+        // Achterligger must follow pattern
+        const currentThrowIndex = data.achterliggerThrowCount || 0;
+        const mustBeBlind = data.voorgooierPattern[currentThrowIndex];
+
+        showThrowButtons(mustBeBlind, true); // true = following pattern
+    } else {
+        // Voorgooier or no pattern yet
+        showThrowButtons(false, false); // Show both options
+    }
 }
 
 function handleWaitingForOpponent(data) {
@@ -759,8 +1069,17 @@ function handleFirstRoundReveal(data) {
     debugLog('👁️ First round reveal:', data);
 
     // Show both throws
-    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false);
-    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false);
+    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, false); // No animation - just reveal
+    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, false); // No animation - just reveal
+
+    // Update both throws in history to not blind anymore
+    if (playerThrowHistory.length > 0) {
+        playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+    }
+    if (opponentThrowHistory.length > 0) {
+        opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+    }
+    updateThrowHistory();
 
     // Show message
     showInlineMessage(`🎲 ${data.yourName}: ${data.yourThrow.name} | ${data.opponentName}: ${data.opponentThrow.name}`, 'info');
@@ -775,8 +1094,28 @@ function handleFirstRoundResult(data) {
     const iWon = data.winnerId === currentUser.id;
     const iLost = data.loserId === currentUser.id;
 
+    // Update game state with new voorgooier
+    if (data.newVoorgooier) {
+        currentGame.voorgooier = data.newVoorgooier;
+        currentGame.currentTurn = data.newVoorgooier;
+        debugLog(`📌 New voorgooier: ${data.newVoorgooier === currentUser.id ? 'Me' : 'Opponent'}`);
+    }
+
     // Update lives display
     updateGameUI();
+
+    // Update last round summary for first round (NEW!)
+    // Convert first round format to regular round format
+    const summaryData = {
+        voorgooierId: data.winnerId,  // Winner was first (arbitrary for round 1)
+        achterliggerId: data.loserId,
+        voorgooierThrow: data.winnerThrow,
+        achterliggerThrow: data.loserThrow,
+        winnerId: data.winnerId,
+        loserId: data.loserId,
+        penalty: data.penalty
+    };
+    updateLastRoundSummary(summaryData);
 
     // Show result message
     const winnerName = iWon ? 'Jij' : currentGame.opponent.username;
@@ -792,6 +1131,19 @@ function handleFirstRoundResult(data) {
     } else {
         const voorgooierName = data.newVoorgooier === currentUser.id ? 'Jij bent' : `${currentGame.opponent.username} is`;
         showToast(`${voorgooierName} de voorgooier!`, 'info', 2000);
+
+        // CRITICAL FIX: Show buttons immediately if it's our turn as voorgooier
+        hideAllActionButtons();
+        if (data.newVoorgooier === currentUser.id) {
+            isMyTurn = true;
+            showInlineMessage('👑 Jouw beurt als voorgooier! Gooi de dobbelstenen', 'info');
+            showThrowButtons(false); // Both open and blind
+            debugLog('✅ Voorgooier buttons shown after first round result');
+        } else {
+            isMyTurn = false;
+            showWaitingMessage('Wachten op voorgooier...');
+            debugLog('⏳ Waiting for opponent voorgooier');
+        }
     }
 }
 
@@ -802,8 +1154,8 @@ function handleFirstRoundTie(data) {
     showToast(data.message, 'warning', 3000);
 
     // Reset UI for new throw
-    showDice('', '', false);
-    showOpponentDice('', '', false);
+    showDice('', '', false, false); // No animation - just clear
+    showOpponentDice('', '', false, false); // No animation - just clear
 
     // Both players can throw again
     isMyTurn = true;
@@ -846,7 +1198,10 @@ function handleGameOver(data) {
 function updateGameUI() {
     if (!currentGame) return;
 
-    document.getElementById('roundNumber').textContent = currentGame.roundNumber || 1;
+    const roundNumberEl = document.getElementById('roundNumber');
+    if (roundNumberEl) {
+        roundNumberEl.textContent = currentGame.roundNumber || 1;
+    }
 
     const me = currentGame.players?.find(p => p.id === currentUser.id);
     const opponent = currentGame.players?.find(p => p.id !== currentUser.id);
@@ -857,11 +1212,50 @@ function updateGameUI() {
 
         // Update opponent name in UI labels
         const opponentName = opponent.username || currentGame.opponent?.username || 'Tegenstander';
-        document.getElementById('opponentDiceCupLabel').textContent = `🎯 ${opponentName}`;
-        document.getElementById('opponentHistoryLabel').textContent = `👤 ${opponentName}`;
+        const opponentDiceCupLabelEl = document.getElementById('opponentDiceCupLabel');
+        if (opponentDiceCupLabelEl) {
+            opponentDiceCupLabelEl.textContent = `🎯 ${opponentName}`;
+        }
     }
 
     updateTurnIndicator();
+}
+
+function resetGameUI() {
+    debugLog('🔄 Resetting game UI...');
+
+    // Hide all action buttons first
+    hideAllActionButtons();
+
+    // Clear any stuck animations
+    document.querySelectorAll('.rolling').forEach(el => el.classList.remove('rolling'));
+    document.querySelectorAll('.shaking').forEach(el => el.classList.remove('shaking'));
+
+    // Update game state displays
+    if (currentGame) {
+        updateGameUI();
+        updateThrowHistory();
+
+        // Show appropriate buttons based on turn
+        if (isMyTurn) {
+            // Check if we need to show specific buttons based on game state
+            if (currentGame.isSimultaneous) {
+                showThrowButtons(true); // Blind only for first round
+            } else if (currentGame.mustBlind) {
+                showThrowButtons(true);
+            } else {
+                // Show appropriate buttons - you may need to adjust based on actual game state
+                updateTurnIndicator();
+            }
+        } else {
+            showWaitingMessage('Wachten op tegenstander...');
+        }
+
+        debugLog('✅ UI reset voltooid');
+    } else {
+        debugLog('⚠️ Geen actieve game om te resetten');
+        showWaitingMessage('Geen actieve game');
+    }
 }
 
 function updateLives(playerId, lives) {
@@ -869,7 +1263,10 @@ function updateLives(playerId, lives) {
     const livesElement = document.getElementById(isMe ? 'myLives' : 'opponentLives');
 
     if (livesElement) {
-        livesElement.textContent = '●'.repeat(Math.max(0, lives));
+        // Display lives as dice symbols (6 levens = ⚅, 5 = ⚄, etc.)
+        const diceSymbols = ['💀', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        const clampedLives = Math.max(0, Math.min(6, lives));
+        livesElement.textContent = diceSymbols[clampedLives];
     }
 }
 
@@ -886,46 +1283,310 @@ function updateTurnIndicator() {
     }
 }
 
-function showDice(dice1, dice2, isHidden) {
+// Helper function to calculate throw display value
+function calculateThrowDisplay(dice1, dice2) {
+    const higher = Math.max(dice1, dice2);
+    const lower = Math.min(dice1, dice2);
+
+    if ((higher === 2 && lower === 1) || (higher === 1 && lower === 2)) {
+        // Mexico!
+        return { displayValue: '21', isMexico: true };
+    } else if (higher === lower) {
+        // Doubles as hundreds (66 = 600, 55 = 500, etc.)
+        return { displayValue: (higher * 100).toString(), isMexico: false };
+    } else {
+        // Regular throw (highest first)
+        return { displayValue: (higher * 10 + lower).toString(), isMexico: false };
+    }
+}
+
+function updateThrowHistory() {
+    const historyDisplay = document.getElementById('throwHistoryDisplay');
+    if (!historyDisplay) return;
+
+    // Always show the history panel (even when empty)
+    historyDisplay.classList.remove('hidden');
+
+    // Update opponent label
+    const opponent = currentGame?.players?.find(p => p.id !== currentUser?.id);
+    const opponentName = opponent?.username || 'Tegenstander';
+    document.getElementById('opponentThrowHistoryLabel').textContent = `🎯 ${opponentName}`;
+
+    // Build player column
+    const playerItems = document.getElementById('playerThrowHistoryItems');
+    if (playerItems) {
+        let playerHtml = '';
+        if (playerThrowHistory.length === 0) {
+            playerHtml = '<div class="text-xs opacity-50" style="color: var(--text-secondary);">Nog geen worpen</div>';
+        } else {
+            playerThrowHistory.forEach((throwData, index) => {
+                // Check if this is still blind (not revealed)
+                const isStillBlind = throwData.isBlind;
+
+                let displayValue, typeLabel, mexicoLabel;
+
+                if (isStillBlind) {
+                    // Current throw is still blind - don't reveal!
+                    displayValue = '???';
+                    typeLabel = '🙈 Verborgen';
+                    mexicoLabel = '';
+                } else {
+                    // Throw has been revealed (or was open from start)
+                    displayValue = throwData.displayValue;
+                    typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                    mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
+                }
+
+                playerHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                    <span class="opacity-75">${index + 1}.</span>
+                    <span class="font-bold" style="color: var(--color-gold);">${displayValue}</span>
+                    <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
+                    ${mexicoLabel}
+                </div>`;
+            });
+        }
+        playerItems.innerHTML = playerHtml;
+    }
+
+    // Build opponent column
+    const opponentItems = document.getElementById('opponentThrowHistoryItems');
+    if (opponentItems) {
+        let opponentHtml = '';
+        if (opponentThrowHistory.length === 0) {
+            opponentHtml = '<div class="text-xs opacity-50" style="color: var(--text-secondary);">Nog geen worpen</div>';
+        } else {
+            opponentThrowHistory.forEach((throwData, index) => {
+                // Check if this throw is still blind (not revealed yet)
+                const isStillBlind = throwData.isBlind;
+
+                let displayValue, typeLabel, mexicoLabel;
+
+                if (isStillBlind) {
+                    // Opponent throw is still blind - don't reveal!
+                    displayValue = '???';
+                    typeLabel = '🙈 Verborgen';
+                    mexicoLabel = '';
+                } else {
+                    // Throw has been revealed
+                    displayValue = throwData.displayValue;
+                    typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                    mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
+                }
+
+                opponentHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                    <span class="opacity-75">${index + 1}.</span>
+                    <span class="font-bold" style="color: var(--color-gold);">${displayValue}</span>
+                    <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
+                    ${mexicoLabel}
+                </div>`;
+            });
+        }
+        opponentItems.innerHTML = opponentHtml;
+    }
+
+    // Update game info section
+    const gameInfo = document.getElementById('gameInfoInHistory');
+    if (gameInfo && currentGame) {
+        const voorgooierName = currentGame.voorgooier === currentUser?.id ? 'Jij' : opponentName;
+        gameInfo.innerHTML = `
+            <div>Ronde ${currentGame.roundNumber || 1} | Voorgooier: <span class="font-semibold" style="color: var(--color-gold);">${voorgooierName}</span></div>
+        `;
+    }
+}
+
+function showDice(dice1, dice2, isHidden, animate = true) {
     const dice1El = document.getElementById('myDice1');
     const dice2El = document.getElementById('myDice2');
+    const diceCup = document.getElementById('playerDiceCup');
 
     if (!dice1El || !dice2El) return;
 
+    debugLog(`🎲 showDice called: dice1=${dice1}, dice2=${dice2}, isHidden=${isHidden}, animate=${animate}`);
+
+    // Bij BLIND worp: meteen verbergen VOOR animatie
     if (isHidden) {
         dice1El.textContent = '?';
         dice2El.textContent = '?';
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
+    }
+
+    // If animation requested and we have valid dice values
+    if (animate && ((isHidden) || (dice1 && dice2 && dice1 !== '' && dice2 !== ''))) {
+        // Animate dice cup
+        if (diceCup) {
+            diceCup.classList.add('shaking');
+            setTimeout(() => {
+                diceCup.classList.remove('shaking');
+            }, 500);
+        }
+
+        // Make dice visible and add rolling class
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
+        dice1El.classList.add('rolling');
+        dice2El.classList.add('rolling');
+
+        // Bij BLIND: blijf ? tonen tijdens animatie
+        if (isHidden) {
+            // Geen rolling numbers, gewoon shake effect
+            setTimeout(() => {
+                dice1El.classList.remove('rolling');
+                dice2El.classList.remove('rolling');
+                dice1El.textContent = '?';
+                dice2El.textContent = '?';
+            }, 500);
+            return; // Stop hier voor blind worpen
+        }
+
+        // Random rolling effect (alleen voor OPEN worpen)
+        const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        let rollCount = 0;
+        const rollInterval = setInterval(() => {
+            const rand1 = Math.floor(Math.random() * 6) + 1;
+            const rand2 = Math.floor(Math.random() * 6) + 1;
+            dice1El.textContent = diceSymbols[rand1 - 1];
+            dice2El.textContent = diceSymbols[rand2 - 1];
+            rollCount++;
+
+            if (rollCount >= 10) {
+                clearInterval(rollInterval);
+
+                // Show final result
+                dice1El.classList.remove('rolling');
+                dice2El.classList.remove('rolling');
+
+                debugLog(`🎯 Animation ending - showing final: dice1=${dice1} (${diceSymbols[dice1 - 1]}), dice2=${dice2} (${diceSymbols[dice2 - 1]})`);
+
+                dice1El.textContent = diceSymbols[dice1 - 1];
+                dice2El.textContent = diceSymbols[dice2 - 1];
+            }
+        }, 50);
+
+        return;
+    }
+
+    // No animation - show immediately
+    if (isHidden) {
+        // Blind throw - show question marks
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
+        dice1El.textContent = '?';
+        dice2El.textContent = '?';
+    } else if (dice1 === '' || dice2 === '' || !dice1 || !dice2) {
+        // No throw yet - dice are in the cup, not visible!
+        dice1El.style.visibility = 'hidden';
+        dice2El.style.visibility = 'hidden';
+        dice1El.textContent = '';
+        dice2El.textContent = '';
     } else {
+        // Normal throw - show dice values
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
         const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
         dice1El.textContent = diceSymbols[dice1 - 1];
         dice2El.textContent = diceSymbols[dice2 - 1];
     }
 }
 
-function showOpponentDice(dice1, dice2, isHidden) {
+function showOpponentDice(dice1, dice2, isHidden, animate = true) {
     const dice1El = document.getElementById('opponentDice1');
     const dice2El = document.getElementById('opponentDice2');
+    const diceCup = document.getElementById('opponentDiceCup');
 
     if (!dice1El || !dice2El) return;
 
+    // If animation requested and we have valid dice values
+    if (animate && ((isHidden) || (dice1 && dice2 && dice1 !== '' && dice2 !== ''))) {
+        // Animate dice cup
+        if (diceCup) {
+            diceCup.classList.add('shaking');
+            setTimeout(() => {
+                diceCup.classList.remove('shaking');
+            }, 500);
+        }
+
+        // Make dice visible and add rolling class
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
+        dice1El.classList.add('rolling');
+        dice2El.classList.add('rolling');
+
+        // Random rolling effect
+        const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        let rollCount = 0;
+        const rollInterval = setInterval(() => {
+            const rand1 = Math.floor(Math.random() * 6) + 1;
+            const rand2 = Math.floor(Math.random() * 6) + 1;
+            dice1El.textContent = diceSymbols[rand1 - 1];
+            dice2El.textContent = diceSymbols[rand2 - 1];
+            rollCount++;
+
+            if (rollCount >= 10) {
+                clearInterval(rollInterval);
+
+                // Show final result
+                dice1El.classList.remove('rolling');
+                dice2El.classList.remove('rolling');
+
+                if (isHidden) {
+                    dice1El.textContent = '?';
+                    dice2El.textContent = '?';
+                } else {
+                    dice1El.textContent = diceSymbols[dice1 - 1];
+                    dice2El.textContent = diceSymbols[dice2 - 1];
+                }
+            }
+        }, 50);
+
+        return;
+    }
+
+    // No animation - show immediately
     if (isHidden) {
+        // Blind throw - show question marks
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
         dice1El.textContent = '?';
         dice2El.textContent = '?';
+    } else if (dice1 === '' || dice2 === '' || !dice1 || !dice2) {
+        // No throw yet - dice are in the cup, not visible!
+        dice1El.style.visibility = 'hidden';
+        dice2El.style.visibility = 'hidden';
+        dice1El.textContent = '';
+        dice2El.textContent = '';
     } else {
+        // Normal throw - show dice values
+        dice1El.style.visibility = 'visible';
+        dice2El.style.visibility = 'visible';
         const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
         dice1El.textContent = diceSymbols[dice1 - 1];
         dice2El.textContent = diceSymbols[dice2 - 1];
     }
 }
 
-function showThrowButtons(mustBlind) {
+function showThrowButtons(mustBlind, followingPattern = false) {
     hideAllActionButtons();
 
-    if (mustBlind) {
-        document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+    if (followingPattern) {
+        // Achterligger must follow voorgooier's pattern
+        if (mustBlind) {
+            // Voorgooier threw blind → achterligger must throw blind
+            document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        } else {
+            // Voorgooier threw open → achterligger must throw open
+            document.getElementById('throwOpenBtn')?.classList.remove('hidden');
+        }
     } else {
-        document.getElementById('throwOpenBtn')?.classList.remove('hidden');
-        document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        // Voorgooier OR first round - show options based on mustBlind
+        if (mustBlind) {
+            // First round: must be blind
+            document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        } else {
+            // Normal turn: can choose
+            document.getElementById('throwOpenBtn')?.classList.remove('hidden');
+            document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        }
     }
 }
 
@@ -946,16 +1607,10 @@ function showKeepAndThrowAgainButtons() {
     document.getElementById('throwBlindBtn')?.classList.remove('hidden');
 }
 
-function showResultChoiceButtons() {
-    hideAllActionButtons();
-    document.getElementById('resultWonBtn')?.classList.remove('hidden');
-    document.getElementById('resultVastBtn')?.classList.remove('hidden');
-    document.getElementById('resultLostBtn')?.classList.remove('hidden');
-}
+// showResultChoiceButtons VERWIJDERD - automatische vergelijking!
 
 function hideAllActionButtons() {
-    ['throwOpenBtn', 'throwBlindBtn', 'revealBtn', 'keepBtn',
-     'resultWonBtn', 'resultVastBtn', 'resultLostBtn'].forEach(id => {
+    ['throwOpenBtn', 'throwBlindBtn', 'revealBtn', 'keepBtn'].forEach(id => {
         document.getElementById(id)?.classList.add('hidden');
     });
 }
@@ -969,6 +1624,8 @@ function showWaitingMessage(message) {
     }
 }
 
+// Voorgooier pattern display functions VERWIJDERD - overbodig met throw history statistieken
+
 function returnToLobby() {
     if (currentGame) {
         socket?.emit('return_to_lobby', { gameId: currentGame.gameId });
@@ -981,6 +1638,78 @@ function returnToLobby() {
     showLobby();
     updateUserStats();
     loadLeaderboard();
+}
+
+// ============================================
+// VASTGOOIER HANDLERS
+// ============================================
+
+function handleVastgooier(data) {
+    debugLog('⚔️  Vastgooier:', data);
+
+    showInlineMessage(data.message || '🤝 Gelijkspel! Overgooien!', 'warning');
+    showToast('⚔️ VASTGOOIER! Beide spelers gooien blind', 'warning', 3000);
+
+    // Enable blind throw for both players
+    isMyTurn = true;
+
+    // Force UI update with slight delay to ensure DOM is ready
+    setTimeout(() => {
+        hideAllActionButtons();
+        const blindBtn = document.getElementById('throwBlindBtn');
+        if (blindBtn) {
+            blindBtn.classList.remove('hidden');
+            debugLog('✅ Vastgooier blind button shown');
+        } else {
+            debugLog('❌ ERROR: Blind button not found!');
+        }
+        updateTurnIndicator();
+    }, 100);
+}
+
+function handleVastgooierReveal(data) {
+    debugLog('👁️  Vastgooier reveal:', data);
+
+    // Show own throw
+    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, false); // No animation - just reveal
+
+    // Show opponent throw
+    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, false); // No animation - just reveal
+
+    // Update both throws in history to not blind anymore
+    if (playerThrowHistory.length > 0) {
+        playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+    }
+    if (opponentThrowHistory.length > 0) {
+        opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+    }
+    updateThrowHistory();
+
+    // Show message
+    showInlineMessage(`Jij: ${data.yourThrow.name} vs ${data.opponentName}: ${data.opponentThrow.name}`, 'info');
+}
+
+function handleVastgooierResult(data) {
+    debugLog('🏆 Vastgooier result:', data);
+
+    const isWinner = data.winnerId === currentUser.id;
+
+    if (data.gameOver) {
+        showInlineMessage(isWinner ? '🎉 JE WINT!' : '💀 GAME OVER', isWinner ? 'success' : 'error');
+        showToast(isWinner ? '🎉 Gefeliciteerd! Je hebt gewonnen!' : '💀 Helaas! Je hebt verloren', isWinner ? 'success' : 'error', 5000);
+    } else {
+        showInlineMessage(isWinner ? '✅ Ronde gewonnen!' : '❌ Ronde verloren', isWinner ? 'success' : 'error');
+
+        // Update game UI
+        updateGameUI();
+
+        // Show penalty message
+        if (!isWinner) {
+            showToast(`-${data.penalty} leven (geen Mexico penalty bij overgooien)`, 'warning', 3000);
+        }
+    }
+
+    hideAllActionButtons();
 }
 
 // ============================================
@@ -1005,6 +1734,67 @@ function debugLog(...args) {
         debugLogEl.scrollTop = debugLogEl.scrollHeight;
     }
 }
+
+// ============================================
+// LAST ROUND SUMMARY
+// ============================================
+
+function updateLastRoundSummary(data) {
+    const summaryEl = document.getElementById('lastRoundSummary');
+    const contentEl = document.getElementById('lastRoundContent');
+
+    if (!summaryEl || !contentEl || !data) return;
+
+    // Determine names
+    const voorgooierName = data.voorgooierId === currentUser.id ? 'Jij' : currentGame.opponent.username;
+    const achterliggerName = data.achterliggerId === currentUser.id ? 'Jij' : currentGame.opponent.username;
+    const winnerName = data.winnerId === currentUser.id ? 'Jij' : currentGame.opponent.username;
+    const loserName = data.loserId === currentUser.id ? 'Jij' : currentGame.opponent.username;
+
+    // Get throw values
+    const voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value || '?';
+    const achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value || '?';
+
+    // Build compact text summary
+    let text = '';
+
+    if (data.winnerId && data.loserId) {
+        const winnerColor = data.winnerId === currentUser.id ? 'var(--color-green)' : 'var(--color-red)';
+        const loserColor = data.loserId === currentUser.id ? 'var(--color-red)' : 'var(--color-green)';
+
+        // Main result line
+        text = `<span style="color: var(--color-gold);">📊 Vorige ronde:</span> `;
+        text += `👑 ${voorgooierName} (${voorgooierValue}) vs 🎯 ${achterliggerName} (${achterliggerValue}) → `;
+        text += `<span style="color: ${winnerColor}; font-weight: bold;">${winnerName} wint</span>`;
+
+        // Penalty info (draaisteen terminologie)
+        if (data.penalty > 1) {
+            text += ` <span style="color: var(--color-red);">(${loserName} draait ${data.penalty}x, Mexico!)</span>`;
+        } else {
+            text += ` <span style="color: var(--text-secondary);">(${loserName} moet draaien)</span>`;
+        }
+
+        // Next voorgooier
+        text += ` → ${loserName} mag voorgooien`;
+    } else {
+        text = `<span style="color: var(--color-gold);">📊 Vorige ronde:</span> `;
+        text += `${voorgooierName} (${voorgooierValue}) vs ${achterliggerName} (${achterliggerValue}) → `;
+        text += `<span style="color: var(--text-secondary);">🔄 Gelijkspel (Vastgooier!)</span>`;
+    }
+
+    contentEl.innerHTML = text;
+    summaryEl.classList.remove('hidden');
+}
+
+// Close summary button handler
+document.addEventListener('DOMContentLoaded', () => {
+    const closeSummaryBtn = document.getElementById('closeSummaryBtn');
+    if (closeSummaryBtn) {
+        closeSummaryBtn.addEventListener('click', () => {
+            document.getElementById('lastRoundSummary')?.classList.add('hidden');
+        });
+    }
+});
 
 console.log('🎲 Multiplayer Mexico Client - CORRECTE SPELREGELS');
 console.log('✅ Client initialized');

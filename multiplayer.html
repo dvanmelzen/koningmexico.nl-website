@@ -596,27 +596,51 @@
                     </div>
                 </div>
 
+                <!-- Last Round Summary (Compact) -->
+                <div id="lastRoundSummary" class="rounded-lg p-3 mb-4 border-l-4 hidden" style="background: var(--bg-card); border-color: var(--color-gold);">
+                    <div class="flex items-center justify-between">
+                        <div id="lastRoundContent" class="text-xs flex-1" style="color: var(--text-primary);">
+                            <!-- Content filled by JS -->
+                        </div>
+                        <button id="closeSummaryBtn" class="text-xs ml-2 px-2 py-1 rounded transition hover:opacity-80" style="background: var(--text-secondary); color: white;">✕</button>
+                    </div>
+                </div>
+
+                <!-- Throw History (Both Players) with Game Info -->
+                <div id="throwHistoryDisplay" class="rounded-lg shadow-lg p-3 mb-6 border-l-4 border-gold hidden" style="background: var(--bg-card); border-color: var(--color-gold);">
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <!-- Player throws (left) -->
+                        <div>
+                            <div class="text-xs font-semibold mb-1" style="color: var(--color-green);">👤 Jij:</div>
+                            <div id="playerThrowHistoryItems" class="space-y-1">
+                                <!-- Player throw history -->
+                            </div>
+                        </div>
+                        <!-- Opponent throws (right) -->
+                        <div>
+                            <div class="text-xs font-semibold mb-1" style="color: var(--color-red);"><span id="opponentThrowHistoryLabel">🎯 Tegenstander</span>:</div>
+                            <div id="opponentThrowHistoryItems" class="space-y-1">
+                                <!-- Opponent throw history -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Info integrated below -->
+                    <div id="gameInfoInHistory" class="border-t pt-2 text-xs" style="border-color: var(--border-color); color: var(--text-secondary);">
+                        <!-- Game info will be inserted here -->
+                    </div>
+                </div>
+
                 <!-- Game Board -->
                 <div>
                     <div class="rounded-2xl shadow-xl p-6" style="background: var(--bg-card);">
 
-                        <!-- Game Info -->
-                        <div class="text-center mb-4">
-                            <div class="text-sm font-semibold" style="color: var(--text-secondary);">
-                                <span id="playerNameGame" style="color: var(--color-green);"></span> (Elo: <span id="playerEloGame"></span>)
-                                vs
-                                <span id="opponentNameGame" style="color: var(--color-red);"></span> (Elo: <span id="opponentEloGame"></span>)
-                            </div>
-                            <div class="text-xs mt-1" style="color: var(--text-secondary);">
-                                Ronde <span id="roundNumber">1</span> | Voorgooier: <span id="voorgooierName">-</span>
-                            </div>
-                            <div class="text-xs mt-1" style="color: var(--color-gold);" id="throwCounter">
-                                <!-- Worp counter will be shown here -->
-                            </div>
+                        <!-- Turn Indicator with Reset Button -->
+                        <div class="relative mb-6">
+                            <div id="turnIndicator" class="text-center py-4 rounded-xl font-bold text-lg"></div>
+                            <button id="resetUIBtn" class="absolute top-2 right-2 px-3 py-1 text-xs rounded-lg transition" style="background: var(--color-red); color: white;" title="Reset UI als het spel vastloopt">
+                                🔄 Reset UI
+                            </button>
                         </div>
-
-                        <!-- Turn Indicator -->
-                        <div id="turnIndicator" class="text-center py-4 mb-6 rounded-xl font-bold text-lg"></div>
 
                         <!-- Dice Cups -->
                         <div class="flex justify-center gap-6 mb-6">
@@ -660,30 +684,10 @@
                             <button type="button" class="btn-game btn-primary w-full hidden" id="revealBtn">
                                 👁️ Laten Zien
                             </button>
-                            <button type="button" class="btn-game btn-secondary w-full hidden" id="resultWonBtn">
-                                ✅ Ronde Gehaald
-                            </button>
-                            <button type="button" class="btn-game btn-primary w-full hidden" id="resultVastBtn">
-                                🤝 Vast
-                            </button>
-                            <button type="button" class="btn-game btn-danger w-full hidden" id="resultLostBtn">
-                                ❌ Verloren
-                            </button>
+                            <!-- Result knoppen VERWIJDERD - automatische vergelijking! -->
                             <button type="button" class="btn-game btn-danger w-full hidden" id="giveUpBtn">
                                 ❌ Pas
                             </button>
-                        </div>
-
-                        <!-- Throw History -->
-                        <div class="grid grid-cols-2 gap-4 mt-6">
-                            <div>
-                                <h4 class="font-semibold mb-2 text-sm" style="color: var(--text-primary);">🎯 Jouw worpen:</h4>
-                                <div id="playerHistory" class="space-y-1 text-sm"></div>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold mb-2 text-sm" style="color: var(--text-primary);"><span id="opponentHistoryLabel">👤 Tegenstander</span> worpen:</h4>
-                                <div id="opponentHistory" class="space-y-1 text-sm"></div>
-                            </div>
                         </div>
 
                         <!-- Game Result -->
@@ -708,9 +712,14 @@
     <div id="debugPanel" class="fixed bottom-4 left-4 z-50 hidden bg-black bg-opacity-90 text-green-400 font-mono text-xs p-4 rounded-lg shadow-2xl max-w-lg" style="max-height: 400px; width: 500px;">
         <div class="flex justify-between items-center mb-2 border-b border-green-600 pb-2">
             <span class="font-bold text-green-300">🐛 Debug Log</span>
-            <button id="clearDebugBtn" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">
-                Clear
-            </button>
+            <div class="flex gap-2">
+                <button id="copyDebugBtn" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">
+                    📋 Copy
+                </button>
+                <button id="clearDebugBtn" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">
+                    Clear
+                </button>
+            </div>
         </div>
         <div id="debugLog" class="overflow-y-auto space-y-1" style="max-height: 340px;"></div>
     </div>
