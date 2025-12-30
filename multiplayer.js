@@ -254,7 +254,7 @@ function setupUIListeners() {
     });
 }
 
-// Update header user display (username and ELO)
+// Update header user display (username and Power)
 function updateHeaderUserDisplay() {
     const userDisplay = document.getElementById('userDisplay');
     const usernameEl = document.getElementById('username');
@@ -268,7 +268,7 @@ function updateHeaderUserDisplay() {
 
         // Update content
         if (usernameEl) usernameEl.textContent = currentUser.username;
-        if (eloRatingEl) eloRatingEl.textContent = `(${currentUser.eloRating || 1200} ELO)`;
+        if (eloRatingEl) eloRatingEl.textContent = `(${currentUser.eloRating || 1200} Power)`;
     } else {
         // Hide when logged out
         userDisplay?.classList.add('hidden');
@@ -1187,7 +1187,7 @@ function handleGameOver(data) {
 
     // Show game over with inline message and toast
     showInlineMessage(title, iWon ? 'success' : 'error');
-    showToast(`${title}\nElo: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
+    showToast(`${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
 
     document.getElementById('returnLobbyBtn')?.classList.remove('hidden');
 }
