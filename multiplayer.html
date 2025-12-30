@@ -405,6 +405,12 @@
                 </button>
                 <a href="spelregels.html" class="text-white hover:text-gold-light transition font-semibold">Spelregels</a>
                 <a href="spel_vs_computer.html" class="text-white hover:text-gold-light transition font-semibold">Single Player</a>
+                <!-- Live Stats -->
+                <span id="liveStats" class="text-white text-sm px-3 py-1 rounded-lg" style="background: rgba(255,255,255,0.1);">
+                    <span class="mr-2">🟢 <span id="onlinePlayers">--</span></span>
+                    <span class="mr-2">⏳ <span id="queuePlayers">--</span></span>
+                    <span>🎮 <span id="activeGames">--</span></span>
+                </span>
                 <span id="userDisplay" class="hidden text-white">
                     <span class="font-semibold" id="username"></span>
                     <span class="text-sm text-white text-opacity-80" id="eloRating"></span>
@@ -694,9 +700,14 @@
                         <div id="gameResult" class="hidden mt-6 p-6 rounded-xl text-center" style="background: var(--bg-secondary);">
                             <h2 id="resultTitle" class="text-3xl font-heading font-bold mb-4"></h2>
                             <p id="resultMessage" class="text-lg mb-6" style="color: var(--text-primary);"></p>
-                            <button id="returnLobbyBtn" class="btn-game btn-primary px-8 py-3 rounded-xl shadow-lg">
-                                🏠 Terug naar Lobby
-                            </button>
+                            <div class="flex gap-4 justify-center">
+                                <button id="requestRematchBtn" class="btn-game btn-secondary px-8 py-3 rounded-xl shadow-lg hidden">
+                                    🔄 Revanche aanvragen
+                                </button>
+                                <button id="returnLobbyBtn" class="btn-game btn-primary px-8 py-3 rounded-xl shadow-lg">
+                                    🏠 Terug naar Lobby
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -89,6 +89,17 @@ function calculateThrowValue(dice1, dice2) {
     return { value: high * 10 + low, name: `${high}-${low}`, isMexico: false };
 }
 
+// Broadcast live stats to all connected clients
+function broadcastStats() {
+    const stats = {
+        totalUsers: db.getUserCount(),
+        onlinePlayers: activeSockets.size,
+        playersInQueue: matchmakingQueue.length,
+        activeGames: games.size
+    };
+    io.emit('statsUpdate', stats);
+}
+
 // ============================================
 // REST API ENDPOINTS
 // ============================================
@@ -96,6 +107,16 @@ function calculateThrowValue(dice1, dice2) {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', players: db.getUserCount(), games: games.size });
+});
+
+// Live stats endpoint
+app.get('/api/stats', (req, res) => {
+    res.json({
+        totalUsers: db.getUserCount(),
+        onlinePlayers: activeSockets.size,
+        playersInQueue: matchmakingQueue.length,
+        activeGames: games.size
+    });
 });
 
 // Register
@@ -275,6 +296,9 @@ io.on('connection', (socket) => {
 
     socket.emit('authenticated', { username: user.username });
 
+    // Broadcast updated stats to all clients
+    broadcastStats();
+
     // ============================================
     // MATCHMAKING
     // ============================================
@@ -299,6 +323,9 @@ io.on('connection', (socket) => {
 
         socket.emit('queue_joined', { queueSize: matchmakingQueue.length });
 
+        // Broadcast updated stats
+        broadcastStats();
+
         // Try to find a match
         tryMatchmaking();
     });
@@ -307,6 +334,9 @@ io.on('connection', (socket) => {
         const index = matchmakingQueue.findIndex(p => p.userId === userId);
         if (index !== -1) {
             matchmakingQueue.splice(index, 1);
+
+            // Broadcast updated stats
+            broadcastStats();
             console.log(`❌ ${user.username} left matchmaking queue`);
         }
     });
@@ -359,6 +389,117 @@ io.on('connection', (socket) => {
     });
 
     // ============================================
+    // REMATCH FUNCTIONALITY
+    // ============================================
+
+    socket.on('request_rematch', ({ gameId, opponentId }) => {
+        console.log(`🔄 Rematch request from ${user.username} to opponent ${opponentId}`);
+
+        // Find opponent socket
+        const opponentSocketId = Array.from(activeSockets.entries())
+            .find(([_, id]) => id === opponentId)?.[0];
+
+        if (opponentSocketId) {
+            const requestId = `rematch_${Date.now()}_${userId}_${opponentId}`;
+
+            // Send rematch request to opponent
+            io.to(opponentSocketId).emit('rematch_request', {
+                requestId,
+                fromUserId: userId,
+                fromUsername: user.username,
+                gameId
+            });
+
+            console.log(`✅ Rematch request sent to ${opponentId}`);
+        } else {
+            socket.emit('error', { message: 'Opponent not online' });
+        }
+    });
+
+    socket.on('accept_rematch', ({ requestId, fromUserId }) => {
+        console.log(`✅ Rematch accepted by ${user.username} from ${fromUserId}`);
+
+        // Find both players
+        const player1SocketId = Array.from(activeSockets.entries())
+            .find(([_, id]) => id === fromUserId)?.[0];
+        const player2SocketId = socket.id;
+
+        if (!player1SocketId) {
+            return socket.emit('error', { message: 'Original player not online' });
+        }
+
+        const player1 = users.get(fromUserId);
+        const player2 = user;
+
+        // Start a new game immediately
+        const gameId = `game_${Date.now()}_${player1.id}_${player2.id}`;
+        const game = createGame(gameId, player1, player2);
+        games.set(gameId, game);
+
+        console.log(`🎮 Rematch game created: ${gameId}`);
+
+        // Notify both players
+        io.to(player1SocketId).emit('rematch_accepted', {
+            requestId,
+            gameId
+        });
+
+        io.to(player2SocketId).emit('rematch_accepted', {
+            requestId,
+            gameId
+        });
+
+        // Start the game for both players
+        setTimeout(() => {
+            io.to(player1SocketId).emit('game_start', {
+                gameId: game.gameId,
+                opponent: {
+                    id: player2.id,
+                    username: player2.username,
+                    eloRating: player2.eloRating,
+                    avatarEmoji: player2.avatarEmoji
+                },
+                yourLives: game.player1Lives,
+                opponentLives: game.player2Lives,
+                roundNumber: game.roundNumber
+            });
+
+            io.to(player2SocketId).emit('game_start', {
+                gameId: game.gameId,
+                opponent: {
+                    id: player1.id,
+                    username: player1.username,
+                    eloRating: player1.eloRating,
+                    avatarEmoji: player1.avatarEmoji
+                },
+                yourLives: game.player2Lives,
+                opponentLives: game.player1Lives,
+                roundNumber: game.roundNumber
+            });
+
+            console.log(`▶️  Rematch game started between ${player1.username} and ${player2.username}`);
+        }, 500);
+
+        // Broadcast updated stats
+        broadcastStats();
+    });
+
+    socket.on('decline_rematch', ({ requestId, fromUserId }) => {
+        console.log(`❌ Rematch declined by ${user.username}`);
+
+        // Find requester socket
+        const requesterSocketId = Array.from(activeSockets.entries())
+            .find(([_, id]) => id === fromUserId)?.[0];
+
+        if (requesterSocketId) {
+            io.to(requesterSocketId).emit('rematch_declined', {
+                requestId,
+                declinedBy: user.username
+            });
+        }
+    });
+
+    // ============================================
     // DISCONNECT
     // ============================================
 
@@ -379,6 +520,9 @@ io.on('connection', (socket) => {
                 endGame(game, winnerId, 'opponent_disconnected');
             }
         }
+
+        // Broadcast updated stats to all clients
+        broadcastStats();
     });
 });
 
@@ -438,6 +582,9 @@ function createGame(player1Data, player2Data) {
     };
 
     games.set(gameId, game);
+
+    // Broadcast updated stats (game started, queue reduced)
+    broadcastStats();
 
     console.log(`🎮 Game created: ${player1.username} vs ${player2.username}`);
 
@@ -1547,6 +1694,9 @@ function endGame(game, winnerId, reason) {
 
     // Remove game
     games.delete(game.gameId);
+
+    // Broadcast updated stats (game ended)
+    broadcastStats();
 }
 
 // ============================================

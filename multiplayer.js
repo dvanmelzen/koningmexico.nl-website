@@ -418,6 +418,11 @@ function initializeSocket() {
     socket.on('first_round_result', handleFirstRoundResult);
     socket.on('first_round_tie', handleFirstRoundTie);
 
+    // Rematch events
+    socket.on('rematch_request', handleRematchRequest);
+    socket.on('rematch_accepted', handleRematchAccepted);
+    socket.on('rematch_declined', handleRematchDeclined);
+
     socket.on('error', (data) => debugLog('❌ Error:', data));
 }
 
@@ -529,6 +534,7 @@ function setupGameListeners() {
     // Result button listeners VERWIJDERD - automatische vergelijking!
 
     document.getElementById('returnLobbyBtn')?.addEventListener('click', returnToLobby);
+    document.getElementById('requestRematchBtn')?.addEventListener('click', requestRematch);
 }
 
 function handleGameStart(data) {
@@ -1221,6 +1227,8 @@ function handleGameOver(data) {
     showInlineMessage(title, iWon ? 'success' : 'error');
     showToast(`${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
 
+    // Show rematch and return buttons
+    document.getElementById('requestRematchBtn')?.classList.remove('hidden');
     document.getElementById('returnLobbyBtn')?.classList.remove('hidden');
 }
 
@@ -1671,6 +1679,71 @@ function returnToLobby() {
     showLobby();
     updateUserStats();
     loadLeaderboard();
+}
+
+// ============================================
+// REMATCH FUNCTIONALITY
+// ============================================
+
+function requestRematch() {
+    if (!currentGame || !currentGame.opponent) return;
+
+    // Disable rematch button and show waiting state
+    const rematchBtn = document.getElementById('requestRematchBtn');
+    if (rematchBtn) {
+        rematchBtn.disabled = true;
+        rematchBtn.textContent = '⏳ Wachten op tegenstander...';
+    }
+
+    socket?.emit('request_rematch', {
+        gameId: currentGame.gameId,
+        opponentId: currentGame.opponent.id
+    });
+
+    showToast('🔄 Revanche aanvraag verzonden...', 'info', 3000);
+}
+
+function handleRematchRequest(data) {
+    debugLog('🔄 Rematch request received:', data);
+
+    const opponentName = data.fromUsername || 'Je tegenstander';
+
+    // Show confirmation dialog
+    if (confirm(`${opponentName} wil revanche! Wil je nog een keer spelen?`)) {
+        socket?.emit('accept_rematch', {
+            requestId: data.requestId,
+            fromUserId: data.fromUserId
+        });
+        showToast('✅ Revanche geaccepteerd! Starting nieuwe game...', 'success', 2000);
+    } else {
+        socket?.emit('decline_rematch', {
+            requestId: data.requestId,
+            fromUserId: data.fromUserId
+        });
+        showToast('❌ Revanche geweigerd', 'info', 2000);
+    }
+}
+
+function handleRematchAccepted(data) {
+    debugLog('✅ Rematch accepted:', data);
+    showToast('🎮 Revanche geaccepteerd! Game start...', 'success', 2000);
+
+    // Reset UI
+    resetGameUI();
+
+    // Game will start automatically via game_start event
+}
+
+function handleRematchDeclined(data) {
+    debugLog('❌ Rematch declined:', data);
+    showToast('😔 Revanche geweigerd door tegenstander', 'error', 3000);
+
+    // Re-enable rematch button
+    const rematchBtn = document.getElementById('requestRematchBtn');
+    if (rematchBtn) {
+        rematchBtn.disabled = false;
+        rematchBtn.textContent = '🔄 Revanche aanvragen';
+    }
 }
 
 // ============================================
