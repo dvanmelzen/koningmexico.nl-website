@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Node modules (will be installed in container)
+node_modules
+npm-debug.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Documentation
+*.md
+README.md
+DEPLOYMENT_HETZNER.md
+PRD.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Backups
+backups/
+*.backup
+
+# Development files
+backend/nul
+nul
+
+# Old versions
+*.backup
+backups/

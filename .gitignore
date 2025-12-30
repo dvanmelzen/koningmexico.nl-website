@@ -31,5 +31,18 @@ build/
 .env.local
 .env.*.local
 
+# Database
+backend/mexico.db
+backend/mexico.db-shm
+backend/mexico.db-wal
+
+# Backup files
+*.backup
+backups/
+
+# Temp files
+nul
+backend/nul
+
 # Netlify
 .netlify/

@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  # Backend (Node.js/Socket.io)
+  mexico-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: mexico-backend-prod
+    restart: always
+    ports:
+      - "127.0.0.1:3001:3001"  # Only bind to localhost (Nginx will proxy)
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-https://koningmexico.nl}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://koningmexico.nl}
+    volumes:
+      - mexico_data:/app/data  # SQLite database persistence
+    networks:
+      - mexico-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (Static Nginx)
+  mexico-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: mexico-frontend-prod
+    restart: always
+    ports:
+      - "127.0.0.1:8080:8080"  # Only bind to localhost (Nginx will proxy)
+    networks:
+      - mexico-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  mexico_data:
+    driver: local
+
+networks:
+  mexico-network:
+    driver: bridge
