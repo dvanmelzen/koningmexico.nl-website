@@ -285,6 +285,26 @@ function getRecentGames(userId, limit = 10) {
     return stmt.all(userId, userId, userId, userId, userId, limit);
 }
 
+// Get recently registered users
+function getRecentUsers(limit = 3) {
+    const stmt = db.prepare(`
+        SELECT id, username, eloRating, avatarEmoji, createdAt
+        FROM users
+        ORDER BY createdAt DESC
+        LIMIT ?
+    `);
+
+    const users = stmt.all(limit);
+
+    return users.map(user => ({
+        id: user.id,
+        username: user.username,
+        eloRating: user.eloRating,
+        avatarEmoji: user.avatarEmoji,
+        createdAt: new Date(user.createdAt)
+    }));
+}
+
 // ============================================
 // EXPORTS
 // ============================================
@@ -300,5 +320,6 @@ module.exports = {
     getUserCount,
     saveGameHistory,
     getRecentGames,
+    getRecentUsers,
     db // Export db instance for direct queries if needed
 };

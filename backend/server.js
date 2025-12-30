@@ -290,6 +290,13 @@ app.get('/api/leaderboard', (req, res) => {
     res.json({ players });
 });
 
+// Recent Users
+app.get('/api/users/recent', (req, res) => {
+    const limit = parseInt(req.query.limit) || 3;
+    const users = db.getRecentUsers(limit);
+    res.json(users);
+});
+
 // ============================================
 // SOCKET.IO CONNECTION & AUTHENTICATION
 // ============================================

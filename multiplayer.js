@@ -61,6 +61,7 @@ function showLobby() {
     document.getElementById('lobbyScreen')?.classList.remove('hidden');
     loadLeaderboard();
     loadRecentGames();
+    loadRecentUsers();
     updateUserStats();
 }
 
@@ -617,6 +618,68 @@ async function loadRecentGames() {
         const recentGamesDiv = document.getElementById('recentGamesList');
         if (recentGamesDiv) {
             recentGamesDiv.innerHTML = `
+                <div class="text-center py-4 text-sm" style="color: var(--text-secondary);">
+                    Fout bij laden
+                </div>
+            `;
+        }
+    }
+}
+
+async function loadRecentUsers() {
+    try {
+        const response = await fetch(`${API_URL}/api/users/recent?limit=3`);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch recent users');
+        }
+
+        const users = await response.json();
+        const newPlayersDiv = document.getElementById('newPlayersList');
+        if (!newPlayersDiv) return;
+
+        if (users.length === 0) {
+            newPlayersDiv.innerHTML = `
+                <div class="text-center py-8" style="color: var(--text-secondary);">
+                    <div class="text-4xl mb-2">👤</div>
+                    <div class="text-sm">Nog geen spelers</div>
+                </div>
+            `;
+            return;
+        }
+
+        newPlayersDiv.innerHTML = users.map(user => {
+            const timeAgo = formatTimeAgo(user.createdAt);
+
+            return `
+                <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg-secondary);">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${user.avatarEmoji}</span>
+                        <div>
+                            <div class="font-medium" style="color: var(--text-primary);">
+                                ${user.username}
+                            </div>
+                            <div class="text-xs" style="color: var(--text-secondary);">
+                                ${timeAgo}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-sm" style="color: var(--color-gold);">
+                            ${user.eloRating}
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">
+                            Power
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Recent users error:', error);
+        const newPlayersDiv = document.getElementById('newPlayersList');
+        if (newPlayersDiv) {
+            newPlayersDiv.innerHTML = `
                 <div class="text-center py-4 text-sm" style="color: var(--text-secondary);">
                     Fout bij laden
                 </div>
@@ -1834,6 +1897,7 @@ function returnToLobby() {
     updateUserStats();
     loadLeaderboard();
     loadRecentGames();
+    loadRecentUsers();
 }
 
 // ============================================
