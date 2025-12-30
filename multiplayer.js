@@ -271,6 +271,25 @@ function setupUIListeners() {
         }
     });
 
+    // Copy Debug Log
+    document.getElementById('copyDebugLog')?.addEventListener('click', () => {
+        const debugEventLog = document.getElementById('debugEventLog');
+        if (!debugEventLog) return;
+
+        // Extract text from all log entries
+        const logText = Array.from(debugEventLog.children)
+            .map(entry => entry.textContent)
+            .join('\n');
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(logText).then(() => {
+            showToast('📋 Debug log gekopieerd!', 'success', 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('❌ Kopiëren mislukt', 'error', 2000);
+        });
+    });
+
     // Clear Debug Log
     document.getElementById('clearDebugLog')?.addEventListener('click', () => {
         const debugEventLog = document.getElementById('debugEventLog');
