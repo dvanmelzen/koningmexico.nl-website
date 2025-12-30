@@ -119,6 +119,19 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
+// Get recent games for a user
+app.get('/api/games/recent', authenticateToken, (req, res) => {
+    try {
+        const userId = req.user.id;
+        const limit = parseInt(req.query.limit) || 10;
+        const games = db.getRecentGames(userId, limit);
+        res.json({ games });
+    } catch (error) {
+        console.error('Error fetching recent games:', error);
+        res.status(500).json({ error: 'Failed to fetch recent games' });
+    }
+});
+
 // Register
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -1671,6 +1684,19 @@ function endGame(game, winnerId, reason) {
         eloRating: loser.eloRating,
         losses: loser.stats.losses,
         gamesPlayed: loser.stats.gamesPlayed
+    });
+
+    // Save game history
+    db.saveGameHistory({
+        gameId: game.gameId,
+        winnerId,
+        loserId,
+        winnerUsername: winner.username,
+        loserUsername: loser.username,
+        winnerEloChange: winnerChange,
+        loserEloChange: loserChange,
+        winnerFinalElo: winner.eloRating,
+        loserFinalElo: loser.eloRating
     });
 
     // Send game over

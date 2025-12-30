@@ -60,6 +60,7 @@ function showLobby() {
     hideAllScreens();
     document.getElementById('lobbyScreen')?.classList.remove('hidden');
     loadLeaderboard();
+    loadRecentGames();
     updateUserStats();
 }
 
@@ -486,6 +487,92 @@ async function loadLeaderboard() {
     } catch (error) {
         console.error('Leaderboard error:', error);
     }
+}
+
+async function loadRecentGames() {
+    try {
+        const response = await fetch(`${API_URL}/api/games/recent`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch recent games');
+        }
+
+        const data = await response.json();
+        const recentGamesDiv = document.getElementById('recentGamesList');
+        if (!recentGamesDiv) return;
+
+        if (data.games.length === 0) {
+            recentGamesDiv.innerHTML = `
+                <div class="text-center py-8" style="color: var(--text-secondary);">
+                    <div class="text-4xl mb-2">🎮</div>
+                    <div class="text-sm">Geen games gespeeld</div>
+                </div>
+            `;
+            return;
+        }
+
+        recentGamesDiv.innerHTML = data.games.map(game => {
+            const isWin = game.result === 'win';
+            const resultIcon = isWin ? '🏆' : '❌';
+            const resultColor = isWin ? 'var(--color-green)' : 'var(--color-red)';
+            const eloSign = game.eloChange > 0 ? '+' : '';
+            const timeAgo = formatTimeAgo(game.playedAt);
+
+            return `
+                <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg-secondary);">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">${resultIcon}</span>
+                        <div>
+                            <div class="font-medium" style="color: var(--text-primary);">
+                                vs ${game.opponent}
+                            </div>
+                            <div class="text-xs" style="color: var(--text-secondary);">
+                                ${timeAgo}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold" style="color: ${resultColor};">
+                            ${eloSign}${game.eloChange}
+                        </div>
+                        <div class="text-xs" style="color: var(--text-secondary);">
+                            Power
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Recent games error:', error);
+        const recentGamesDiv = document.getElementById('recentGamesList');
+        if (recentGamesDiv) {
+            recentGamesDiv.innerHTML = `
+                <div class="text-center py-4 text-sm" style="color: var(--text-secondary);">
+                    Fout bij laden
+                </div>
+            `;
+        }
+    }
+}
+
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now - then;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Zojuist';
+    if (diffMins < 60) return `${diffMins} min geleden`;
+    if (diffHours < 24) return `${diffHours} uur geleden`;
+    if (diffDays === 1) return 'Gisteren';
+    if (diffDays < 7) return `${diffDays} dagen geleden`;
+    return then.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 }
 
 function updateUserStats() {
@@ -1679,6 +1766,7 @@ function returnToLobby() {
     showLobby();
     updateUserStats();
     loadLeaderboard();
+    loadRecentGames();
 }
 
 // ============================================
