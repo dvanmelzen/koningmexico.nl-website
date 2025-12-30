@@ -587,6 +587,49 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Debug Panel -->
+                    <div class="rounded-2xl shadow-xl p-4 mt-6" style="background: #1a1a1a; border: 2px solid var(--color-gold);">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold" style="color: var(--color-gold);">🔧 Debug Panel</h3>
+                            <button id="toggleDebugPanel" class="text-xs px-2 py-1 rounded" style="background: var(--color-gold); color: #000;">
+                                ▼ Collapse
+                            </button>
+                        </div>
+                        <div id="debugPanelContent" class="space-y-2 text-xs font-mono">
+                            <!-- Connection Status -->
+                            <div class="border-b pb-2" style="border-color: #333;">
+                                <div class="font-bold mb-1" style="color: #00ff00;">📡 Verbinding:</div>
+                                <div id="debugSocketStatus" style="color: #aaa;">Bezig met verbinden...</div>
+                            </div>
+
+                            <!-- Queue Status -->
+                            <div class="border-b pb-2" style="border-color: #333;">
+                                <div class="font-bold mb-1" style="color: #00ff00;">🔍 Queue Status:</div>
+                                <div id="debugQueueStatus" style="color: #aaa;">Niet in queue</div>
+                                <div id="debugQueueSize" style="color: #aaa;">Spelers in queue: <span class="font-bold" style="color: var(--color-gold);">0</span></div>
+                            </div>
+
+                            <!-- Matchmaking Events -->
+                            <div class="border-b pb-2" style="border-color: #333;">
+                                <div class="font-bold mb-1" style="color: #00ff00;">🎮 Matchmaking:</div>
+                                <div id="debugMatchStatus" style="color: #aaa;">Wachten...</div>
+                            </div>
+
+                            <!-- Live Event Log -->
+                            <div>
+                                <div class="font-bold mb-1" style="color: #00ff00;">📋 Event Log:</div>
+                                <div id="debugEventLog" style="color: #aaa; max-height: 200px; overflow-y: auto; line-height: 1.4;">
+                                    <div style="opacity: 0.6;">Wachten op events...</div>
+                                </div>
+                            </div>
+
+                            <!-- Clear Log Button -->
+                            <button id="clearDebugLog" class="w-full mt-2 py-1 text-xs rounded" style="background: #333; color: #fff;">
+                                🗑️ Clear Log
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

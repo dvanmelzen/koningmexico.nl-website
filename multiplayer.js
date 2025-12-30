@@ -256,6 +256,28 @@ function setupUIListeners() {
         resetGameUI();
         showToast('🔄 UI gereset!', 'info', 2000);
     });
+
+    // New Debug Panel Toggle
+    const toggleDebugPanel = document.getElementById('toggleDebugPanel');
+    const debugPanelContent = document.getElementById('debugPanelContent');
+
+    toggleDebugPanel?.addEventListener('click', () => {
+        const isHidden = debugPanelContent?.style.display === 'none';
+        if (debugPanelContent) {
+            debugPanelContent.style.display = isHidden ? 'block' : 'none';
+        }
+        if (toggleDebugPanel) {
+            toggleDebugPanel.textContent = isHidden ? '▼ Collapse' : '▶ Expand';
+        }
+    });
+
+    // Clear Debug Log
+    document.getElementById('clearDebugLog')?.addEventListener('click', () => {
+        const debugEventLog = document.getElementById('debugEventLog');
+        if (debugEventLog) {
+            debugEventLog.innerHTML = '<div style="opacity: 0.6;">Log gewist...</div>';
+        }
+    });
 }
 
 // Update header user display (username and Power)
@@ -378,20 +400,41 @@ function initializeSocket() {
         auth: { token: accessToken }
     });
 
-    socket.on('connect', () => debugLog('✅ Connected'));
-    socket.on('disconnect', () => debugLog('❌ Disconnected'));
-    socket.on('authenticated', (data) => debugLog('✅ Authenticated:', data));
+    socket.on('connect', () => {
+        debugLog('✅ Connected');
+        updateDebugSocketStatus('✅ Verbonden met server', '#00ff00');
+    });
+
+    socket.on('disconnect', () => {
+        debugLog('❌ Disconnected');
+        updateDebugSocketStatus('❌ Verbinding verbroken', '#ff4444');
+        updateDebugQueueStatus('Niet verbonden', false);
+    });
+
+    socket.on('authenticated', (data) => {
+        debugLog('✅ Authenticated:', data);
+        updateDebugSocketStatus(`✅ Ingelogd als ${data.username}`, '#00ff00');
+    });
 
     // Live stats updates
     socket.on('statsUpdate', (stats) => {
         updateLiveStats(stats);
+        updateDebugQueueSize(stats.playersInQueue || 0);
     });
 
     // Matchmaking
-    socket.on('queue_joined', (data) => debugLog('🔍 Queue joined:', data));
+    socket.on('queue_joined', (data) => {
+        debugLog('🔍 Queue joined:', data);
+        updateDebugQueueStatus('✅ In matchmaking queue', true);
+        updateDebugQueueSize(data.queueSize || 1);
+        updateDebugMatchStatus('Zoeken naar tegenstander...', '#ffaa00');
+    });
+
     socket.on('match_found', (data) => {
         debugLog('🎮 Match found!', data);
         currentGame = { opponent: data.opponent };
+        updateDebugQueueStatus('Match gevonden!', false);
+        updateDebugMatchStatus(`🎉 Match met ${data.opponent.username}`, '#00ff00');
     });
 
     // Game events
@@ -453,6 +496,10 @@ function setupLobbyListeners() {
         // Show idle UI
         document.getElementById('queueSearching')?.classList.add('hidden');
         document.getElementById('queueIdle')?.classList.remove('hidden');
+
+        // Update debug panel
+        updateDebugQueueStatus('Queue verlaten', false);
+        updateDebugMatchStatus('Niet zoeken', '#aaa');
     });
 
     document.getElementById('refreshLeaderboard')?.addEventListener('click', loadLeaderboard);
@@ -626,6 +673,7 @@ function setupGameListeners() {
 
 function handleGameStart(data) {
     debugLog('▶️  Game started:', data);
+    updateDebugMatchStatus('🎮 Spel gestart!', '#00ff00');
 
     currentGame = {
         ...currentGame,
@@ -1926,6 +1974,68 @@ function debugLog(...args) {
         logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="text-green-400">${message}</span>`;
         debugLogEl.appendChild(logEntry);
         debugLogEl.scrollTop = debugLogEl.scrollHeight;
+    }
+
+    // Also log to new debug panel
+    logToDebugPanel(args.join(' '));
+}
+
+// New Debug Panel Functions
+function logToDebugPanel(message, type = 'info') {
+    const debugEventLog = document.getElementById('debugEventLog');
+    if (!debugEventLog) return;
+
+    // Clear initial "waiting" message
+    if (debugEventLog.children.length === 1 && debugEventLog.children[0].textContent.includes('Wachten')) {
+        debugEventLog.innerHTML = '';
+    }
+
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
+    logEntry.style.marginBottom = '4px';
+
+    let color = '#00ff00';
+    if (type === 'error') color = '#ff4444';
+    if (type === 'warn') color = '#ffaa00';
+
+    logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> <span style="color: ${color};">${message}</span>`;
+    debugEventLog.appendChild(logEntry);
+
+    // Auto-scroll to bottom
+    debugEventLog.scrollTop = debugEventLog.scrollHeight;
+
+    // Keep only last 50 entries
+    while (debugEventLog.children.length > 50) {
+        debugEventLog.removeChild(debugEventLog.firstChild);
+    }
+}
+
+function updateDebugSocketStatus(status, color = '#00ff00') {
+    const el = document.getElementById('debugSocketStatus');
+    if (el) {
+        el.innerHTML = `<span style="color: ${color};">${status}</span>`;
+    }
+}
+
+function updateDebugQueueStatus(status, inQueue = false) {
+    const el = document.getElementById('debugQueueStatus');
+    if (el) {
+        const color = inQueue ? '#00ff00' : '#aaa';
+        el.innerHTML = `<span style="color: ${color};">${status}</span>`;
+    }
+}
+
+function updateDebugQueueSize(size) {
+    const el = document.getElementById('debugQueueSize');
+    if (el) {
+        el.innerHTML = `Spelers in queue: <span class="font-bold" style="color: var(--color-gold);">${size}</span>`;
+    }
+}
+
+function updateDebugMatchStatus(status, color = '#aaa') {
+    const el = document.getElementById('debugMatchStatus');
+    if (el) {
+        el.innerHTML = `<span style="color: ${color};">${status}</span>`;
     }
 }
 
