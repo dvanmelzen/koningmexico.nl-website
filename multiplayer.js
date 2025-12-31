@@ -93,9 +93,16 @@ function setupAuthListeners() {
     });
 
     // Guest login button
-    document.getElementById('guestLoginBtn')?.addEventListener('click', () => {
-        handleGuestLogin();
-    });
+    const guestBtn = document.getElementById('guestLoginBtn');
+    if (guestBtn) {
+        console.log('✅ Guest login button gevonden, event listener toegevoegd');
+        guestBtn.addEventListener('click', () => {
+            console.log('🖱️ Guest login button geklikt!');
+            handleGuestLogin();
+        });
+    } else {
+        console.error('❌ Guest login button niet gevonden in DOM!');
+    }
 
     // Tab switching
     document.getElementById('loginTab')?.addEventListener('click', () => {
@@ -199,10 +206,15 @@ async function handleRegister() {
 }
 
 async function handleGuestLogin() {
+    console.log('🎮 Guest login gestart...');
+
     try {
         // Generate random guest number (10000-99999)
         const guestNumber = Math.floor(10000 + Math.random() * 90000);
         const guestUsername = `Gast${guestNumber}`;
+
+        console.log(`👤 Genereer gastgebruiker: ${guestUsername}`);
+        console.log(`📡 API URL: ${API_URL}/api/auth/guest`);
 
         const response = await fetch(`${API_URL}/api/auth/guest`, {
             method: 'POST',
@@ -210,15 +222,21 @@ async function handleGuestLogin() {
             body: JSON.stringify({ username: guestUsername })
         });
 
+        console.log(`📥 Response status: ${response.status}`);
+
         const data = await response.json();
+        console.log('📦 Response data:', data);
 
         if (!response.ok) {
+            console.error('❌ Guest login mislukt:', data.message);
             showToast(data.message || 'Gast login mislukt', 'error');
             return;
         }
 
         currentUser = data.user;
         accessToken = data.accessToken;
+
+        console.log('✅ Guest login succesvol:', currentUser.username);
 
         // Don't save guest sessions to localStorage (temporary only)
         // localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -229,7 +247,7 @@ async function handleGuestLogin() {
         updateHeaderUserDisplay();
         showLobby();
     } catch (error) {
-        console.error('Guest login error:', error);
+        console.error('❌ Guest login error:', error);
         showToast('Verbinding mislukt - is de server actief?', 'error');
     }
 }
@@ -399,26 +417,48 @@ function showToast(message, type = 'info', duration = 3000) {
     if (!container) return;
 
     const toast = document.createElement('div');
-    toast.className = 'toast-notification p-4 rounded-lg shadow-lg mb-2 fade-in';
+    toast.className = 'toast-notification';
 
-    let bgColor = 'bg-blue-500';
+    // Inline styles for better visibility
+    let bgColor = '#3B82F6'; // blue
     let icon = 'ℹ️';
 
     if (type === 'success') {
-        bgColor = 'bg-green-500';
+        bgColor = '#10B981'; // green
         icon = '✅';
     } else if (type === 'error') {
-        bgColor = 'bg-red-500';
+        bgColor = '#EF4444'; // red
         icon = '❌';
     } else if (type === 'warning') {
-        bgColor = 'bg-yellow-500';
+        bgColor = '#F59E0B'; // yellow/orange
         icon = '⚠️';
     }
 
-    toast.className += ` ${bgColor} text-white`;
-    toast.innerHTML = `<span class="text-lg mr-2">${icon}</span><span>${message}</span>`;
+    toast.style.cssText = `
+        background: ${bgColor};
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        min-width: 250px;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateX(100px);
+        transition: all 0.3s ease;
+    `;
+
+    toast.innerHTML = `<span style="font-size: 1.25rem; margin-right: 0.5rem;">${icon}</span><span>${message}</span>`;
 
     container.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
 
     setTimeout(() => {
         toast.style.opacity = '0';
