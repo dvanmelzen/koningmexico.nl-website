@@ -33,10 +33,26 @@ const KoningMexicoNav = {
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Home</span>
                 </a>
-                <a href="spelregels.html" class="nav-link">
-                    <span class="nav-icon">📖</span>
-                    <span class="nav-text">Spelregels</span>
-                </a>
+
+                <!-- Spelregels Dropdown -->
+                <div class="nav-dropdown">
+                    <button class="nav-link nav-dropdown-btn">
+                        <span class="nav-icon">📖</span>
+                        <span class="nav-text">Spelregels</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="spelregels.html" class="nav-dropdown-item">
+                            <span>📜</span>
+                            <span>Spelregels</span>
+                        </a>
+                        <a href="ai_psychology.html" class="nav-dropdown-item">
+                            <span>🧠</span>
+                            <span>AI Psychologie</span>
+                        </a>
+                    </div>
+                </div>
+
                 <a href="spel.html" class="nav-link">
                     <span class="nav-icon">🎲</span>
                     <span class="nav-text">Solo Spelen</span>
@@ -69,6 +85,10 @@ const KoningMexicoNav = {
                 <a href="spelregels.html" class="mobile-nav-link">
                     <span class="text-2xl">📖</span>
                     <span>Spelregels</span>
+                </a>
+                <a href="ai_psychology.html" class="mobile-nav-link mobile-nav-subitem">
+                    <span class="text-2xl">🧠</span>
+                    <span>AI Psychologie</span>
                 </a>
                 <a href="spel.html" class="mobile-nav-link">
                     <span class="text-2xl">🎲</span>
@@ -217,6 +237,78 @@ const KoningMexicoNav = {
                 background: rgba(255, 215, 0, 0.25);
             }
 
+            /* Mobile subitem */
+            .mobile-nav-subitem {
+                margin-left: 2rem;
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+
+            /* Dropdown Menu */
+            .nav-dropdown {
+                position: relative;
+            }
+
+            .nav-dropdown-btn {
+                cursor: pointer;
+                background: transparent;
+                border: none;
+            }
+
+            .dropdown-arrow {
+                font-size: 0.7rem;
+                margin-left: 0.25rem;
+                transition: transform 0.2s;
+            }
+
+            .nav-dropdown:hover .dropdown-arrow {
+                transform: rotate(180deg);
+            }
+
+            .nav-dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                min-width: 200px;
+                background: rgba(13, 94, 58, 0.98);
+                border-radius: 0.5rem;
+                padding: 0.5rem;
+                margin-top: 0.5rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.2s ease;
+                z-index: 1000;
+            }
+
+            .nav-dropdown:hover .nav-dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .nav-dropdown-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                color: white;
+                font-weight: 600;
+                border-radius: 0.375rem;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            .nav-dropdown-item:hover {
+                background: rgba(255, 255, 255, 0.15);
+                transform: translateX(5px);
+            }
+
+            .nav-dropdown-item span:first-child {
+                font-size: 1.25rem;
+            }
+
             /* Responsive adjustments */
             @media (max-width: 1024px) {
                 .nav-text {
@@ -225,6 +317,10 @@ const KoningMexicoNav = {
 
                 .nav-icon {
                     font-size: 1.5rem;
+                }
+
+                .dropdown-arrow {
+                    display: none;
                 }
             }
 
