@@ -1,7 +1,14 @@
 // Multiplayer Mexico Game - Client (CORRECTE SPELREGELS)
-// Use relative URLs so it works in any environment (localhost, dev, production)
-const API_URL = window.location.origin;
-const SOCKET_URL = window.location.origin;
+// Smart API URL detection: use dev server if on production without backend
+let API_URL = window.location.origin;
+let SOCKET_URL = window.location.origin;
+
+// If on GitHub Pages (koningmexico.nl without backend), use dev server
+if (window.location.hostname === 'koningmexico.nl' || window.location.hostname.includes('github.io')) {
+    API_URL = 'https://dev.koningmexico.nl';
+    SOCKET_URL = 'https://dev.koningmexico.nl';
+    console.log('📡 Using dev backend:', API_URL);
+}
 
 // Global state
 let socket = null;
@@ -1695,11 +1702,16 @@ function updateThrowHistory() {
                     mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
                 }
 
-                playerHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                const isLast = index === playerThrowHistory.length - 1;
+                const animClass = isLast ? 'throw-entry-new' : '';
+                const highlightStyle = isLast ? 'background: rgba(255, 215, 0, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem; border-left: 2px solid var(--color-gold);' : '';
+
+                playerHtml += `<div class="text-xs ${animClass}" style="color: var(--text-primary); ${highlightStyle}">
                     <span class="opacity-75">${index + 1}.</span>
                     <span class="font-bold" style="color: var(--color-gold);">${displayValue}</span>
                     <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
                     ${mexicoLabel}
+                    ${isLast ? ' <span class="text-[0.6rem]" style="color: var(--color-gold);">◄ Nieuw</span>' : ''}
                 </div>`;
             });
         }
@@ -1731,11 +1743,16 @@ function updateThrowHistory() {
                     mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
                 }
 
-                opponentHtml += `<div class="text-xs" style="color: var(--text-primary);">
+                const isLast = index === opponentThrowHistory.length - 1;
+                const animClass = isLast ? 'throw-entry-new' : '';
+                const highlightStyle = isLast ? 'background: rgba(255, 99, 71, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem; border-left: 2px solid var(--color-red);' : '';
+
+                opponentHtml += `<div class="text-xs ${animClass}" style="color: var(--text-primary); ${highlightStyle}">
                     <span class="opacity-75">${index + 1}.</span>
                     <span class="font-bold" style="color: var(--color-gold);">${displayValue}</span>
                     <span class="opacity-60 text-[0.65rem]">${typeLabel}</span>
                     ${mexicoLabel}
+                    ${isLast ? ' <span class="text-[0.6rem]" style="color: var(--color-red);">◄ Nieuw</span>' : ''}
                 </div>`;
             });
         }
