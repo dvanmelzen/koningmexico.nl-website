@@ -92,6 +92,11 @@ function setupAuthListeners() {
         handleRegister();
     });
 
+    // Guest login button
+    document.getElementById('guestLoginBtn')?.addEventListener('click', () => {
+        handleGuestLogin();
+    });
+
     // Tab switching
     document.getElementById('loginTab')?.addEventListener('click', () => {
         document.getElementById('loginForm')?.classList.remove('hidden');
@@ -189,6 +194,42 @@ async function handleRegister() {
         showLobby();
     } catch (error) {
         console.error('Register error:', error);
+        showToast('Verbinding mislukt - is de server actief?', 'error');
+    }
+}
+
+async function handleGuestLogin() {
+    try {
+        // Generate random guest number (10000-99999)
+        const guestNumber = Math.floor(10000 + Math.random() * 90000);
+        const guestUsername = `Gast${guestNumber}`;
+
+        const response = await fetch(`${API_URL}/api/auth/guest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: guestUsername })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showToast(data.message || 'Gast login mislukt', 'error');
+            return;
+        }
+
+        currentUser = data.user;
+        accessToken = data.accessToken;
+
+        // Don't save guest sessions to localStorage (temporary only)
+        // localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        // localStorage.setItem('accessToken', accessToken);
+
+        showToast(`Welkom ${currentUser.username}! 👋 (Gastspeler)`, 'success', 3000);
+        initializeSocket();
+        updateHeaderUserDisplay();
+        showLobby();
+    } catch (error) {
+        console.error('Guest login error:', error);
         showToast('Verbinding mislukt - is de server actief?', 'error');
     }
 }

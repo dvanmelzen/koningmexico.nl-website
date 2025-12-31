@@ -282,6 +282,52 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// Guest Login (temporary, in-memory only)
+app.post('/api/auth/guest', async (req, res) => {
+    try {
+        let { username } = req.body;
+
+        // Validation
+        if (!username || !username.startsWith('Gast')) {
+            return res.status(400).json({ message: 'Ongeldige gast gebruikersnaam' });
+        }
+
+        username = username.trim();
+
+        // Create in-memory guest user (NOT saved to database)
+        const guestUser = {
+            id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            username: username,
+            email: `${username.toLowerCase()}@guest.temporary`,
+            eloRating: 1200,
+            avatarEmoji: '👤',
+            stats: {
+                wins: 0,
+                losses: 0,
+                gamesPlayed: 0
+            },
+            isGuest: true // Flag to identify guest users
+        };
+
+        // Cache guest user (temporary)
+        userCache.set(guestUser.id, guestUser);
+
+        // Generate token (same as regular users)
+        const accessToken = generateToken(guestUser);
+
+        console.log(`👤 Guest user joined: ${guestUser.username} (${guestUser.id})`);
+
+        res.status(200).json({
+            user: guestUser,
+            accessToken
+        });
+
+    } catch (error) {
+        console.error('Guest login error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Leaderboard
 app.get('/api/leaderboard', (req, res) => {
     const players = db.getAllUsers()
