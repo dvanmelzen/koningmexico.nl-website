@@ -850,6 +850,20 @@ function handleGameStart(data) {
         mustBlind: data.mustBlind
     };
 
+    // Update opponent name in UI labels
+    const opponent = data.players?.find(p => p.id !== currentUser?.id);
+    const opponentName = opponent?.username || 'Tegenstander';
+
+    const opponentDiceCupLabel = document.getElementById('opponentDiceCupLabel');
+    if (opponentDiceCupLabel) {
+        opponentDiceCupLabel.textContent = `🎯 ${opponentName}`;
+    }
+
+    const opponentThrowHistoryLabel = document.getElementById('opponentThrowHistoryLabel');
+    if (opponentThrowHistoryLabel) {
+        opponentThrowHistoryLabel.textContent = `🎯 ${opponentName}`;
+    }
+
     showGame();
     updateGameUI();
 
