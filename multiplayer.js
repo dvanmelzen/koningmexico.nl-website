@@ -324,6 +324,11 @@ function setupUIListeners() {
         showToast('🔄 UI gereset!', 'info', 2000);
     });
 
+    // Leave Game button - allows leaving during active game
+    document.getElementById('leaveGameBtn')?.addEventListener('click', () => {
+        showLeaveGameConfirmation();
+    });
+
     // New Debug Panel Toggle
     const toggleDebugPanel = document.getElementById('toggleDebugPanel');
     const debugPanelContent = document.getElementById('debugPanelContent');
@@ -2464,6 +2469,71 @@ function startSearchingAnimation() {
             updateDebugMatchStatus('Niet zoeken', '#aaa');
         });
     }
+}
+
+// Leave Game Confirmation
+function showLeaveGameConfirmation() {
+    const confirmHtml = `
+        <div class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" id="leaveGameModal">
+            <div class="rounded-2xl shadow-2xl p-8 max-w-md text-center" style="background: var(--bg-card);">
+                <div class="text-6xl mb-4">🚪</div>
+                <h2 class="text-2xl font-heading font-bold mb-4" style="color: var(--color-gold);">
+                    Spel verlaten?
+                </h2>
+                <p class="mb-2" style="color: var(--text-primary); font-weight: 600;">
+                    Weet je het zeker?
+                </p>
+                <p class="mb-6 text-sm" style="color: var(--text-secondary);">
+                    Als je nu vertrekt, verlies je automatisch dit spel en wordt je tegenstander de winnaar.
+                </p>
+                <div class="flex gap-4">
+                    <button id="confirmLeaveBtn" class="flex-1 py-3 px-6 rounded-xl font-bold transition transform hover:scale-105" style="background: var(--color-red); color: white;">
+                        🚪 Ja, verlaten
+                    </button>
+                    <button id="cancelLeaveBtn" class="flex-1 py-3 px-6 rounded-xl font-bold transition hover:opacity-80" style="background: var(--color-green); color: white;">
+                        ❌ Annuleren
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Check if modal already exists
+    if (document.getElementById('leaveGameModal')) return;
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', confirmHtml);
+
+    // Setup event listeners
+    document.getElementById('confirmLeaveBtn')?.addEventListener('click', () => {
+        document.getElementById('leaveGameModal')?.remove();
+        leaveGame();
+    });
+
+    document.getElementById('cancelLeaveBtn')?.addEventListener('click', () => {
+        document.getElementById('leaveGameModal')?.remove();
+    });
+}
+
+// Leave Game
+function leaveGame() {
+    if (!socket || !currentGame) {
+        showToast('Geen actief spel om te verlaten', 'error');
+        return;
+    }
+
+    debugLog('🚪 Verlaat spel...');
+
+    // Emit leave game event to server
+    socket.emit('leave_game', { gameId: currentGame.gameId });
+
+    // Show toast
+    showToast('🚪 Je hebt het spel verlaten', 'info', 3000);
+
+    // Reset game state and return to lobby
+    currentGame = null;
+    resetGameUI();
+    showLobby();
 }
 
 // Close summary button handler

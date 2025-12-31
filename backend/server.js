@@ -588,6 +588,35 @@ io.on('connection', (socket) => {
     });
 
     // ============================================
+    // LEAVE GAME (Voluntary)
+    // ============================================
+
+    socket.on('leave_game', ({ gameId }) => {
+        console.log(`🚪 ${user.username} left game ${gameId}`);
+
+        const game = games.get(gameId);
+        if (!game) {
+            return socket.emit('error', { message: 'Game not found' });
+        }
+
+        // Verify user is in this game
+        if (game.player1Id !== userId && game.player2Id !== userId) {
+            return socket.emit('error', { message: 'You are not in this game' });
+        }
+
+        // Determine winner (the other player)
+        const winnerId = game.player1Id === userId ? game.player2Id : game.player1Id;
+        const loser = userCache.get(userId);
+        const winner = userCache.get(winnerId);
+
+        console.log(`   🏆 ${winner.username} wins by forfeit (opponent left)`);
+        console.log(`   💔 ${loser.username} left the game`);
+
+        // End game with reason 'player_left'
+        endGame(game, winnerId, 'player_left');
+    });
+
+    // ============================================
     // DISCONNECT
     // ============================================
 
