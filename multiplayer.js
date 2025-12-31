@@ -511,12 +511,31 @@ function initializeSocket() {
     socket.on('connect', () => {
         debugLog('✅ Connected');
         updateDebugSocketStatus('✅ Verbonden met server', '#00ff00');
+        updateConnectionStatus('connected', 'Verbonden');
+        showToast('✅ Verbonden met server', 'success', 2000);
     });
 
-    socket.on('disconnect', () => {
-        debugLog('❌ Disconnected');
+    socket.on('disconnect', (reason) => {
+        debugLog('❌ Disconnected:', reason);
         updateDebugSocketStatus('❌ Verbinding verbroken', '#ff4444');
         updateDebugQueueStatus('Niet verbonden', false);
+        updateConnectionStatus('disconnected', 'Verbinding verbroken');
+
+        // Show reconnect option if not intentional disconnect
+        if (reason !== 'io client disconnect') {
+            showReconnectOption();
+        }
+    });
+
+    socket.on('connect_error', (error) => {
+        debugLog('❌ Connection error:', error);
+        updateConnectionStatus('disconnected', 'Verbindingsfout');
+        showToast('❌ Kan geen verbinding maken met server', 'error', 4000);
+    });
+
+    socket.on('reconnecting', (attemptNumber) => {
+        debugLog(`🔄 Reconnecting... attempt ${attemptNumber}`);
+        updateConnectionStatus('reconnecting', `Opnieuw verbinden... (${attemptNumber})`);
     });
 
     socket.on('authenticated', (data) => {
@@ -543,6 +562,9 @@ function initializeSocket() {
         currentGame = { opponent: data.opponent };
         updateDebugQueueStatus('Match gevonden!', false);
         updateDebugMatchStatus(`🎉 Match met ${data.opponent.username}`, '#00ff00');
+
+        // Show match found with countdown
+        showMatchFoundCountdown(data.opponent.username);
     });
 
     // Game events
@@ -591,9 +613,8 @@ function setupLobbyListeners() {
         debugLog('🔍 Joining matchmaking queue...', 'info');
         socket.emit('join_queue', { gameMode: 'ranked' });
 
-        // Show searching UI
-        document.getElementById('queueIdle')?.classList.add('hidden');
-        document.getElementById('queueSearching')?.classList.remove('hidden');
+        // Show enhanced searching UI
+        startSearchingAnimation();
     });
 
     document.getElementById('leaveQueueBtn')?.addEventListener('click', () => {
@@ -2288,6 +2309,161 @@ function updateLastRoundSummary(data) {
 
     contentEl.innerHTML = text;
     summaryEl.classList.remove('hidden');
+}
+
+// ============================================
+// UX ENHANCEMENTS
+// ============================================
+
+// Connection Status Indicator
+function updateConnectionStatus(status, text) {
+    const statusEl = document.getElementById('connectionStatus');
+    const statusTextEl = document.getElementById('connectionStatusText');
+
+    if (!statusEl || !statusTextEl) return;
+
+    // Remove all status classes
+    statusEl.classList.remove('connected', 'disconnected', 'reconnecting', 'hidden');
+
+    // Add appropriate status class
+    statusEl.classList.add(status);
+    statusTextEl.textContent = text;
+
+    // Auto-hide after 3 seconds if connected
+    if (status === 'connected') {
+        setTimeout(() => {
+            statusEl.classList.add('hidden');
+        }, 3000);
+    }
+}
+
+// Show Reconnect Option
+function showReconnectOption() {
+    const reconnectHtml = `
+        <div class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" id="reconnectModal">
+            <div class="rounded-2xl shadow-2xl p-8 max-w-md text-center" style="background: var(--bg-card);">
+                <div class="text-6xl mb-4">🔌</div>
+                <h2 class="text-2xl font-heading font-bold mb-4" style="color: var(--color-gold);">
+                    Verbinding verbroken
+                </h2>
+                <p class="mb-6" style="color: var(--text-secondary);">
+                    De verbinding met de server is verbroken. Probeer opnieuw te verbinden?
+                </p>
+                <div class="flex gap-4">
+                    <button id="reconnectBtn" class="flex-1 py-3 px-6 rounded-xl font-bold transition transform hover:scale-105" style="background: var(--color-gold); color: #000;">
+                        🔄 Opnieuw verbinden
+                    </button>
+                    <button id="cancelReconnectBtn" class="flex-1 py-3 px-6 rounded-xl font-bold transition" style="background: var(--bg-secondary); color: var(--text-primary);">
+                        ❌ Annuleren
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Check if modal already exists
+    if (document.getElementById('reconnectModal')) return;
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', reconnectHtml);
+
+    // Setup event listeners
+    document.getElementById('reconnectBtn')?.addEventListener('click', () => {
+        document.getElementById('reconnectModal')?.remove();
+        initializeSocket();
+        showToast('🔄 Opnieuw verbinden...', 'info', 2000);
+    });
+
+    document.getElementById('cancelReconnectBtn')?.addEventListener('click', () => {
+        document.getElementById('reconnectModal')?.remove();
+    });
+}
+
+// Match Found Countdown
+function showMatchFoundCountdown(opponentName) {
+    const queueSearching = document.getElementById('queueSearching');
+    if (!queueSearching) return;
+
+    // Replace searching message with match found countdown
+    queueSearching.innerHTML = `
+        <div class="text-center py-12">
+            <div class="text-6xl mb-4">🎉</div>
+            <div class="text-2xl font-bold mb-4" style="color: var(--color-gold);">
+                Match gevonden!
+            </div>
+            <div class="text-lg mb-6" style="color: var(--text-primary);">
+                Tegenstander: <span class="font-bold">${opponentName}</span>
+            </div>
+            <div class="countdown-timer" id="matchCountdown">3</div>
+            <div class="text-sm mt-4" style="color: var(--text-secondary);">
+                Het spel start zo...
+            </div>
+        </div>
+    `;
+
+    // Countdown animation
+    let countdown = 3;
+    const countdownEl = document.getElementById('matchCountdown');
+
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdownEl) {
+            countdownEl.textContent = countdown;
+            countdownEl.style.animation = 'none';
+            setTimeout(() => {
+                if (countdownEl) countdownEl.style.animation = 'countdown-pulse 1s ease-in-out';
+            }, 10);
+        }
+
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+}
+
+// Enhanced Searching Animation
+function startSearchingAnimation() {
+    const queueIdle = document.getElementById('queueIdle');
+    const queueSearching = document.getElementById('queueSearching');
+
+    if (queueIdle) queueIdle.classList.add('hidden');
+    if (queueSearching) {
+        queueSearching.classList.remove('hidden');
+
+        // Enhanced searching animation
+        queueSearching.innerHTML = `
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4 searching-animation">🔍</div>
+                <div class="text-xl font-bold mb-2" style="color: var(--color-gold);">
+                    Zoeken naar tegenstander...
+                </div>
+                <div class="flex justify-center items-center gap-2 mb-6">
+                    <div class="loading-spinner text-2xl">⚄</div>
+                    <div class="text-sm" style="color: var(--text-secondary);">
+                        Dit kan even duren
+                    </div>
+                </div>
+                <button id="leaveQueueBtn" class="py-2 px-6 rounded-lg font-semibold transition hover:opacity-80" style="background: var(--color-red); color: white;">
+                    ❌ Annuleren
+                </button>
+            </div>
+        `;
+
+        // Re-attach leave queue listener
+        document.getElementById('leaveQueueBtn')?.addEventListener('click', () => {
+            if (!socket) return;
+            debugLog('❌ Leaving queue', 'info');
+            socket.emit('leave_queue');
+
+            // Show idle UI
+            queueSearching.classList.add('hidden');
+            queueIdle?.classList.remove('hidden');
+
+            // Update debug panel
+            updateDebugQueueStatus('Queue verlaten', false);
+            updateDebugMatchStatus('Niet zoeken', '#aaa');
+        });
+    }
 }
 
 // Close summary button handler

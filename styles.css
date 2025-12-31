@@ -584,3 +584,170 @@ button:focus {
         transform: translateX(0);
     }
 }
+
+/* ========================================
+   Mobile Optimizations
+   ======================================== */
+
+/* Responsive Dice Cups */
+@media (max-width: 640px) {
+    .dice-cup {
+        width: 100px !important;
+        height: 100px !important;
+        padding: 0.75rem !important;
+    }
+
+    .dice {
+        font-size: 2rem !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .dice-cup-wrapper {
+        flex: 1;
+    }
+
+    /* Smaller player cards on mobile */
+    .player-card {
+        padding: 1rem !important;
+    }
+
+    .player-card .text-6xl {
+        font-size: 3rem !important;
+    }
+
+    /* Touch-friendly buttons */
+    .btn-game {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+        padding: 0.875rem 1.5rem !important;
+    }
+
+    /* Compact throw history on mobile */
+    .throw-history-mobile {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Landscape mode optimizations */
+@media (max-width: 896px) and (orientation: landscape) {
+    .player-card {
+        padding: 0.75rem !important;
+    }
+
+    .player-card .text-6xl {
+        font-size: 2.5rem !important;
+    }
+
+    .dice-cup {
+        width: 90px !important;
+        height: 90px !important;
+    }
+
+    .dice {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* Connection Status Indicator */
+.connection-status {
+    position: fixed;
+    top: 80px;
+    right: 1rem;
+    z-index: 40;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+    background: #10B981;
+    color: white;
+}
+
+.connection-status.disconnected {
+    background: #EF4444;
+    color: white;
+}
+
+.connection-status.reconnecting {
+    background: #F59E0B;
+    color: white;
+}
+
+.connection-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Searching Animation */
+@keyframes search-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+.searching-animation {
+    animation: search-pulse 1.5s ease-in-out infinite;
+}
+
+/* Countdown Timer */
+.countdown-timer {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--color-gold);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    animation: countdown-pulse 1s ease-in-out;
+}
+
+@keyframes countdown-pulse {
+    0% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Loading Spinner */
+@keyframes spin-slow {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner {
+    display: inline-block;
+    animation: spin-slow 2s linear infinite;
+}
