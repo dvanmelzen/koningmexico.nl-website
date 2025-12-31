@@ -1086,7 +1086,8 @@ function compareFirstRoundThrows(game) {
         console.log(`   💔 VERLIEZER: ${loser.username} (${loserThrow.value})`);
 
         // Determine penalty (Mexico = -2, normal = -1)
-        const penalty = loserThrow.isMexico ? 2 : 1;
+        // BELANGRIJK: Als de WINNAAR Mexico gooit, krijgt de verliezer 2x penalty!
+        const penalty = winnerThrow.isMexico ? 2 : 1;
 
         // Apply penalty
         if (loserId === game.player1Id) {
