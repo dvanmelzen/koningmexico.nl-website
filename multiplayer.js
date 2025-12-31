@@ -864,6 +864,11 @@ function handleGameStart(data) {
         opponentThrowHistoryLabel.textContent = `🎯 ${opponentName}`;
     }
 
+    const opponentCardLabel = document.getElementById('opponentCardLabel');
+    if (opponentCardLabel) {
+        opponentCardLabel.textContent = `🎯 ${opponentName.toUpperCase()}`;
+    }
+
     showGame();
     updateGameUI();
 
