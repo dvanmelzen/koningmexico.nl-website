@@ -10,6 +10,13 @@ if (window.location.hostname === 'koningmexico.nl' || window.location.hostname.i
     console.log('📡 Using dev backend:', API_URL);
 }
 
+// If opened via file:// protocol (local testing), use localhost backend
+if (window.location.protocol === 'file:') {
+    API_URL = 'http://localhost:3001';
+    SOCKET_URL = 'http://localhost:3001';
+    console.log('📡 Local file detected, using localhost backend:', API_URL);
+}
+
 // ============================================
 // CENTRALIZED STATE MANAGEMENT
 // ============================================
