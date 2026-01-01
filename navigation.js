@@ -396,6 +396,12 @@ const KoningMexicoNav = {
         const spelregelsLinks = document.querySelectorAll('a[href="spelregels.html"]');
 
         spelregelsLinks.forEach(link => {
+            // Skip links with 'allow-navigation' class (like the one in the modal)
+            if (link.classList.contains('allow-navigation')) {
+                console.log('⏩ Skipping link with allow-navigation class');
+                return;
+            }
+
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();

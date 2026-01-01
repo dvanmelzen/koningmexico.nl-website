@@ -324,6 +324,13 @@ function setupUIListeners() {
         debugMode = !debugPanel?.classList.contains('hidden');
     });
 
+    // Home button - back to lobby
+    const homeBtn = document.getElementById('homeBtn');
+    homeBtn?.addEventListener('click', () => {
+        debugLog('🏠 Home button clicked - returning to lobby');
+        showLobby();
+    });
+
     // Clear debug log
     document.getElementById('clearDebugBtn')?.addEventListener('click', () => {
         const debugLog = document.getElementById('debugLog');
@@ -470,7 +477,7 @@ function debugLog(message, type = 'info') {
     const logEntry = document.createElement('div');
     logEntry.className = 'text-xs';
 
-    let color = 'text-green-400';
+    let color = 'text-white';
     let icon = 'ℹ️';
 
     if (type === 'error') {
@@ -480,11 +487,11 @@ function debugLog(message, type = 'info') {
         color = 'text-yellow-400';
         icon = '⚠️';
     } else if (type === 'success') {
-        color = 'text-green-300';
+        color = 'text-white';
         icon = '✅';
     }
 
-    logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="${color}">${icon} ${message}</span>`;
+    logEntry.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> <span class="${color}">${icon} ${message}</span>`;
     debugLogEl.appendChild(logEntry);
     debugLogEl.scrollTop = debugLogEl.scrollHeight;
 }

@@ -395,9 +395,9 @@
             <div class="flex justify-between items-center flex-wrap gap-2">
                 <!-- Left: Quick Icons -->
                 <div class="flex gap-2 items-center">
-                    <a href="index.html" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-xl" title="Home">
+                    <button id="homeBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-xl" title="Terug naar Lobby">
                         🏠
-                    </a>
+                    </button>
                     <button id="spelregelsBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-xl" title="Spelregels">
                         📖
                     </button>
@@ -836,9 +836,9 @@
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
     <!-- Debug Log Panel -->
-    <div id="debugPanel" class="fixed bottom-4 left-4 z-50 hidden bg-black bg-opacity-90 text-green-400 font-mono text-xs p-4 rounded-lg shadow-2xl max-w-lg" style="max-height: 400px; width: 500px;">
-        <div class="flex justify-between items-center mb-2 border-b border-green-600 pb-2">
-            <span class="font-bold text-green-300">🐛 Debug Log</span>
+    <div id="debugPanel" class="fixed bottom-4 left-4 z-50 hidden bg-black bg-opacity-90 text-white font-mono text-xs p-4 rounded-lg shadow-2xl max-w-lg" style="max-height: 400px; width: 500px;">
+        <div class="flex justify-between items-center mb-2 border-b border-gray-500 pb-2">
+            <span class="font-bold text-white">🐛 Debug Log</span>
             <div class="flex gap-2">
                 <button id="copyDebugBtn" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">
                     📋 Copy
@@ -966,7 +966,7 @@
 
                         <!-- CTA Button -->
                         <div class="mt-8 pt-6 flex justify-center" style="border-top: 1px dashed #654321;">
-                            <a href="spelregels.html" class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-xl transition transform hover:scale-105 shadow-xl" style="background: linear-gradient(135deg, #0D5E3A, #1B7A4B); color: white; text-decoration: none; font-family: 'Cinzel', serif;">
+                            <a href="spelregels.html" class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-xl transition transform hover:scale-105 shadow-xl allow-navigation" style="background: linear-gradient(135deg, #0D5E3A, #1B7A4B); color: white; text-decoration: none; font-family: 'Cinzel', serif;">
                                 <span class="text-2xl">📜</span>
                                 <span>Lees de volledige spelregels</span>
                                 <span class="text-2xl">⚔️</span>
