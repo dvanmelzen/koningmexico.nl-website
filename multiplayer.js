@@ -356,6 +356,44 @@ function setupUIListeners() {
         });
     });
 
+    // Auto-hide menu on scroll down (mobile optimization)
+    let lastScrollTop = 0;
+    let scrollTimeout;
+    const mainHeader = document.getElementById('main-header');
+    const controlBar = document.querySelector('.bg-gradient-to-r.from-green-light.to-green');
+
+    window.addEventListener('scroll', () => {
+        // Clear previous timeout
+        clearTimeout(scrollTimeout);
+
+        // Wait for scroll to finish
+        scrollTimeout = setTimeout(() => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > lastScrollTop && scrollTop > 80) {
+                // Scrolling down - hide menus
+                if (mainHeader) {
+                    mainHeader.style.transform = 'translateY(-100%)';
+                    mainHeader.style.transition = 'transform 0.3s ease';
+                }
+                if (controlBar) {
+                    controlBar.style.transform = 'translateY(-100%)';
+                    controlBar.style.transition = 'transform 0.3s ease';
+                }
+            } else {
+                // Scrolling up or at top - show menus
+                if (mainHeader) {
+                    mainHeader.style.transform = 'translateY(0)';
+                }
+                if (controlBar) {
+                    controlBar.style.transform = 'translateY(0)';
+                }
+            }
+
+            lastScrollTop = scrollTop;
+        }, 100); // Debounce 100ms
+    });
+
     // Reset UI button - helps if UI gets stuck
     document.getElementById('resetUIBtn')?.addEventListener('click', () => {
         debugLog('🔄 UI Reset aangeroepen');
