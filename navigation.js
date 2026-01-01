@@ -529,25 +529,60 @@ const KoningMexicoNav = {
 
         console.log('🎮 Initializing multiplayer controls in navigation...');
 
-        // Function to forward events to multiplayer page's buttons
-        const forwardClick = (navBtnId, targetBtnId) => {
-            const navBtn = document.getElementById(navBtnId);
-            const targetBtn = document.getElementById(targetBtnId);
+        // Home button - return to lobby
+        const navHomeBtn = document.getElementById('navHomeBtn');
+        if (navHomeBtn) {
+            navHomeBtn.addEventListener('click', () => {
+                console.log('🏠 Nav home button clicked');
+                if (window.showLobby) {
+                    window.showLobby();
+                } else {
+                    console.warn('showLobby function not found');
+                }
+            });
+        }
 
-            if (navBtn && targetBtn) {
-                navBtn.addEventListener('click', () => {
-                    console.log(`📡 Forwarding click from ${navBtnId} to ${targetBtnId}`);
-                    targetBtn.click();
-                });
-            }
-        };
+        // Spelregels button - open modal
+        const navSpelregelsBtn = document.getElementById('navSpelregelsBtn');
+        if (navSpelregelsBtn) {
+            navSpelregelsBtn.addEventListener('click', () => {
+                console.log('📜 Nav spelregels button clicked');
+                const spelregelsModal = document.getElementById('spelregelsModal');
+                if (spelregelsModal) {
+                    spelregelsModal.classList.remove('hidden');
+                }
+            });
+        }
 
-        // Forward button clicks to existing multiplayer buttons
-        forwardClick('navHomeBtn', 'homeBtn');
-        forwardClick('navSpelregelsBtn', 'spelregelsBtn');
-        forwardClick('navDarkModeToggle', 'darkModeToggle');
-        forwardClick('navDebugToggle', 'debugToggle');
-        forwardClick('navLogoutBtnMobile', 'logoutBtn');
+        // Dark mode toggle - forward to original
+        const navDarkModeToggle = document.getElementById('navDarkModeToggle');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (navDarkModeToggle && darkModeToggle) {
+            navDarkModeToggle.addEventListener('click', () => {
+                console.log('🌙 Nav dark mode toggle clicked');
+                darkModeToggle.click();
+            });
+        }
+
+        // Debug toggle - forward to original
+        const navDebugToggle = document.getElementById('navDebugToggle');
+        const debugToggle = document.getElementById('debugToggle');
+        if (navDebugToggle && debugToggle) {
+            navDebugToggle.addEventListener('click', () => {
+                console.log('🐛 Nav debug toggle clicked');
+                debugToggle.click();
+            });
+        }
+
+        // Logout button (mobile menu) - forward to original
+        const navLogoutBtnMobile = document.getElementById('navLogoutBtnMobile');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (navLogoutBtnMobile && logoutBtn) {
+            navLogoutBtnMobile.addEventListener('click', () => {
+                console.log('🚪 Nav logout button clicked');
+                logoutBtn.click();
+            });
+        }
 
         // Sync logout button visibility and dark mode icon
         const syncElements = () => {
