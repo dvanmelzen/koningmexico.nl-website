@@ -75,6 +75,9 @@ const KoningMexicoNav = {
             </button>
         </div>
 
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
         <!-- Mobile Navigation -->
         <nav id="mobile-menu" class="mobile-menu">
             <div class="py-4 space-y-2">
@@ -208,7 +211,26 @@ const KoningMexicoNav = {
             }
 
             .mobile-menu.active {
-                max-height: 500px;
+                max-height: 400px;
+            }
+
+            /* Mobile menu overlay */
+            .mobile-menu-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease-in-out;
+            }
+
+            .mobile-menu-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
 
             .mobile-nav-link {
@@ -341,13 +363,22 @@ const KoningMexicoNav = {
     initializeMobileMenu() {
         const menuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
+        const overlay = document.getElementById('mobile-menu-overlay');
 
-        if (!menuBtn || !mobileMenu) return;
+        if (!menuBtn || !mobileMenu || !overlay) return;
 
         // Toggle menu
         menuBtn.addEventListener('click', function() {
             menuBtn.classList.toggle('active');
             mobileMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+
+            // Prevent body scroll when menu is open
+            if (mobileMenu.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         });
 
         // Close menu when clicking a link
@@ -356,7 +387,17 @@ const KoningMexicoNav = {
             link.addEventListener('click', () => {
                 menuBtn.classList.remove('active');
                 mobileMenu.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
             });
+        });
+
+        // Close menu when clicking overlay
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            mobileMenu.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
         });
 
         // Close menu when clicking outside
@@ -364,6 +405,8 @@ const KoningMexicoNav = {
             if (!menuBtn.contains(event.target) && !mobileMenu.contains(event.target)) {
                 menuBtn.classList.remove('active');
                 mobileMenu.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
     },
