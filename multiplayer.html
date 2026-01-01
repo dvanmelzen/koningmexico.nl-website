@@ -470,6 +470,23 @@
                 font-size: 1rem;
             }
 
+            /* Modal scrolling fix for mobile */
+            #spelregelsModal {
+                align-items: flex-start !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                padding: 1rem 0;
+            }
+
+            #spelregelsModal > div {
+                margin-top: auto;
+                margin-bottom: auto;
+            }
+
+            #spelregelsModal .overflow-y-auto {
+                max-height: 70vh !important;
+            }
+
             /* Minimum touch target size: 44x44px */
             button,
             .btn-game,

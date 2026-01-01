@@ -1081,11 +1081,29 @@ function handleGameRejoined(data) {
         const player1 = data.game.players[0];
         const player2 = data.game.players[1];
 
-        // Update player info
-        document.getElementById('player1Name').textContent = player1.username;
-        document.getElementById('player2Name').textContent = player2.username;
-        document.getElementById('player1Lives').textContent = '❤️'.repeat(player1.lives);
-        document.getElementById('player2Lives').textContent = '❤️'.repeat(player2.lives);
+        // Determine which player is me and which is opponent
+        const isPlayer1Me = player1.userId === currentUser?.id;
+        const me = isPlayer1Me ? player1 : player2;
+        const opponent = isPlayer1Me ? player2 : player1;
+
+        // Update lives using the correct function
+        updateLives(me.userId, me.lives);
+        updateLives(opponent.userId, opponent.lives);
+
+        // Update opponent name in UI labels
+        const opponentName = opponent.username || 'Tegenstander';
+        const opponentDiceCupLabel = document.getElementById('opponentDiceCupLabel');
+        if (opponentDiceCupLabel) {
+            opponentDiceCupLabel.textContent = `🎯 ${opponentName}`;
+        }
+        const opponentThrowHistoryLabel = document.getElementById('opponentThrowHistoryLabel');
+        if (opponentThrowHistoryLabel) {
+            opponentThrowHistoryLabel.textContent = `🎯 ${opponentName}`;
+        }
+        const opponentCardLabel = document.getElementById('opponentCardLabel');
+        if (opponentCardLabel) {
+            opponentCardLabel.textContent = `🎯 ${opponentName.toUpperCase()}`;
+        }
     }
 
     // Restore dice display if available
