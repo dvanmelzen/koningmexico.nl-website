@@ -405,7 +405,14 @@ function setupUIListeners() {
     // Spelregels Modal Handlers
     const spelregelsModal = document.getElementById('spelregelsModal');
     const closeSpelregelsBtn = document.getElementById('closeSpelregelsModal');
-    const spelregelsLink = document.getElementById('spelregelsLink');
+    const spelregelsBtn = document.getElementById('spelregelsBtn');
+
+    // Open modal from button
+    spelregelsBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        spelregelsModal?.classList.remove('hidden');
+        debugLog('📜 Modal geopend via spelregels button');
+    });
 
     // Close button
     closeSpelregelsBtn?.addEventListener('click', () => {
@@ -427,13 +434,6 @@ function setupUIListeners() {
             spelregelsModal.classList.add('hidden');
             debugLog('📜 Modal gesloten via ESC key');
         }
-    });
-
-    // Desktop Spelregels icon click
-    spelregelsLink?.addEventListener('click', (e) => {
-        e.preventDefault();
-        spelregelsModal?.classList.remove('hidden');
-        debugLog('📜 Modal geopend via desktop spelregels icon');
     });
 }
 
@@ -899,9 +899,19 @@ function updateLiveStats(stats) {
     const queueEl = document.getElementById('queuePlayers');
     const gamesEl = document.getElementById('activeGames');
 
+    // Desktop/tablet stats
     if (onlineEl) onlineEl.textContent = stats.onlinePlayers || 0;
     if (queueEl) queueEl.textContent = stats.playersInQueue || 0;
     if (gamesEl) gamesEl.textContent = stats.activeGames || 0;
+
+    // Mobile stats
+    const onlineMobileEl = document.getElementById('onlinePlayersMobile');
+    const queueMobileEl = document.getElementById('queuePlayersMobile');
+    const gamesMobileEl = document.getElementById('activeGamesMobile');
+
+    if (onlineMobileEl) onlineMobileEl.textContent = stats.onlinePlayers || 0;
+    if (queueMobileEl) queueMobileEl.textContent = stats.playersInQueue || 0;
+    if (gamesMobileEl) gamesMobileEl.textContent = stats.activeGames || 0;
 }
 
 // Fetch initial stats on page load
