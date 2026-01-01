@@ -10,6 +10,8 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:3001:3001"  # Expose to localhost only (Caddy on host will proxy)
+    env_file:
+      - .env.production  # Load environment variables from .env.production
     environment:
       NODE_ENV: production
       PORT: 3001

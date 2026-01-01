@@ -5,26 +5,51 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./database');
 require('dotenv').config();
 
 // Configuration
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'mexico-secret-key-change-in-production';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://dev.koningmexico.nl';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || FRONTEND_URL;
+
+// JWT Secret is REQUIRED - no fallback for security
+if (!process.env.JWT_SECRET) {
+    console.error('❌ FATAL ERROR: JWT_SECRET environment variable is not set!');
+    console.error('   Generate one with: openssl rand -base64 64');
+    console.error('   Add it to .env.production file');
+    process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Rate limiting for auth endpoints (prevent brute force)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // max 5 attempts per window
+    message: { message: 'Te veel login pogingen. Probeer het over 15 minuten opnieuw.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Initialize Express & Socket.io
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
+        origin: CORS_ORIGIN,
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: CORS_ORIGIN,
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.static('../')); // Serve frontend files
 
@@ -36,10 +61,57 @@ app.use(express.static('../')); // Serve frontend files
 db.initializeDatabase();
 
 // In-memory caches (for active sessions)
-const userCache = new Map(); // userId -> user object (cached from DB)
-const games = new Map(); // gameId -> game object
+const userCache = new Map(); // userId -> user object (cached from DB) + { lastActivity: timestamp }
+const games = new Map(); // gameId -> game object + { createdAt: timestamp }
 const matchmakingQueue = []; // Array of { userId, eloRating, socketId }
 const activeSockets = new Map(); // socketId -> userId
+
+// ============================================
+// CLEANUP FUNCTIONS (Prevent memory leaks)
+// ============================================
+
+// Cleanup old games (every 10 minutes)
+setInterval(() => {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [gameId, game] of games.entries()) {
+        // Remove games older than 2 hours
+        const gameAge = now - (game.createdAt || 0);
+        if (gameAge > 2 * 60 * 60 * 1000) {
+            games.delete(gameId);
+            cleanedCount++;
+            console.log(`🧹 Cleaned up old game: ${gameId} (age: ${Math.round(gameAge / 60000)} min)`);
+        }
+    }
+
+    if (cleanedCount > 0) {
+        console.log(`🧹 Game cleanup: Removed ${cleanedCount} old games`);
+    }
+}, 10 * 60 * 1000); // Run every 10 minutes
+
+// Cleanup inactive guest users (every 30 minutes)
+setInterval(() => {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [userId, user] of userCache.entries()) {
+        // Only cleanup guest users
+        if (user.isGuest) {
+            const inactiveTime = now - (user.lastActivity || now);
+            // Remove guests inactive for > 24 hours
+            if (inactiveTime > 24 * 60 * 60 * 1000) {
+                userCache.delete(userId);
+                cleanedCount++;
+                console.log(`🧹 Cleaned up inactive guest: ${user.username} (inactive: ${Math.round(inactiveTime / 3600000)} hrs)`);
+            }
+        }
+    }
+
+    if (cleanedCount > 0) {
+        console.log(`🧹 Guest cleanup: Removed ${cleanedCount} inactive guests`);
+    }
+}, 30 * 60 * 1000); // Run every 30 minutes
 
 // ============================================
 // HELPER FUNCTIONS
@@ -154,8 +226,8 @@ app.get('/api/games/recent', authenticateToken, (req, res) => {
     }
 });
 
-// Register
-app.post('/api/auth/register', async (req, res) => {
+// Register (with rate limiting)
+app.post('/api/auth/register', authLimiter, async (req, res) => {
     try {
         let { username, email, password } = req.body;
 
@@ -237,8 +309,8 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Login
-app.post('/api/auth/login', async (req, res) => {
+// Login (with rate limiting)
+app.post('/api/auth/login', authLimiter, async (req, res) => {
     try {
         let { username, password } = req.body;
 
@@ -282,8 +354,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Guest Login (temporary, in-memory only)
-app.post('/api/auth/guest', async (req, res) => {
+// Guest Login (temporary, in-memory only, with rate limiting)
+app.post('/api/auth/guest', authLimiter, async (req, res) => {
     try {
         let { username } = req.body;
 
@@ -306,7 +378,8 @@ app.post('/api/auth/guest', async (req, res) => {
                 losses: 0,
                 gamesPlayed: 0
             },
-            isGuest: true // Flag to identify guest users
+            isGuest: true, // Flag to identify guest users
+            lastActivity: Date.now() // Track activity for cleanup
         };
 
         // Cache guest user (temporary)
@@ -342,6 +415,56 @@ app.get('/api/users/recent', (req, res) => {
     const users = db.getRecentUsers(limit);
     res.json(users);
 });
+
+// ============================================
+// INPUT VALIDATION HELPERS (Socket.IO)
+// ============================================
+
+function validateSocketInput(data, rules) {
+    const errors = [];
+
+    for (const [field, rule] of Object.entries(rules)) {
+        const value = data[field];
+
+        // Required check
+        if (rule.required && (value === undefined || value === null)) {
+            errors.push(`${field} is required`);
+            continue;
+        }
+
+        // Skip validation if not required and not provided
+        if (!rule.required && (value === undefined || value === null)) {
+            continue;
+        }
+
+        // Type check
+        if (rule.type && typeof value !== rule.type) {
+            errors.push(`${field} must be of type ${rule.type}`);
+        }
+
+        // Enum check
+        if (rule.enum && !rule.enum.includes(value)) {
+            errors.push(`${field} must be one of: ${rule.enum.join(', ')}`);
+        }
+
+        // String length check
+        if (rule.type === 'string' && rule.maxLength && value.length > rule.maxLength) {
+            errors.push(`${field} must be max ${rule.maxLength} characters`);
+        }
+
+        // Number range check
+        if (rule.type === 'number') {
+            if (rule.min !== undefined && value < rule.min) {
+                errors.push(`${field} must be at least ${rule.min}`);
+            }
+            if (rule.max !== undefined && value > rule.max) {
+                errors.push(`${field} must be at most ${rule.max}`);
+            }
+        }
+    }
+
+    return { valid: errors.length === 0, errors };
+}
 
 // ============================================
 // SOCKET.IO CONNECTION & AUTHENTICATION
@@ -391,7 +514,18 @@ io.on('connection', (socket) => {
     // MATCHMAKING
     // ============================================
 
-    socket.on('join_queue', ({ gameMode }) => {
+    socket.on('join_queue', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameMode: { type: 'string', enum: ['ranked', 'casual'], required: true }
+        });
+
+        if (!validation.valid) {
+            console.log(`❌ Invalid join_queue input from ${user.username}:`, validation.errors);
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameMode } = data;
         console.log(`🔍 ${user.username} joined matchmaking queue`);
 
         // Remove from queue if already there
@@ -433,7 +567,19 @@ io.on('connection', (socket) => {
     // GAME EVENTS - CORRECTE SPELREGELS!
     // ============================================
 
-    socket.on('throw_dice', ({ gameId, isBlind }) => {
+    socket.on('throw_dice', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 },
+            isBlind: { type: 'boolean', required: true }
+        });
+
+        if (!validation.valid) {
+            console.log(`❌ Invalid throw_dice input from ${user.username}:`, validation.errors);
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId, isBlind } = data;
         const game = games.get(gameId);
         if (!game) {
             return socket.emit('error', { message: 'Game not found' });
@@ -449,7 +595,17 @@ io.on('connection', (socket) => {
         handleThrow(game, userId, isBlind);
     });
 
-    socket.on('reveal_dice', ({ gameId }) => {
+    socket.on('reveal_dice', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId } = data;
         const game = games.get(gameId);
         if (!game || game.currentTurn !== userId) {
             return socket.emit('error', { message: 'Not your turn' });
@@ -458,7 +614,17 @@ io.on('connection', (socket) => {
         handleReveal(game, userId);
     });
 
-    socket.on('keep_throw', ({ gameId }) => {
+    socket.on('keep_throw', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId } = data;
         const game = games.get(gameId);
         if (!game || game.currentTurn !== userId) {
             return socket.emit('error', { message: 'Not your turn' });
@@ -469,7 +635,17 @@ io.on('connection', (socket) => {
 
     // choose_result systeem VERWIJDERD - automatische vergelijking via compareThrows()
 
-    socket.on('return_to_lobby', ({ gameId }) => {
+    socket.on('return_to_lobby', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId } = data;
         const game = games.get(gameId);
         if (game) {
             games.delete(gameId);
@@ -480,7 +656,18 @@ io.on('connection', (socket) => {
     // REMATCH FUNCTIONALITY
     // ============================================
 
-    socket.on('request_rematch', ({ gameId, opponentId }) => {
+    socket.on('request_rematch', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 },
+            opponentId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId, opponentId } = data;
         console.log(`🔄 Rematch request from ${user.username} to opponent ${opponentId}`);
 
         // Find opponent socket
@@ -504,7 +691,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('accept_rematch', ({ requestId, fromUserId }) => {
+    socket.on('accept_rematch', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            requestId: { type: 'string', required: true, maxLength: 100 },
+            fromUserId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { requestId, fromUserId } = data;
         console.log(`✅ Rematch accepted by ${user.username} from ${fromUserId}`);
 
         // Find both players
@@ -572,7 +770,18 @@ io.on('connection', (socket) => {
         broadcastStats();
     });
 
-    socket.on('decline_rematch', ({ requestId, fromUserId }) => {
+    socket.on('decline_rematch', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            requestId: { type: 'string', required: true, maxLength: 100 },
+            fromUserId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { requestId, fromUserId } = data;
         console.log(`❌ Rematch declined by ${user.username}`);
 
         // Find requester socket
@@ -591,7 +800,17 @@ io.on('connection', (socket) => {
     // LEAVE GAME (Voluntary)
     // ============================================
 
-    socket.on('leave_game', ({ gameId }) => {
+    socket.on('leave_game', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId } = data;
         console.log(`🚪 ${user.username} left game ${gameId}`);
 
         const game = games.get(gameId);
@@ -695,7 +914,8 @@ function createGame(player1Data, player2Data) {
         voorgooierResult: null, // 'won', 'lost', or 'vast'
         achterliggerResult: null, // 'won', 'lost', or 'vast'
         status: 'active',
-        startedAt: new Date()
+        startedAt: new Date(),
+        createdAt: Date.now() // For cleanup tracking
     };
 
     games.set(gameId, game);
