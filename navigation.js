@@ -263,6 +263,8 @@ const KoningMexicoNav = {
                 max-height: 0;
                 overflow: hidden;
                 transition: max-height 0.3s ease-in-out;
+                position: relative;
+                z-index: 50;
             }
 
             .mobile-menu.active {
@@ -550,6 +552,29 @@ const KoningMexicoNav = {
                 const spelregelsModal = document.getElementById('spelregelsModal');
                 if (spelregelsModal) {
                     spelregelsModal.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Close spelregels modal button
+        const closeSpelregelsModal = document.getElementById('closeSpelregelsModal');
+        if (closeSpelregelsModal) {
+            closeSpelregelsModal.addEventListener('click', () => {
+                console.log('❌ Close spelregels modal clicked');
+                const spelregelsModal = document.getElementById('spelregelsModal');
+                if (spelregelsModal) {
+                    spelregelsModal.classList.add('hidden');
+                }
+            });
+        }
+
+        // Close modal when clicking outside (on backdrop)
+        const spelregelsModal = document.getElementById('spelregelsModal');
+        if (spelregelsModal) {
+            spelregelsModal.addEventListener('click', (e) => {
+                if (e.target === spelregelsModal) {
+                    console.log('❌ Clicked outside modal - closing');
+                    spelregelsModal.classList.add('hidden');
                 }
             });
         }
