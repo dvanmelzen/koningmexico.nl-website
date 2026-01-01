@@ -99,17 +99,49 @@ function setupAuthListeners() {
         handleRegister();
     });
 
-    // Guest login button
-    const guestBtn = document.getElementById('guestLoginBtn');
-    if (guestBtn) {
-        console.log('✅ Guest login button gevonden, event listener toegevoegd');
-        guestBtn.addEventListener('click', () => {
-            console.log('🖱️ Guest login button geklikt!');
+    // Guest login button - GLOBAL function for inline onclick (most reliable on mobile)
+    window.handleGuestLoginClick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🎯 Guest login clicked via inline onclick!');
+
+        const guestBtn = document.getElementById('guestLoginBtn');
+        if (guestBtn) {
+            // Disable button temporarily to prevent double-clicks
+            guestBtn.disabled = true;
+            guestBtn.style.opacity = '0.6';
+            guestBtn.style.pointerEvents = 'none';
+
+            // Call handler
             handleGuestLogin();
-        });
-    } else {
-        console.error('❌ Guest login button niet gevonden in DOM!');
-    }
+
+            // Re-enable after 2 seconds
+            setTimeout(() => {
+                guestBtn.disabled = false;
+                guestBtn.style.opacity = '1';
+                guestBtn.style.pointerEvents = 'auto';
+            }, 2000);
+        }
+    };
+
+    console.log('✅ Guest login handler registered globally');
+
+    // Spelregels modal handler - GLOBAL function for inline link
+    window.handleSpelregelsClick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('📜 Spelregels clicked!');
+
+        const spelregelsModal = document.getElementById('spelregelsModal');
+        if (spelregelsModal) {
+            console.log('📜 Opening modal...');
+            spelregelsModal.classList.remove('hidden');
+        } else {
+            console.error('❌ Modal not found!');
+        }
+    };
+
+    console.log('✅ Spelregels handler registered globally');
 
     // Tab switching
     document.getElementById('loginTab')?.addEventListener('click', () => {
@@ -368,6 +400,40 @@ function setupUIListeners() {
         if (debugEventLog) {
             debugEventLog.innerHTML = '<div style="opacity: 0.6;">Log gewist...</div>';
         }
+    });
+
+    // Spelregels Modal Handlers
+    const spelregelsModal = document.getElementById('spelregelsModal');
+    const closeSpelregelsBtn = document.getElementById('closeSpelregelsModal');
+    const spelregelsLink = document.getElementById('spelregelsLink');
+
+    // Close button
+    closeSpelregelsBtn?.addEventListener('click', () => {
+        spelregelsModal?.classList.add('hidden');
+        debugLog('📜 Modal gesloten via X button');
+    });
+
+    // Click outside modal to close
+    spelregelsModal?.addEventListener('click', (e) => {
+        if (e.target === spelregelsModal) {
+            spelregelsModal.classList.add('hidden');
+            debugLog('📜 Modal gesloten via backdrop click');
+        }
+    });
+
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && spelregelsModal && !spelregelsModal.classList.contains('hidden')) {
+            spelregelsModal.classList.add('hidden');
+            debugLog('📜 Modal gesloten via ESC key');
+        }
+    });
+
+    // Desktop Spelregels icon click
+    spelregelsLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        spelregelsModal?.classList.remove('hidden');
+        debugLog('📜 Modal geopend via desktop spelregels icon');
     });
 }
 
@@ -989,6 +1055,14 @@ function handleThrowResult(data) {
     const isLastThrow = data.throwCount >= data.maxThrows;
     if (isLastThrow) {
         debugLog(`🎯 Laatste worp (${data.throwCount}/${data.maxThrows}) - AUTO-KEEP`);
+
+        // ✅ BELANGRIJK: Toon dobbelstenen VOOR de return!
+        if (data.isBlind) {
+            showDice('?', '?', true);
+        } else {
+            showDice(data.dice1, data.dice2, false);
+        }
+
         showWaitingMessage('Laatste worp - wacht op tegenstander...');
 
         // Auto-keep na korte delay (zodat speler de worp ziet)
@@ -1573,13 +1647,68 @@ function handleGameOver(data) {
     const title = iWon ? '🏆 Je hebt gewonnen!' : '😔 Helaas, je hebt verloren';
     const eloChange = iWon ? `+${data.eloChange}` : `${data.eloChange}`;
 
-    // Show game over with inline message and toast
-    showInlineMessage(title, iWon ? 'success' : 'error');
-    showToast(`${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
+    // Check if game ended because opponent left
+    if (data.reason === 'player_left') {
+        if (iWon) {
+            // Show prominent popup for win by forfeit
+            showWinByForfeitPopup(data);
+        } else {
+            // You left - show regular message
+            showInlineMessage(title, 'error');
+            showToast(`${title}\nPower: ${eloChange} (Nieuw: ${data.loserElo})`, 'error', 7000);
+        }
+    } else {
+        // Normal game end
+        showInlineMessage(title, iWon ? 'success' : 'error');
+        showToast(`${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
+    }
 
     // Show rematch and return buttons
     document.getElementById('requestRematchBtn')?.classList.remove('hidden');
     document.getElementById('returnLobbyBtn')?.classList.remove('hidden');
+}
+
+function showWinByForfeitPopup(data) {
+    const opponentName = data.loserUsername === currentUser.username ? data.winnerUsername : data.loserUsername;
+    const eloChange = `+${data.eloChange}`;
+
+    const popupHtml = `
+        <div class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" id="winByForfeitModal">
+            <div class="rounded-2xl shadow-2xl p-8 max-w-md text-center animate-bounce-in" style="background: linear-gradient(135deg, #1a5f3a 0%, #0d3b24 100%);">
+                <div class="text-8xl mb-4 animate-pulse">🏆</div>
+                <h2 class="text-3xl font-heading font-bold mb-4" style="color: #FFD700;">
+                    Je hebt gewonnen!
+                </h2>
+                <div class="mb-6">
+                    <p class="text-xl mb-2" style="color: white; font-weight: 600;">
+                        🚪 ${opponentName} heeft het spel verlaten
+                    </p>
+                    <p class="text-sm mb-4" style="color: rgba(255, 255, 255, 0.7);">
+                        Je wint automatisch door opgave van je tegenstander
+                    </p>
+                    <div class="p-4 rounded-lg mb-4" style="background: rgba(255, 215, 0, 0.1); border: 2px solid #FFD700;">
+                        <p class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Power wijziging</p>
+                        <p class="text-2xl font-bold" style="color: #4ADE80;">${eloChange}</p>
+                        <p class="text-sm" style="color: rgba(255, 255, 255, 0.7);">Nieuw: ${data.winnerElo}</p>
+                    </div>
+                </div>
+                <button id="closeForfeitPopup" class="px-6 py-3 rounded-lg font-bold text-lg transition hover:opacity-80" style="background: #FFD700; color: #0D3B24;">
+                    ✨ Geweldig!
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    document.getElementById('winByForfeitModal')?.remove();
+
+    // Add to body
+    document.body.insertAdjacentHTML('beforeend', popupHtml);
+
+    // Add event listeners
+    document.getElementById('closeForfeitPopup').addEventListener('click', () => {
+        document.getElementById('winByForfeitModal')?.remove();
+    });
 }
 
 // ============================================
@@ -2281,9 +2410,12 @@ function updateLastRoundSummary(data) {
     const winnerName = data.winnerId === currentUser.id ? 'Jij' : currentGame.opponent.username;
     const loserName = data.loserId === currentUser.id ? 'Jij' : currentGame.opponent.username;
 
-    // Get throw values
-    const voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value || '?';
-    const achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value || '?';
+    // Get throw values - replace 1000 with "Mexico!"
+    let voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value || '?';
+    if (voorgooierValue === 1000 || voorgooierValue === '1000') voorgooierValue = 'Mexico!';
+
+    let achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value || '?';
+    if (achterliggerValue === 1000 || achterliggerValue === '1000') achterliggerValue = 'Mexico!';
 
     // Build compact text summary
     let text = '';
@@ -2299,7 +2431,7 @@ function updateLastRoundSummary(data) {
 
         // Penalty info (draaisteen terminologie)
         if (data.penalty > 1) {
-            text += ` <span style="color: var(--color-red);">(${loserName} draait ${data.penalty}x, Mexico!)</span>`;
+            text += ` <span style="color: var(--color-red);">(${loserName} moet ${data.penalty}x draaien - Mexico!)</span>`;
         } else {
             text += ` <span style="color: var(--text-secondary);">(${loserName} moet draaien)</span>`;
         }
@@ -2545,6 +2677,67 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// ===================================================================
+// SPELREGELS PARCHMENT MODAL
+// ===================================================================
+
+// Spelregels link handler - GLOBAL function for inline onclick (most reliable)
+window.handleSpelregelsClick = function(event) {
+    console.log('📜 Spelregels clicked!');
+
+    const gameScreen = document.getElementById('gameScreen');
+    const spelregelsModal = document.getElementById('spelregelsModal');
+    const isGameActive = gameScreen && !gameScreen.classList.contains('hidden');
+
+    console.log('📜 Game active?', isGameActive);
+
+    // If game is active, show modal instead of navigating
+    if (isGameActive && spelregelsModal) {
+        event.preventDefault();
+        console.log('📜 Opening Spelregels modal during active game');
+        spelregelsModal.classList.remove('hidden');
+        return false; // Prevent navigation
+    }
+
+    // Otherwise, allow normal navigation to spelregels.html
+    console.log('📜 Allowing navigation to spelregels.html');
+    return true;
+};
+
+// Close button and backdrop handlers
+document.addEventListener('DOMContentLoaded', () => {
+    const spelregelsModal = document.getElementById('spelregelsModal');
+    const closeModalBtn = document.getElementById('closeSpelregelsModal');
+
+    if (closeModalBtn && spelregelsModal) {
+        // Close button handler
+        closeModalBtn.addEventListener('click', () => {
+            console.log('📜 Closing Spelregels modal (close button)');
+            spelregelsModal.classList.add('hidden');
+        });
+
+        // Close on backdrop click
+        spelregelsModal.addEventListener('click', (e) => {
+            if (e.target === spelregelsModal) {
+                console.log('📜 Closing Spelregels modal (backdrop click)');
+                spelregelsModal.classList.add('hidden');
+            }
+        });
+
+        console.log('✅ Spelregels modal close handlers registered');
+    }
+
+    // ESC key handler
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && spelregelsModal && !spelregelsModal.classList.contains('hidden')) {
+            console.log('📜 Closing Spelregels modal (ESC key)');
+            spelregelsModal.classList.add('hidden');
+        }
+    });
+});
+
+console.log('✅ Spelregels parchment modal handler registered globally');
 
 console.log('🎲 Multiplayer Mexico Client - CORRECTE SPELREGELS');
 console.log('✅ Client initialized');

@@ -20,7 +20,7 @@ COPY game_vs_computer.js /usr/share/nginx/html/
 COPY multiplayer.js /usr/share/nginx/html/
 COPY navigation.js /usr/share/nginx/html/
 COPY styles.css /usr/share/nginx/html/
-COPY assets/ /usr/share/nginx/html/
+COPY assets/ /usr/share/nginx/html/assets/
 
 # Expose port
 EXPOSE 8080
