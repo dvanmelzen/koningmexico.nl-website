@@ -46,7 +46,8 @@ const io = new Server(server, {
 });
 
 // Trust proxy (required for rate limiting behind Caddy reverse proxy)
-app.set('trust proxy', true);
+// Only trust loopback (Caddy runs on same server)
+app.set('trust proxy', 'loopback');
 
 // Middleware
 app.use(cors({
