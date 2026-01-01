@@ -1716,6 +1716,8 @@ function handleDiceRevealed(data) {
     if (data.isMexico) {
         showToast('🎉 MEXICO!!! 🎉', 'success', 5000);
         showInlineMessage('🏆 MEXICO! 2-1!', 'success');
+        // Fire confetti celebration!
+        fireMexicoConfetti('mexico');
     }
 
     // mustChooseResult VERWIJDERD - automatische vergelijking!
@@ -3324,6 +3326,69 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('✅ Spelregels parchment modal handler registered globally');
+
+// ============================================
+// CONFETTI EFFECT
+// ============================================
+
+/**
+ * Fire Mexican-themed confetti (green, white, red)
+ * @param {string} type - 'mexico' for full effect, 'small' for subtle effect
+ */
+function fireMexicoConfetti(type = 'mexico') {
+    if (typeof confetti === 'undefined') {
+        console.warn('⚠️ Confetti library not loaded');
+        return;
+    }
+
+    const mexicanColors = ['#0D5E3A', '#FFFFFF', '#8B0000']; // Green, White, Red (Mexican flag)
+
+    if (type === 'mexico') {
+        // Full Mexico confetti - celebrate!
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+
+            // Fire from left
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                colors: mexicanColors
+            });
+
+            // Fire from right
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                colors: mexicanColors
+            });
+        }, 250);
+    } else if (type === 'small') {
+        // Small confetti burst
+        confetti({
+            particleCount: 30,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: mexicanColors,
+            zIndex: 9999
+        });
+    }
+}
 
 console.log('🎲 Multiplayer Mexico Client - CORRECTE SPELREGELS');
 console.log('✅ Client initialized');
