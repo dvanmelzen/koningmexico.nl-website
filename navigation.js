@@ -82,19 +82,6 @@ const KoningMexicoNav = {
             </div>
             ` : ''}
 
-            <!-- Multiplayer User Info (Always visible on multiplayer page) -->
-            ${isMultiplayer ? `
-            <div id="navUserInfo" class="flex items-center gap-1 sm:gap-2">
-                <span id="navUserDisplay" class="text-white text-xs sm:text-sm font-semibold hidden">
-                    <span id="navUsername"></span>
-                    <span id="navEloRating" class="text-xs text-white text-opacity-80 ml-1 hidden sm:inline"></span>
-                </span>
-                <button id="navLogoutBtn" class="hidden px-2 sm:px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold shadow-md">
-                    Uitloggen
-                </button>
-            </div>
-            ` : ''}
-
             <!-- Mobile Menu Button -->
             <button id="mobile-menu-btn" class="lg:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
                 <span class="hamburger-line"></span>
@@ -133,6 +120,12 @@ const KoningMexicoNav = {
                     <span class="text-2xl">🎮</span>
                     <span>Multiplayer</span>
                 </a>
+                ${isMultiplayer ? `
+                <button id="navLogoutBtnMobile" class="mobile-nav-link bg-red-600 hover:bg-red-700 transition mt-4 hidden">
+                    <span class="text-2xl">🚪</span>
+                    <span>Uitloggen</span>
+                </button>
+                ` : ''}
             </div>
         </nav>
     </div>
@@ -549,74 +542,47 @@ const KoningMexicoNav = {
             }
         };
 
-        // Forward desktop button clicks to existing multiplayer buttons
+        // Forward button clicks to existing multiplayer buttons
         forwardClick('navHomeBtn', 'homeBtn');
         forwardClick('navSpelregelsBtn', 'spelregelsBtn');
         forwardClick('navDarkModeToggle', 'darkModeToggle');
         forwardClick('navDebugToggle', 'debugToggle');
-        forwardClick('navLogoutBtn', 'logoutBtn');
+        forwardClick('navLogoutBtnMobile', 'logoutBtn');
 
-        // Sync user display elements
-        // We'll set up observers to sync from the original elements to nav elements
-        const syncUserDisplay = () => {
+        // Sync logout button visibility and dark mode icon
+        const syncElements = () => {
             // Get original elements (from hidden secondary bar)
-            const username = document.getElementById('username');
-            const eloRating = document.getElementById('eloRating');
-            const userDisplay = document.getElementById('userDisplay');
             const logoutBtn = document.getElementById('logoutBtn');
+            const darkModeIcon = document.getElementById('darkModeIcon');
 
             // Get nav elements
-            const navUsername = document.getElementById('navUsername');
-            const navEloRating = document.getElementById('navEloRating');
-            const navUserDisplay = document.getElementById('navUserDisplay');
-            const navLogoutBtn = document.getElementById('navLogoutBtn');
+            const navLogoutBtnMobile = document.getElementById('navLogoutBtnMobile');
+            const navDarkModeIcon = document.getElementById('navDarkModeIcon');
 
-            if (username && navUsername) {
-                // Sync username text
-                navUsername.textContent = username.textContent;
-            }
-
-            if (eloRating && navEloRating) {
-                // Sync ELO rating text
-                navEloRating.textContent = eloRating.textContent;
-            }
-
-            if (userDisplay && navUserDisplay) {
-                // Sync visibility
-                if (!userDisplay.classList.contains('hidden')) {
-                    navUserDisplay.classList.remove('hidden');
-                } else {
-                    navUserDisplay.classList.add('hidden');
-                }
-            }
-
-            if (logoutBtn && navLogoutBtn) {
-                // Sync visibility
+            // Sync logout button visibility
+            if (logoutBtn && navLogoutBtnMobile) {
                 if (!logoutBtn.classList.contains('hidden')) {
-                    navLogoutBtn.classList.remove('hidden');
+                    navLogoutBtnMobile.classList.remove('hidden');
                 } else {
-                    navLogoutBtn.classList.add('hidden');
+                    navLogoutBtnMobile.classList.add('hidden');
                 }
             }
 
             // Sync dark mode icon
-            const darkModeIcon = document.getElementById('darkModeIcon');
-            const navDarkModeIcon = document.getElementById('navDarkModeIcon');
-
             if (darkModeIcon && navDarkModeIcon) {
                 navDarkModeIcon.textContent = darkModeIcon.textContent;
             }
         };
 
         // Initial sync
-        setTimeout(syncUserDisplay, 100);
+        setTimeout(syncElements, 100);
 
         // Set up observer for changes
-        const observer = new MutationObserver(syncUserDisplay);
+        const observer = new MutationObserver(syncElements);
 
-        // Observe username, eloRating, userDisplay, logoutBtn for changes
-        const observeElements = ['username', 'eloRating', 'userDisplay', 'logoutBtn', 'darkModeIcon'];
-        observeElements.forEach(id => {
+        // Observe logoutBtn and darkModeIcon for changes
+        const observeElementIds = ['logoutBtn', 'darkModeIcon'];
+        observeElementIds.forEach(id => {
             const elem = document.getElementById(id);
             if (elem) {
                 observer.observe(elem, {
