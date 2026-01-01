@@ -1660,8 +1660,11 @@ function compareVastgooierThrows(game) {
         console.log(`   🏆 WINNAAR: ${winner.username} (${winnerThrow.value})`);
         console.log(`   💔 VERLIEZER: ${loser.username} (${loserThrow.value})`);
 
-        // BELANGRIJK: Bij vastgooier is penalty ALTIJD -1 (geen Mexico penalty!)
-        const penalty = 1;
+        // BELANGRIJK: Check of ORIGINELE worp (voor vastgooier) Mexico was!
+        // Als beide spelers Mexico gooiden → vastgooier → winnaar krijgt 2x penalty
+        const wasMexico = game.vastgooierOriginalVoorgooierThrow?.isMexico ||
+                         game.vastgooierOriginalAchterliggerThrow?.isMexico;
+        const penalty = wasMexico ? 2 : 1;
 
         // Apply penalty
         if (loserId === game.player1Id) {
@@ -1672,7 +1675,7 @@ function compareVastgooierThrows(game) {
 
         const loserLivesLeft = loserId === game.player1Id ? game.player1Lives : game.player2Lives;
 
-        console.log(`   Penalty: -${penalty} (geen Mexico penalty bij overgooien)`);
+        console.log(`   Penalty: -${penalty} ${wasMexico ? '(MEXICO vastgooier! Originele worp was Mexico)' : '(normale vastgooier)'}`);
         console.log(`   ${loser.username} lives left: ${loserLivesLeft}`);
 
         // Check if game over
@@ -1711,6 +1714,8 @@ function compareVastgooierThrows(game) {
         game.isVastgooier = false;
         game.vastgooierThrows = null;
         game.vastgooierOriginalVoorgooier = null;
+        game.vastgooierOriginalVoorgooierThrow = null;
+        game.vastgooierOriginalAchterliggerThrow = null;
 
         // Notify both players
         io.to(game.player1SocketId).emit('vastgooier_result', {
@@ -1986,6 +1991,10 @@ function compareThrows(game) {
         // Mark game as in vastgooier mode
         game.isVastgooier = true;
         game.vastgooierOriginalVoorgooier = voorgooierId; // Remember who was voorgooier
+
+        // BELANGRIJK: Bewaar originele worpen voor Mexico penalty check!
+        game.vastgooierOriginalVoorgooierThrow = voorgooierThrowData;
+        game.vastgooierOriginalAchterliggerThrow = achterliggerThrowData;
 
         // Emit vastgooier event to both players
         io.to(game.player1SocketId).emit('vastgooier', {
