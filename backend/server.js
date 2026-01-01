@@ -471,10 +471,45 @@ app.post('/api/auth/guest', authLimiter, async (req, res) => {
 
 // Leaderboard
 app.get('/api/leaderboard', (req, res) => {
-    const players = db.getAllUsers()
-        .slice(0, 100); // Top 100
+    // Get query parameters
+    const minGames = parseInt(req.query.minGames) || 0;
+    const sortBy = req.query.sortBy || 'elo'; // 'elo', 'winrate', 'games'
+    const limit = parseInt(req.query.limit) || 100;
 
-    res.json({ players });
+    // Get all users and filter/sort
+    let players = db.getAllUsers()
+        // Exclude guests
+        .filter(user => !user.id.startsWith('guest_'))
+        // Filter by minimum games
+        .filter(user => user.stats.gamesPlayed >= minGames)
+        // Calculate win rate
+        .map(user => ({
+            ...user,
+            winRate: user.stats.gamesPlayed > 0
+                ? Math.round((user.stats.wins / user.stats.gamesPlayed) * 100)
+                : 0
+        }));
+
+    // Sort based on parameter
+    if (sortBy === 'winrate') {
+        players.sort((a, b) => {
+            // Sort by win rate, then by games played as tiebreaker
+            if (b.winRate !== a.winRate) {
+                return b.winRate - a.winRate;
+            }
+            return b.stats.gamesPlayed - a.stats.gamesPlayed;
+        });
+    } else if (sortBy === 'games') {
+        players.sort((a, b) => b.stats.gamesPlayed - a.stats.gamesPlayed);
+    } else {
+        // Default: sort by ELO (already sorted in getAllUsers)
+        players.sort((a, b) => b.eloRating - a.eloRating);
+    }
+
+    // Limit results
+    players = players.slice(0, limit);
+
+    res.json({ players, filters: { minGames, sortBy, limit } });
 });
 
 // Recent Users

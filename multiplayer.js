@@ -1253,6 +1253,10 @@ function setupLobbyListeners() {
     });
 
     document.getElementById('refreshLeaderboard')?.addEventListener('click', loadLeaderboard);
+
+    // Leaderboard filter change listeners (Phase 2)
+    document.getElementById('leaderboardSort')?.addEventListener('change', loadLeaderboard);
+    document.getElementById('leaderboardMinGames')?.addEventListener('change', loadLeaderboard);
 }
 
 function handleLogout() {
@@ -1266,23 +1270,73 @@ function handleLogout() {
 
 async function loadLeaderboard() {
     try {
-        const response = await fetch(`${API_URL}/api/leaderboard`);
+        // Get filter values
+        const sortBy = document.getElementById('leaderboardSort')?.value || 'elo';
+        const minGames = document.getElementById('leaderboardMinGames')?.value || '0';
+
+        // Fetch leaderboard with filters
+        const response = await fetch(`${API_URL}/api/leaderboard?sortBy=${sortBy}&minGames=${minGames}&limit=10`);
         const data = await response.json();
 
         const leaderboardDiv = document.getElementById('leaderboardList');
         if (!leaderboardDiv) return;
 
-        leaderboardDiv.innerHTML = data.players.slice(0, 10).map((player, index) => `
-            <div class="flex justify-between items-center p-2 rounded ${player.id === currentUser?.id ? 'bg-gold bg-opacity-20' : ''}">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold">${index + 1}.</span>
-                    <span>${player.username}</span>
+        if (data.players.length === 0) {
+            leaderboardDiv.innerHTML = `
+                <div class="text-center py-8" style="color: var(--text-secondary);">
+                    <div class="text-4xl mb-2">🏆</div>
+                    <div class="text-sm">Geen spelers gevonden met deze filters</div>
                 </div>
-                <span class="font-bold">${player.eloRating}</span>
-            </div>
-        `).join('');
+            `;
+            return;
+        }
+
+        leaderboardDiv.innerHTML = data.players.map((player, index) => {
+            // Determine what stat to show based on sort
+            let statDisplay;
+            let statIcon;
+            if (sortBy === 'winrate') {
+                statDisplay = `${player.winRate}%`;
+                statIcon = '📈';
+            } else if (sortBy === 'games') {
+                statDisplay = `${player.stats.gamesPlayed}`;
+                statIcon = '🎮';
+            } else {
+                statDisplay = player.eloRating;
+                statIcon = '🎯';
+            }
+
+            // Medal colors for top 3
+            const rankClass = index === 0 ? 'leaderboard-rank top-1' :
+                            index === 1 ? 'leaderboard-rank top-2' :
+                            index === 2 ? 'leaderboard-rank top-3' :
+                            'leaderboard-rank';
+
+            return `
+                <div class="flex justify-between items-center p-2 rounded transition hover:bg-opacity-10 hover:bg-white ${player.id === currentUser?.id ? 'bg-gold bg-opacity-20' : ''}" style="border-left: 3px solid ${index < 3 ? 'var(--color-gold)' : 'transparent'};">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span class="${rankClass} text-sm font-bold">${index + 1}.</span>
+                        <span class="truncate">${player.username}</span>
+                        <span class="text-xs opacity-60">${player.avatarEmoji || '👤'}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-sm font-bold whitespace-nowrap">
+                        <span class="text-xs">${statIcon}</span>
+                        <span style="color: var(--color-gold);">${statDisplay}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     } catch (error) {
         console.error('Leaderboard error:', error);
+        const leaderboardDiv = document.getElementById('leaderboardList');
+        if (leaderboardDiv) {
+            leaderboardDiv.innerHTML = `
+                <div class="text-center py-8" style="color: var(--text-secondary);">
+                    <div class="text-4xl mb-2">❌</div>
+                    <div class="text-sm">Fout bij laden leaderboard</div>
+                </div>
+            `;
+        }
     }
 }
 
