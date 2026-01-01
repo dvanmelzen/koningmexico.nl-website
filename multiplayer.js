@@ -55,7 +55,18 @@ const gameState = {
         if (token) localStorage.setItem('accessToken', token);
         else localStorage.removeItem('accessToken');
     },
-    setGame(game) { this.currentGame = game; },
+    setGame(game) {
+        this.currentGame = game;
+        // Track active game for reconnection
+        if (game && game.gameId) {
+            localStorage.setItem('activeGameId', game.gameId);
+        } else {
+            localStorage.removeItem('activeGameId');
+        }
+    },
+    getActiveGameId() {
+        return localStorage.getItem('activeGameId');
+    },
     setTurn(isMyTurn) { this.isMyTurn = isMyTurn; },
     setThrowData(data) { this.currentThrowData = data; },
     setPlayerHistory(history) { this.playerThrowHistory = history; },
@@ -77,6 +88,7 @@ const gameState = {
         this.isMyTurn = false;
         this.currentThrowData = null;
         this.clearHistory();
+        localStorage.removeItem('activeGameId');
     },
 
     // Logout
@@ -88,6 +100,7 @@ const gameState = {
         this.reset();
         localStorage.removeItem('accessToken');
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('activeGameId');
     }
 };
 
@@ -313,7 +326,15 @@ document.addEventListener('DOMContentLoaded', () => {
         accessToken = gameState.accessToken;
         currentUser = gameState.currentUser;
         initializeSocket();
-        showLobby();
+
+        // Check for active game to reconnect
+        const activeGameId = gameState.getActiveGameId();
+        if (activeGameId) {
+            console.log('🔄 Found active game, attempting reconnection:', activeGameId);
+            attemptGameReconnection(activeGameId);
+        } else {
+            showLobby();
+        }
     } else {
         showAuth();
     }
@@ -993,6 +1014,124 @@ function initializeSocket() {
     socket.on('rematch_declined', handleRematchDeclined);
 
     socket.on('error', (data) => debugLog('❌ Error:', data));
+
+    // Reconnection handling
+    socket.on('game_rejoined', handleGameRejoined);
+    socket.on('rejoin_failed', handleRejoinFailed);
+}
+
+// Attempt to reconnect to an active game
+function attemptGameReconnection(gameId) {
+    if (!socket || !socket.connected) {
+        console.warn('⚠️ Cannot reconnect: socket not connected');
+        gameState.reset();
+        showLobby();
+        return;
+    }
+
+    console.log('🔄 Attempting to rejoin game:', gameId);
+    showToast('🔄 Opnieuw verbinden met game...', 'info', 3000);
+
+    // Request to rejoin the game
+    socket.emit('rejoin_game', { gameId });
+
+    // Timeout if no response after 5 seconds
+    const timeout = trackTimeout(setTimeout(() => {
+        console.warn('⚠️ Reconnection timeout');
+        ErrorHandler.network(new Error('Reconnection timeout'), 'Game reconnection');
+        gameState.reset();
+        showLobby();
+    }, 5000));
+
+    // Store timeout so it can be cleared on success
+    gameState._reconnectionTimeout = timeout;
+}
+
+// Handle successful game rejoin
+function handleGameRejoined(data) {
+    console.log('✅ Game rejoined successfully:', data);
+
+    // Clear reconnection timeout
+    if (gameState._reconnectionTimeout) {
+        clearTimeout(gameState._reconnectionTimeout);
+        delete gameState._reconnectionTimeout;
+    }
+
+    // Restore game state
+    gameState.setGame(data.game);
+    currentGame = data.game;
+    gameState.setTurn(data.isYourTurn);
+    isMyTurn = data.isYourTurn;
+
+    // Restore throw history if available
+    if (data.playerHistory) {
+        gameState.setPlayerHistory(data.playerHistory);
+        playerThrowHistory = data.playerHistory;
+    }
+    if (data.opponentHistory) {
+        gameState.setOpponentHistory(data.opponentHistory);
+        opponentThrowHistory = data.opponentHistory;
+    }
+
+    // Show game screen
+    showGame();
+
+    // Update UI with current game state
+    if (data.game.players) {
+        const player1 = data.game.players[0];
+        const player2 = data.game.players[1];
+
+        // Update player info
+        document.getElementById('player1Name').textContent = player1.username;
+        document.getElementById('player2Name').textContent = player2.username;
+        document.getElementById('player1Lives').textContent = '❤️'.repeat(player1.lives);
+        document.getElementById('player2Lives').textContent = '❤️'.repeat(player2.lives);
+    }
+
+    // Restore dice display if available
+    if (data.currentDice) {
+        if (data.currentDice.player) {
+            showDice(data.currentDice.player.dice1, data.currentDice.player.dice2, false);
+        }
+        if (data.currentDice.opponent) {
+            showOpponentDice(data.currentDice.opponent.dice1, data.currentDice.opponent.dice2, data.currentDice.opponent.isBlind);
+        }
+    }
+
+    // Update turn indicator
+    updateTurnIndicator();
+
+    // Update action buttons based on game state
+    if (data.availableActions) {
+        hideAllActionButtons();
+        data.availableActions.forEach(action => {
+            const btn = document.getElementById(`${action}Btn`);
+            if (btn) btn.classList.remove('hidden');
+        });
+    }
+
+    showToast('✅ Game hersteld!', 'success', 3000);
+}
+
+// Handle failed rejoin
+function handleRejoinFailed(data) {
+    console.log('❌ Rejoin failed:', data);
+
+    // Clear reconnection timeout
+    if (gameState._reconnectionTimeout) {
+        clearTimeout(gameState._reconnectionTimeout);
+        delete gameState._reconnectionTimeout;
+    }
+
+    // Clear game state
+    gameState.reset();
+
+    // Show error message
+    const reason = data.reason || 'Game niet meer beschikbaar';
+    showToast(`❌ Kan niet opnieuw verbinden: ${reason}`, 'error', 4000);
+
+    // Return to lobby
+    showLobby();
 }
 
 // ============================================

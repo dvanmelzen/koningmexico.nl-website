@@ -564,6 +564,114 @@ io.on('connection', (socket) => {
     });
 
     // ============================================
+    // GAME RECONNECTION
+    // ============================================
+
+    socket.on('rejoin_game', (data) => {
+        // Input validation
+        const validation = validateSocketInput(data, {
+            gameId: { type: 'string', required: true, maxLength: 100 }
+        });
+
+        if (!validation.valid) {
+            console.log(`❌ Invalid rejoin_game input from ${user.username}:`, validation.errors);
+            return socket.emit('rejoin_failed', { reason: 'Invalid input: ' + validation.errors.join(', ') });
+        }
+
+        const { gameId } = data;
+        const game = games.get(gameId);
+
+        // Check if game exists
+        if (!game) {
+            console.log(`❌ ${user.username} tried to rejoin non-existent game: ${gameId}`);
+            return socket.emit('rejoin_failed', { reason: 'Game niet gevonden' });
+        }
+
+        // Check if user is part of this game
+        const isPlayer = game.players.some(p => p.userId === userId);
+        if (!isPlayer) {
+            console.log(`❌ ${user.username} not part of game: ${gameId}`);
+            return socket.emit('rejoin_failed', { reason: 'Je bent geen speler in deze game' });
+        }
+
+        // Check if game is still active
+        if (game.isFinished) {
+            console.log(`❌ ${user.username} tried to rejoin finished game: ${gameId}`);
+            return socket.emit('rejoin_failed', { reason: 'Game is al afgelopen' });
+        }
+
+        // Update socket reference for this player
+        const playerIndex = game.players.findIndex(p => p.userId === userId);
+        if (playerIndex !== -1) {
+            game.players[playerIndex].socketId = socket.id;
+        }
+
+        // Join socket room for this game
+        socket.join(gameId);
+
+        console.log(`✅ ${user.username} successfully rejoined game: ${gameId}`);
+
+        // Determine current dice state for UI restoration
+        const playerState = game.players[playerIndex];
+        const opponentIndex = playerIndex === 0 ? 1 : 0;
+        const opponentState = game.players[opponentIndex];
+
+        const currentDice = {
+            player: playerState.currentThrow ? {
+                dice1: playerState.currentThrow.dice1,
+                dice2: playerState.currentThrow.dice2,
+                isBlind: playerState.currentThrow.isBlind
+            } : null,
+            opponent: opponentState.currentThrow ? {
+                dice1: opponentState.currentThrow.isBlind ? '?' : opponentState.currentThrow.dice1,
+                dice2: opponentState.currentThrow.isBlind ? '?' : opponentState.currentThrow.dice2,
+                isBlind: opponentState.currentThrow.isBlind
+            } : null
+        };
+
+        // Determine available actions based on game state
+        const availableActions = [];
+        const isPlayerTurn = game.currentTurn === userId;
+
+        if (isPlayerTurn) {
+            if (!playerState.hasThrown) {
+                availableActions.push('throwOpen', 'throwBlind');
+            } else if (playerState.throwsLeft > 0) {
+                availableActions.push('reThrow', 'keepThrow');
+                if (playerState.currentThrow.isBlind && !playerState.hasRevealed) {
+                    availableActions.push('reveal');
+                }
+            }
+        }
+
+        // Send full game state to reconnecting player
+        socket.emit('game_rejoined', {
+            game: {
+                gameId: game.gameId,
+                players: game.players.map(p => ({
+                    userId: p.userId,
+                    username: p.username,
+                    lives: p.lives,
+                    eloRating: p.eloRating
+                })),
+                currentRound: game.currentRound,
+                isFirstRound: game.isFirstRound,
+                isVastgooier: game.isVastgooier || false
+            },
+            isYourTurn: isPlayerTurn,
+            currentDice,
+            availableActions,
+            playerHistory: playerState.throwHistory || [],
+            opponentHistory: opponentState.throwHistory || []
+        });
+
+        // Notify opponent that player reconnected
+        socket.to(gameId).emit('opponent_reconnected', {
+            username: user.username
+        });
+    });
+
+    // ============================================
     // GAME EVENTS - CORRECTE SPELREGELS!
     // ============================================
 

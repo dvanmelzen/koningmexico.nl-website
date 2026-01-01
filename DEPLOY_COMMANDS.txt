@@ -1,0 +1,35 @@
+# Deployment Commands voor VPS
+# Voer deze uit op de Hetzner VPS server
+
+# 1. SSH naar de VPS
+ssh cfdsadmin@46.224.179.228
+
+# 2. Naar de project directory
+cd /opt/koningmexico
+
+# 3. Pull de laatste wijzigingen
+git pull origin master
+
+# 4. Stop de huidige containers
+docker compose -f docker-compose.mexico.yml down
+
+# 5. Rebuild met --no-cache (belangrijk!)
+docker compose -f docker-compose.mexico.yml build --no-cache
+
+# 6. Start de containers
+docker compose -f docker-compose.mexico.yml up -d
+
+# 7. Check of alles draait
+docker compose -f docker-compose.mexico.yml ps
+
+# 8. Bekijk logs (optioneel)
+docker compose -f docker-compose.mexico.yml logs -f
+
+# 9. Test de website
+# Ga naar: https://dev.koningmexico.nl/multiplayer.html
+# Je zou nu moeten zien:
+# - V2.0 TEST rode badge in de titel
+# - 🏠 Home icon voor de dark mode toggle
+# - 📖 icon voor Spelregels (geen tekst meer)
+# - GEEN "Single Player" link meer
+# - Parchment modal als je op 📖 klikt

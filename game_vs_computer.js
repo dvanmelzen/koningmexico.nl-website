@@ -684,14 +684,14 @@
         const computer = gameState.computer;
         const player = gameState.player;
 
-        showMessage('🤖 Computer gooit...', 'info');
+        showMessage('🤖 Computer denkt na...', 'info');
 
-        // Computer strategy:
-        // - First throw is always blind (if first round)
-        // - Otherwise, makes smart decisions based on player's throw
+        // Simulate human-like thinking time (varied)
+        const thinkingTime = 800 + Math.random() * 700; // 800-1500ms
+
         setTimeout(() => {
             computerThrowSequence();
-        }, 600);
+        }, thinkingTime);
     }
 
     function computerFirstRoundTurn() {
