@@ -104,18 +104,66 @@ const gameState = {
     }
 };
 
-// Backward compatibility aliases (maintained for existing code)
-// NOTE: New code should use gameState getters/setters directly
-// Gradual migration strategy: update critical sections first, then expand
-let socket = gameState.socket;
-let currentUser = gameState.currentUser;
-let accessToken = gameState.accessToken;
-let currentGame = gameState.currentGame;
-let isMyTurn = gameState.isMyTurn;
-let currentThrowData = gameState.currentThrowData;
-let debugMode = gameState.debugMode;
-let playerThrowHistory = gameState.playerThrowHistory;
-let opponentThrowHistory = gameState.opponentThrowHistory;
+// ============================================
+// DYNAMIC BACKWARD COMPATIBILITY LAYER
+// ============================================
+// These properties dynamically reference gameState to ensure synchronization
+// Reading these variables gets current value from gameState
+// Writing to these variables updates gameState (use setters where possible)
+
+Object.defineProperty(globalThis, 'socket', {
+    get: () => gameState.getSocket(),
+    set: (value) => gameState.setSocket(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'currentUser', {
+    get: () => gameState.getUser(),
+    set: (value) => gameState.setUser(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'accessToken', {
+    get: () => gameState.getToken(),
+    set: (value) => gameState.setToken(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'currentGame', {
+    get: () => gameState.getGame(),
+    set: (value) => gameState.setGame(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'isMyTurn', {
+    get: () => gameState.isPlayerTurn(),
+    set: (value) => gameState.setTurn(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'currentThrowData', {
+    get: () => gameState.getThrowData(),
+    set: (value) => gameState.setThrowData(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'debugMode', {
+    get: () => gameState.isDebugMode(),
+    set: (value) => gameState.debugMode = value,
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'playerThrowHistory', {
+    get: () => gameState.getPlayerHistory(),
+    set: (value) => gameState.setPlayerHistory(value),
+    configurable: true
+});
+
+Object.defineProperty(globalThis, 'opponentThrowHistory', {
+    get: () => gameState.getOpponentHistory(),
+    set: (value) => gameState.setOpponentHistory(value),
+    configurable: true
+});
 
 // Active timers/intervals tracking (for cleanup)
 let activeTimers = {
@@ -185,10 +233,10 @@ const ErrorHandler = {
     auth(error, shouldLogout = false) {
         this.handle(error, this.types.AUTH, this.severity.ERROR);
         if (shouldLogout) {
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 gameState.logout();
                 showAuth();
-            }, 2000);
+            }, 2000));
         }
     },
 
@@ -911,18 +959,21 @@ function showInlineMessage(message, type = 'info') {
 
 function initializeSocket() {
     // Cleanup existing socket and ALL listeners to prevent duplicates
-    if (socket) {
-        socket.removeAllListeners();  // Remove all event listeners
-        socket.disconnect();
-        socket = null;
+    const existingSocket = gameState.getSocket();
+    if (existingSocket) {
+        existingSocket.removeAllListeners();  // Remove all event listeners
+        existingSocket.disconnect();
+        gameState.setSocket(null);
     }
 
-    socket = io(SOCKET_URL, {
-        auth: { token: accessToken },
+    const newSocket = io(SOCKET_URL, {
+        auth: { token: gameState.getToken() },
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5
     });
+
+    gameState.setSocket(newSocket);
 
     socket.on('connect', () => {
         debugLog('✅ Connected');

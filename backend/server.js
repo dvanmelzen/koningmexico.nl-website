@@ -638,7 +638,7 @@ io.on('connection', (socket) => {
                 availableActions.push('throwOpen', 'throwBlind');
             } else if (playerState.throwsLeft > 0) {
                 availableActions.push('reThrow', 'keepThrow');
-                if (playerState.currentThrow.isBlind && !playerState.hasRevealed) {
+                if (playerState.currentThrow?.isBlind && !playerState.hasRevealed) {
                     availableActions.push('reveal');
                 }
             }
