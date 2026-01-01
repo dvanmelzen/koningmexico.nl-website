@@ -431,6 +431,7 @@ function showLobby() {
     loadRecentGames();
     loadRecentUsers();
     updateUserStats();
+    loadUserStats(); // Phase 2: Load stats dashboard
 }
 
 function showGame() {
@@ -691,6 +692,9 @@ function setupUIListeners() {
         debugLog('🏠 Home button clicked - returning to lobby');
         showLobby();
     });
+
+    // Initialize stats dashboard toggle (Phase 2)
+    initializeStatsToggle();
 
     // Clear debug log
     document.getElementById('clearDebugBtn')?.addEventListener('click', () => {
@@ -1412,6 +1416,83 @@ async function loadRecentUsers() {
             `;
         }
     }
+}
+
+// ============================================
+// STATS DASHBOARD (Phase 2)
+// ============================================
+
+async function loadUserStats() {
+    const statsDashboard = document.getElementById('statsDashboard');
+    if (!statsDashboard) return;
+
+    // Hide for guests
+    if (!currentUser || !accessToken || currentUser.id.startsWith('guest_')) {
+        statsDashboard.classList.add('hidden');
+        return;
+    }
+
+    // Show for registered users
+    statsDashboard.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${API_URL}/api/user/stats`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch stats');
+        }
+
+        const stats = await response.json();
+
+        if (stats.isGuest) {
+            // Show guest message
+            document.getElementById('statsContent').classList.add('hidden');
+            document.getElementById('statsGuestMessage').classList.remove('hidden');
+            return;
+        }
+
+        // Hide guest message, show stats
+        document.getElementById('statsGuestMessage').classList.add('hidden');
+        document.getElementById('statsContent').classList.remove('hidden');
+
+        // Update stats displays
+        document.getElementById('statWinRate').textContent = stats.winRate || '0%';
+        document.getElementById('statTotalGames').textContent = stats.totalGames || 0;
+        document.getElementById('statMexicos').textContent = stats.mexicoCount || 0;
+        document.getElementById('statTotalThrows').textContent = stats.totalThrows || 0;
+        document.getElementById('statBlindThrows').textContent = stats.blindThrows || 0;
+        document.getElementById('statVastgooiers').textContent = stats.vastgooierCount || 0;
+        document.getElementById('statMexicoVast').textContent = stats.mexicoInVastgooier || 0;
+
+    } catch (error) {
+        console.error('Stats error:', error);
+        // Hide stats dashboard on error
+        statsDashboard.classList.add('hidden');
+    }
+}
+
+function initializeStatsToggle() {
+    const statsToggle = document.getElementById('statsToggle');
+    const statsContent = document.getElementById('statsContent');
+    const statsToggleIcon = document.getElementById('statsToggleIcon');
+
+    if (!statsToggle || !statsContent) return;
+
+    statsToggle.addEventListener('click', () => {
+        const isHidden = statsContent.classList.contains('hidden');
+
+        if (isHidden) {
+            statsContent.classList.remove('hidden');
+            statsToggleIcon.textContent = '▼';
+        } else {
+            statsContent.classList.add('hidden');
+            statsToggleIcon.textContent = '▶';
+        }
+    });
 }
 
 function formatTimeAgo(timestamp) {

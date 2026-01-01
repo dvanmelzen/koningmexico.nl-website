@@ -49,14 +49,39 @@ function initializeDatabase() {
         )
     `);
 
+    // Create game_details table for detailed throw-by-throw logging
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS game_details (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gameId TEXT NOT NULL,
+            roundNumber INTEGER NOT NULL,
+            playerId TEXT NOT NULL,
+            opponentId TEXT NOT NULL,
+            throwType TEXT NOT NULL,
+            dice1 INTEGER,
+            dice2 INTEGER,
+            wasMexico INTEGER DEFAULT 0,
+            wasVastgooier INTEGER DEFAULT 0,
+            vastgooierPenalty INTEGER DEFAULT 0,
+            roundWinner TEXT,
+            livesRemaining INTEGER,
+            throwTimestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (playerId) REFERENCES users(id),
+            FOREIGN KEY (opponentId) REFERENCES users(id)
+        )
+    `);
+
     // Create indexes for faster queries
     db.exec(`
         CREATE INDEX IF NOT EXISTS idx_game_history_winner ON game_history(winnerId);
         CREATE INDEX IF NOT EXISTS idx_game_history_loser ON game_history(loserId);
         CREATE INDEX IF NOT EXISTS idx_game_history_played_at ON game_history(playedAt);
+        CREATE INDEX IF NOT EXISTS idx_game_details_gameId ON game_details(gameId);
+        CREATE INDEX IF NOT EXISTS idx_game_details_playerId ON game_details(playerId);
+        CREATE INDEX IF NOT EXISTS idx_game_details_timestamp ON game_details(throwTimestamp);
     `);
 
-    console.log('✅ Database initialized');
+    console.log('✅ Database initialized (with game_details table)');
 }
 
 // ============================================
@@ -306,6 +331,114 @@ function getRecentUsers(limit = 3) {
 }
 
 // ============================================
+// GAME DETAILS OPERATIONS (Phase 2)
+// ============================================
+
+// Save throw details (NOT for guest players)
+function saveThrowDetails(throwData) {
+    // Skip if either player is a guest
+    if (!throwData.playerId || throwData.playerId.startsWith('guest_') ||
+        !throwData.opponentId || throwData.opponentId.startsWith('guest_')) {
+        return false;
+    }
+
+    const stmt = db.prepare(`
+        INSERT INTO game_details (
+            gameId, roundNumber, playerId, opponentId, throwType,
+            dice1, dice2, wasMexico, wasVastgooier, vastgooierPenalty,
+            roundWinner, livesRemaining
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+        throwData.gameId,
+        throwData.roundNumber,
+        throwData.playerId,
+        throwData.opponentId,
+        throwData.throwType, // 'open', 'blind', 'vast'
+        throwData.dice1,
+        throwData.dice2,
+        throwData.wasMexico ? 1 : 0,
+        throwData.wasVastgooier ? 1 : 0,
+        throwData.vastgooierPenalty || 0,
+        throwData.roundWinner || null,
+        throwData.livesRemaining
+    );
+
+    return result.changes > 0;
+}
+
+// Get all throw details for a specific game
+function getGameDetails(gameId) {
+    const stmt = db.prepare(`
+        SELECT
+            id, gameId, roundNumber, playerId, opponentId, throwType,
+            dice1, dice2, wasMexico, wasVastgooier, vastgooierPenalty,
+            roundWinner, livesRemaining, throwTimestamp
+        FROM game_details
+        WHERE gameId = ?
+        ORDER BY roundNumber ASC, throwTimestamp ASC
+    `);
+
+    return stmt.all(gameId);
+}
+
+// Get aggregated throw statistics for a user
+function getUserThrowStats(userId) {
+    const stmt = db.prepare(`
+        SELECT
+            COUNT(*) as totalThrows,
+            SUM(CASE WHEN wasMexico = 1 THEN 1 ELSE 0 END) as mexicoCount,
+            SUM(CASE WHEN wasVastgooier = 1 THEN 1 ELSE 0 END) as vastgooierCount,
+            SUM(CASE WHEN throwType = 'blind' THEN 1 ELSE 0 END) as blindThrows,
+            SUM(CASE WHEN throwType = 'open' THEN 1 ELSE 0 END) as openThrows,
+            SUM(CASE WHEN vastgooierPenalty = 2 THEN 1 ELSE 0 END) as mexicoInVastgooier,
+            AVG(CASE WHEN roundWinner = playerId THEN 1.0 ELSE 0.0 END) as roundWinRate
+        FROM game_details
+        WHERE playerId = ?
+    `);
+
+    return stmt.get(userId);
+}
+
+// Get recent games with round count for a user
+function getRecentGamesWithDetails(userId, limit = 10) {
+    const stmt = db.prepare(`
+        SELECT
+            gh.id,
+            gh.gameId,
+            gh.winnerId,
+            gh.loserId,
+            gh.winnerUsername,
+            gh.loserUsername,
+            gh.winnerEloChange,
+            gh.loserEloChange,
+            gh.winnerFinalElo,
+            gh.loserFinalElo,
+            gh.playedAt,
+            CASE
+                WHEN gh.winnerId = ? THEN 'win'
+                ELSE 'loss'
+            END as result,
+            CASE
+                WHEN gh.winnerId = ? THEN gh.loserUsername
+                ELSE gh.winnerUsername
+            END as opponent,
+            CASE
+                WHEN gh.winnerId = ? THEN gh.winnerEloChange
+                ELSE gh.loserEloChange
+            END as eloChange,
+            (SELECT MAX(roundNumber) FROM game_details WHERE gameId = gh.gameId) as totalRounds
+        FROM game_history gh
+        WHERE gh.winnerId = ? OR gh.loserId = ?
+        ORDER BY gh.playedAt DESC
+        LIMIT ?
+    `);
+
+    return stmt.all(userId, userId, userId, userId, userId, limit);
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
@@ -321,5 +454,10 @@ module.exports = {
     saveGameHistory,
     getRecentGames,
     getRecentUsers,
+    // Phase 2: Game details functions
+    saveThrowDetails,
+    getGameDetails,
+    getUserThrowStats,
+    getRecentGamesWithDetails,
     db // Export db instance for direct queries if needed
 };

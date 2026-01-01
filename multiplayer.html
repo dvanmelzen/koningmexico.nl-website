@@ -695,6 +695,63 @@
                             </div>
                         </div>
 
+                        <!-- Stats Dashboard (Phase 2 - Registered Users Only) -->
+                        <div id="statsDashboard" class="rounded-xl p-4 mb-6 hidden" style="background: var(--bg-secondary); border: 2px solid var(--color-gold); opacity: 0.9;">
+                            <div class="flex items-center justify-between mb-3 cursor-pointer" id="statsToggle">
+                                <h3 class="text-lg font-heading font-bold" style="color: var(--color-gold);">📊 Mijn Statistieken</h3>
+                                <span id="statsToggleIcon" class="text-xl">▼</span>
+                            </div>
+
+                            <div id="statsContent" class="space-y-3">
+                                <!-- Overview Stats -->
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div class="text-center p-2 rounded" style="background: rgba(255, 255, 255, 0.05);">
+                                        <div class="text-2xl font-bold" id="statWinRate" style="color: var(--color-gold);">--</div>
+                                        <div class="text-xs" style="color: var(--text-secondary);">Win Rate</div>
+                                    </div>
+                                    <div class="text-center p-2 rounded" style="background: rgba(255, 255, 255, 0.05);">
+                                        <div class="text-2xl font-bold" id="statTotalGames" style="color: var(--accent-color);">--</div>
+                                        <div class="text-xs" style="color: var(--text-secondary);">Totaal Games</div>
+                                    </div>
+                                    <div class="text-center p-2 rounded" style="background: rgba(255, 255, 255, 0.05);">
+                                        <div class="text-2xl font-bold" id="statMexicos" style="color: #FFD700;">--</div>
+                                        <div class="text-xs" style="color: var(--text-secondary);">Mexico's</div>
+                                    </div>
+                                </div>
+
+                                <!-- Throw Stats -->
+                                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.03);">
+                                    <div class="text-sm font-bold mb-2" style="color: var(--text-primary);">🎲 Worp Statistieken</div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="flex justify-between">
+                                            <span style="color: var(--text-secondary);">Totaal Worpen:</span>
+                                            <span id="statTotalThrows" class="font-bold" style="color: var(--text-primary);">--</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span style="color: var(--text-secondary);">Blind Worpen:</span>
+                                            <span id="statBlindThrows" class="font-bold" style="color: var(--text-primary);">--</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span style="color: var(--text-secondary);">Vastgooiers:</span>
+                                            <span id="statVastgooiers" class="font-bold" style="color: var(--text-primary);">--</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span style="color: var(--text-secondary);">Mexico in Vastgooier:</span>
+                                            <span id="statMexicoVast" class="font-bold" style="color: #FFD700;">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Guest Message -->
+                                <div id="statsGuestMessage" class="text-center py-4 hidden">
+                                    <div class="text-3xl mb-2">🔒</div>
+                                    <div class="text-sm" style="color: var(--text-secondary);">
+                                        Registreer om je statistieken te bekijken
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Matchmaking Queue -->
                         <div id="queueIdle" class="text-center py-12">
                             <div class="text-6xl mb-4">🎯</div>

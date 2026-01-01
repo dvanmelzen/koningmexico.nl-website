@@ -71,6 +71,66 @@ const matchmakingQueue = []; // Array of { userId, eloRating, socketId }
 const activeSockets = new Map(); // socketId -> userId
 
 // ============================================
+// GAME LOGGING HELPERS (Phase 2)
+// ============================================
+
+/**
+ * Log throw details to database (skips guests)
+ */
+function logThrowDetails(game, playerId, throwData) {
+    // Skip if either player is a guest
+    if (!playerId || playerId.startsWith('guest_') ||
+        !game.player1Id || game.player1Id.startsWith('guest_') ||
+        !game.player2Id || game.player2Id.startsWith('guest_')) {
+        return;
+    }
+
+    const opponentId = playerId === game.player1Id ? game.player2Id : game.player1Id;
+
+    try {
+        db.saveThrowDetails({
+            gameId: game.gameId,
+            roundNumber: game.roundNumber || 1,
+            playerId,
+            opponentId,
+            throwType: throwData.isVast ? 'vast' : (throwData.isBlind ? 'blind' : 'open'),
+            dice1: throwData.dice1,
+            dice2: throwData.dice2,
+            wasMexico: throwData.isMexico || false,
+            wasVastgooier: game.isVastgooier || false,
+            vastgooierPenalty: throwData.vastgooierPenalty || 0,
+            roundWinner: null, // Will be updated when round ends
+            livesRemaining: game[playerId === game.player1Id ? 'player1Lives' : 'player2Lives']
+        });
+    } catch (err) {
+        console.error('❌ Failed to log throw details:', err);
+    }
+}
+
+/**
+ * Update round winner in database (skips guests)
+ */
+function updateRoundWinner(game, roundNumber, winnerId) {
+    // Skip if either player is a guest
+    if (!game.player1Id || game.player1Id.startsWith('guest_') ||
+        !game.player2Id || game.player2Id.startsWith('guest_')) {
+        return;
+    }
+
+    try {
+        // Update all throws from this round with the winner
+        const stmt = db.db.prepare(`
+            UPDATE game_details
+            SET roundWinner = ?
+            WHERE gameId = ? AND roundNumber = ?
+        `);
+        stmt.run(winnerId, game.gameId, roundNumber);
+    } catch (err) {
+        console.error('❌ Failed to update round winner:', err);
+    }
+}
+
+// ============================================
 // CLEANUP FUNCTIONS (Prevent memory leaks)
 // ============================================
 
@@ -422,6 +482,50 @@ app.get('/api/users/recent', (req, res) => {
     const limit = parseInt(req.query.limit) || 3;
     const users = db.getRecentUsers(limit);
     res.json(users);
+});
+
+// User Stats (Phase 2)
+app.get('/api/user/stats', authenticate, (req, res) => {
+    const userId = req.userId;
+
+    // Skip if guest
+    if (!userId || userId.startsWith('guest_')) {
+        return res.json({
+            isGuest: true,
+            message: 'Registreer om statistieken te bekijken'
+        });
+    }
+
+    try {
+        const user = db.findUserById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Get throw stats from game_details
+        const throwStats = db.getUserThrowStats(userId);
+
+        // Calculate win rate
+        const totalGames = user.stats.gamesPlayed || 0;
+        const wins = user.stats.wins || 0;
+        const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+
+        res.json({
+            isGuest: false,
+            winRate: `${winRate}%`,
+            totalGames,
+            wins,
+            losses: user.stats.losses || 0,
+            mexicoCount: throwStats?.mexicoCount || 0,
+            totalThrows: throwStats?.totalThrows || 0,
+            blindThrows: throwStats?.blindThrows || 0,
+            vastgooierCount: throwStats?.vastgooierCount || 0,
+            mexicoInVastgooier: throwStats?.mexicoInVastgooier || 0
+        });
+    } catch (error) {
+        console.error('❌ Error fetching user stats:', error);
+        res.status(500).json({ error: 'Failed to fetch stats' });
+    }
 });
 
 // ============================================
