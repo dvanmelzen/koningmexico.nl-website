@@ -1598,9 +1598,9 @@ function handleThrowResult(data) {
 
         // ✅ BELANGRIJK: Toon dobbelstenen VOOR de return!
         if (data.isBlind) {
-            showDice('?', '?', true);
+            showDice('?', '?', true, true); // Animate blind throw
         } else {
-            showDice(data.dice1, data.dice2, false);
+            showDice(data.dice1, data.dice2, false, true); // Animate open throw
         }
 
         showWaitingMessage('Laatste worp - wacht op tegenstander...');
@@ -1614,7 +1614,7 @@ function handleThrowResult(data) {
 
     if (data.isBlind) {
         // Show dice as hidden (? marks)
-        showDice('?', '?', true);
+        showDice('?', '?', true, true); // Animate blind throw
 
         // BELANGRIJK: Geen "Laten Zien" knop bij blind worp!
         // Speler kan alleen kiezen: "Laten Staan" of "Gooi Opnieuw"
@@ -1632,7 +1632,7 @@ function handleThrowResult(data) {
         }
     } else {
         // Open throw - show dice values
-        showDice(data.dice1, data.dice2, false);
+        showDice(data.dice1, data.dice2, false, true); // Animate open throw
 
         if (data.canKeep && data.canThrowAgain) {
             showKeepAndThrowAgainButtonsWithPattern(data.throwCount);
@@ -1705,7 +1705,7 @@ function revealDice() {
 function handleDiceRevealed(data) {
     debugLog('👁️  Dice revealed:', data);
 
-    showDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+    showDice(data.dice1, data.dice2, false, true); // Animate reveal
 
     // Update last throw in player history to not blind anymore
     if (playerThrowHistory.length > 0) {
@@ -1782,7 +1782,7 @@ function handleOpponentThrow(data) {
 
 function handleOpponentDiceRevealed(data) {
     debugLog('👁️  Opponent revealed:', data);
-    showOpponentDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+    showOpponentDice(data.dice1, data.dice2, false, true); // Animate reveal
 
     // Update last throw in opponent history to not blind anymore
     if (opponentThrowHistory.length > 0) {
