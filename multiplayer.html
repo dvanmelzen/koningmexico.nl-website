@@ -529,14 +529,19 @@
                 font-size: 1.1rem !important;
             }
         }
+
+        /* Hide secondary multiplayer control bar - integrated into main nav */
+        .multiplayer-control-bar-hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="font-body min-h-screen">
 
     <!-- Main Navigation (injected by navigation.js) -->
 
-    <!-- Multiplayer Control Bar -->
-    <div class="bg-gradient-to-r from-green-light to-green py-2 shadow-md sticky z-40" style="top: 60px;">
+    <!-- Multiplayer Control Bar (hidden - functionality moved to main nav) -->
+    <div class="bg-gradient-to-r from-green-light to-green py-2 shadow-md sticky z-40 multiplayer-control-bar-hidden" style="top: 60px;">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center flex-wrap gap-2">
                 <!-- Left: Quick Icons -->

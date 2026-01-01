@@ -17,18 +17,21 @@ const KoningMexicoNav = {
             return;
         }
 
+        // Check if we're on multiplayer page
+        const isMultiplayer = window.location.pathname.includes('multiplayer.html');
+
         // Create navigation HTML
         const navHTML = `
 <header id="main-header" class="bg-gradient-to-r from-green to-green-light shadow-lg sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center gap-4">
             <!-- Logo -->
             <a href="/" class="flex-shrink-0">
                 <img src="assets/logo-fixed.png" alt="Koning Mexico Logo" class="h-12 md:h-16 w-auto">
             </a>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden lg:flex items-center gap-2">
+            <nav class="hidden lg:flex items-center gap-2 flex-1">
                 <a href="/" class="nav-link">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Home</span>
@@ -67,6 +70,31 @@ const KoningMexicoNav = {
                 </a>
             </nav>
 
+            <!-- Multiplayer Quick Actions (Desktop only) -->
+            ${isMultiplayer ? `
+            <div id="multiplayerActions" class="hidden lg:flex items-center gap-1">
+                <button id="navHomeBtn" class="nav-icon-btn" title="Terug naar Lobby">🏠</button>
+                <button id="navSpelregelsBtn" class="nav-icon-btn" title="Spelregels">📖</button>
+                <button id="navDarkModeToggle" class="nav-icon-btn" title="Dark Mode">
+                    <span id="navDarkModeIcon">🌙</span>
+                </button>
+                <button id="navDebugToggle" class="nav-icon-btn" title="Debug Console">🐛</button>
+            </div>
+            ` : ''}
+
+            <!-- Multiplayer User Info (Desktop/Tablet) -->
+            ${isMultiplayer ? `
+            <div id="navUserInfo" class="hidden sm:flex items-center gap-2">
+                <span id="navUserDisplay" class="text-white text-sm font-semibold hidden">
+                    <span id="navUsername"></span>
+                    <span id="navEloRating" class="text-xs text-white text-opacity-80 ml-1"></span>
+                </span>
+                <button id="navLogoutBtn" class="hidden px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold text-xs shadow-md">
+                    Uitloggen
+                </button>
+            </div>
+            ` : ''}
+
             <!-- Mobile Menu Button -->
             <button id="mobile-menu-btn" class="lg:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
                 <span class="hamburger-line"></span>
@@ -81,6 +109,41 @@ const KoningMexicoNav = {
         <!-- Mobile Navigation -->
         <nav id="mobile-menu" class="mobile-menu">
             <div class="py-4 space-y-2">
+                ${isMultiplayer ? `
+                <!-- Multiplayer User Info (Mobile) -->
+                <div id="navUserInfoMobile" class="mobile-nav-section">
+                    <span id="navUserDisplayMobile" class="text-white text-sm font-semibold hidden block px-4 py-2">
+                        <span id="navUsernameMobile"></span>
+                        <span id="navEloRatingMobile" class="text-xs text-white text-opacity-80 ml-1"></span>
+                    </span>
+                    <button id="navLogoutBtnMobile" class="hidden w-full text-left px-4 py-3 text-white font-semibold bg-red-600 hover:bg-red-700 transition rounded-lg mx-4" style="width: calc(100% - 2rem);">
+                        🚪 Uitloggen
+                    </button>
+                </div>
+
+                <!-- Multiplayer Quick Actions (Mobile) -->
+                <div class="mobile-nav-section border-t border-white border-opacity-20 pt-2 mt-2">
+                    <button id="navHomeBtnMobile" class="mobile-nav-link">
+                        <span class="text-2xl">🏠</span>
+                        <span>Terug naar Lobby</span>
+                    </button>
+                    <button id="navSpelregelsBtnMobile" class="mobile-nav-link">
+                        <span class="text-2xl">📖</span>
+                        <span>Spelregels</span>
+                    </button>
+                    <button id="navDarkModeToggleMobile" class="mobile-nav-link">
+                        <span class="text-2xl" id="navDarkModeIconMobile">🌙</span>
+                        <span>Dark Mode</span>
+                    </button>
+                    <button id="navDebugToggleMobile" class="mobile-nav-link">
+                        <span class="text-2xl">🐛</span>
+                        <span>Debug Console</span>
+                    </button>
+                </div>
+
+                <!-- Regular Navigation (Mobile) -->
+                <div class="mobile-nav-section border-t border-white border-opacity-20 pt-2 mt-2">
+                ` : ''}
                 <a href="/" class="mobile-nav-link">
                     <span class="text-2xl">🏠</span>
                     <span>Home</span>
@@ -105,6 +168,9 @@ const KoningMexicoNav = {
                     <span class="text-2xl">🎮</span>
                     <span>Multiplayer</span>
                 </a>
+                ${isMultiplayer ? `
+                </div>
+                ` : ''}
             </div>
         </nav>
     </div>
@@ -129,6 +195,7 @@ const KoningMexicoNav = {
         this.initializeMobileMenu();
         this.highlightActivePage();
         this.initializeSpelregelsModal();
+        this.initializeMultiplayerControls();
     },
 
     injectStyles() {
@@ -176,6 +243,32 @@ const KoningMexicoNav = {
                 font-size: 0.95rem;
             }
 
+            /* Multiplayer Icon Buttons */
+            .nav-icon-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.5rem;
+                height: 2.5rem;
+                padding: 0.5rem;
+                color: white;
+                font-size: 1.25rem;
+                border-radius: 0.5rem;
+                transition: all 0.2s;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+            }
+
+            .nav-icon-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            /* Mobile nav section spacing */
+            .mobile-nav-section {
+                padding-bottom: 0.5rem;
+            }
+
             /* Hamburger Menu */
             .hamburger-line {
                 display: block;
@@ -211,7 +304,7 @@ const KoningMexicoNav = {
             }
 
             .mobile-menu.active {
-                max-height: 400px;
+                max-height: 600px; /* Increased for multiplayer controls */
             }
 
             /* Mobile menu overlay */
@@ -463,6 +556,132 @@ const KoningMexicoNav = {
 
             console.log('✅ Event listener added to Spelregels link');
         });
+    },
+
+    initializeMultiplayerControls() {
+        // Only on multiplayer.html
+        const currentPage = window.location.pathname.split('/').pop();
+        if (currentPage !== 'multiplayer.html') {
+            return;
+        }
+
+        console.log('🎮 Initializing multiplayer controls in navigation...');
+
+        // Function to forward events to multiplayer page's buttons
+        const forwardClick = (navBtnId, targetBtnId) => {
+            const navBtn = document.getElementById(navBtnId);
+            const targetBtn = document.getElementById(targetBtnId);
+
+            if (navBtn && targetBtn) {
+                navBtn.addEventListener('click', () => {
+                    console.log(`📡 Forwarding click from ${navBtnId} to ${targetBtnId}`);
+                    targetBtn.click();
+                });
+            }
+        };
+
+        // Forward desktop button clicks to existing multiplayer buttons
+        forwardClick('navHomeBtn', 'homeBtn');
+        forwardClick('navSpelregelsBtn', 'spelregelsBtn');
+        forwardClick('navDarkModeToggle', 'darkModeToggle');
+        forwardClick('navDebugToggle', 'debugToggle');
+        forwardClick('navLogoutBtn', 'logoutBtn');
+
+        // Forward mobile button clicks
+        forwardClick('navHomeBtnMobile', 'homeBtn');
+        forwardClick('navSpelregelsBtnMobile', 'spelregelsBtn');
+        forwardClick('navDarkModeToggleMobile', 'darkModeToggle');
+        forwardClick('navDebugToggleMobile', 'debugToggle');
+        forwardClick('navLogoutBtnMobile', 'logoutBtn');
+
+        // Sync user display elements
+        // We'll set up observers to sync from the original elements to nav elements
+        const syncUserDisplay = () => {
+            // Get original elements (from secondary bar)
+            const username = document.getElementById('username');
+            const eloRating = document.getElementById('eloRating');
+            const userDisplay = document.getElementById('userDisplay');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Get nav elements (desktop/tablet)
+            const navUsername = document.getElementById('navUsername');
+            const navEloRating = document.getElementById('navEloRating');
+            const navUserDisplay = document.getElementById('navUserDisplay');
+            const navLogoutBtn = document.getElementById('navLogoutBtn');
+
+            // Get nav elements (mobile)
+            const navUsernameMobile = document.getElementById('navUsernameMobile');
+            const navEloRatingMobile = document.getElementById('navEloRatingMobile');
+            const navUserDisplayMobile = document.getElementById('navUserDisplayMobile');
+            const navLogoutBtnMobile = document.getElementById('navLogoutBtnMobile');
+
+            if (username && navUsername && navUsernameMobile) {
+                // Sync username text
+                navUsername.textContent = username.textContent;
+                navUsernameMobile.textContent = username.textContent;
+            }
+
+            if (eloRating && navEloRating && navEloRatingMobile) {
+                // Sync ELO rating text
+                navEloRating.textContent = eloRating.textContent;
+                navEloRatingMobile.textContent = eloRating.textContent;
+            }
+
+            if (userDisplay && navUserDisplay && navUserDisplayMobile) {
+                // Sync visibility
+                if (!userDisplay.classList.contains('hidden')) {
+                    navUserDisplay.classList.remove('hidden');
+                    navUserDisplayMobile.classList.remove('hidden');
+                } else {
+                    navUserDisplay.classList.add('hidden');
+                    navUserDisplayMobile.classList.add('hidden');
+                }
+            }
+
+            if (logoutBtn && navLogoutBtn && navLogoutBtnMobile) {
+                // Sync visibility
+                if (!logoutBtn.classList.contains('hidden')) {
+                    navLogoutBtn.classList.remove('hidden');
+                    navLogoutBtnMobile.classList.remove('hidden');
+                } else {
+                    navLogoutBtn.classList.add('hidden');
+                    navLogoutBtnMobile.classList.add('hidden');
+                }
+            }
+
+            // Sync dark mode icon
+            const darkModeIcon = document.getElementById('darkModeIcon');
+            const navDarkModeIcon = document.getElementById('navDarkModeIcon');
+            const navDarkModeIconMobile = document.getElementById('navDarkModeIconMobile');
+
+            if (darkModeIcon && navDarkModeIcon && navDarkModeIconMobile) {
+                navDarkModeIcon.textContent = darkModeIcon.textContent;
+                navDarkModeIconMobile.textContent = darkModeIcon.textContent;
+            }
+        };
+
+        // Initial sync
+        setTimeout(syncUserDisplay, 100);
+
+        // Set up observer for changes
+        const observer = new MutationObserver(syncUserDisplay);
+
+        // Observe username, eloRating, userDisplay, logoutBtn for changes
+        const observeElements = ['username', 'eloRating', 'userDisplay', 'logoutBtn', 'darkModeIcon'];
+        observeElements.forEach(id => {
+            const elem = document.getElementById(id);
+            if (elem) {
+                observer.observe(elem, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true,
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
+        });
+
+        console.log('✅ Multiplayer controls initialized');
     }
 };
 
