@@ -420,6 +420,13 @@ function showAuth() {
 function showLobby() {
     hideAllScreens();
     document.getElementById('lobbyScreen')?.classList.remove('hidden');
+
+    // Reset queue status - hide "Match gevonden!" message
+    const queueSearching = document.getElementById('queueSearching');
+    const queueIdle = document.getElementById('queueIdle');
+    if (queueSearching) queueSearching.classList.add('hidden');
+    if (queueIdle) queueIdle.classList.remove('hidden');
+
     loadLeaderboard();
     loadRecentGames();
     loadRecentUsers();
@@ -2728,7 +2735,7 @@ function showKeepAndThrowAgainButtons() {
 // showResultChoiceButtons VERWIJDERD - automatische vergelijking!
 
 function hideAllActionButtons() {
-    ['throwOpenBtn', 'throwBlindBtn', 'revealBtn', 'keepBtn'].forEach(id => {
+    ['throwOpenBtn', 'throwBlindBtn', 'revealBtn', 'keepBtn', 'leaveGameBtn'].forEach(id => {
         document.getElementById(id)?.classList.add('hidden');
     });
 }
