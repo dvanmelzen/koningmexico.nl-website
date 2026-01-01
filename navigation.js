@@ -30,8 +30,8 @@ const KoningMexicoNav = {
                 <img src="assets/logo-fixed.png" alt="Koning Mexico Logo" class="h-12 md:h-16 w-auto">
             </a>
 
-            <!-- Desktop Navigation -->
-            <nav class="hidden lg:flex items-center gap-2 flex-1">
+            <!-- Desktop Navigation (hidden on multiplayer page) -->
+            <nav class="${isMultiplayer ? 'hidden' : 'hidden lg:flex'} items-center gap-2 flex-1">
                 <a href="/" class="nav-link">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Home</span>
@@ -82,8 +82,8 @@ const KoningMexicoNav = {
             </div>
             ` : ''}
 
-            <!-- Mobile Menu Button -->
-            <button id="mobile-menu-btn" class="lg:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
+            <!-- Mobile Menu Button (always visible on multiplayer page) -->
+            <button id="mobile-menu-btn" class="${isMultiplayer ? 'flex' : 'lg:hidden flex'} flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
                 <span class="hamburger-line"></span>
                 <span class="hamburger-line"></span>
                 <span class="hamburger-line"></span>
@@ -619,12 +619,22 @@ const KoningMexicoNav = {
             const navLogoutBtnMobile = document.getElementById('navLogoutBtnMobile');
             const navDarkModeIcon = document.getElementById('navDarkModeIcon');
 
+            console.log('🔄 Syncing elements:', {
+                logoutBtn: logoutBtn ? 'found' : 'NOT FOUND',
+                logoutBtnHidden: logoutBtn ? logoutBtn.classList.contains('hidden') : 'N/A',
+                navLogoutBtnMobile: navLogoutBtnMobile ? 'found' : 'NOT FOUND',
+                darkModeIcon: darkModeIcon ? 'found' : 'NOT FOUND',
+                navDarkModeIcon: navDarkModeIcon ? 'found' : 'NOT FOUND'
+            });
+
             // Sync logout button visibility
             if (logoutBtn && navLogoutBtnMobile) {
                 if (!logoutBtn.classList.contains('hidden')) {
                     navLogoutBtnMobile.classList.remove('hidden');
+                    console.log('✅ Logout button shown in mobile menu');
                 } else {
                     navLogoutBtnMobile.classList.add('hidden');
+                    console.log('❌ Logout button hidden in mobile menu');
                 }
             }
 
@@ -634,8 +644,11 @@ const KoningMexicoNav = {
             }
         };
 
-        // Initial sync
+        // Initial sync - try multiple times to ensure elements exist
         setTimeout(syncElements, 100);
+        setTimeout(syncElements, 500);
+        setTimeout(syncElements, 1000);
+        setTimeout(syncElements, 2000);
 
         // Set up observer for changes
         const observer = new MutationObserver(syncElements);
