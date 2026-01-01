@@ -485,7 +485,7 @@ app.get('/api/users/recent', (req, res) => {
 });
 
 // User Stats (Phase 2)
-app.get('/api/user/stats', authenticate, (req, res) => {
+app.get('/api/user/stats', authenticateToken, (req, res) => {
     const userId = req.userId;
 
     // Skip if guest
