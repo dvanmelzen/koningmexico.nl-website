@@ -268,7 +268,8 @@ const KoningMexicoNav = {
             }
 
             .mobile-menu.active {
-                max-height: 400px;
+                max-height: 600px;
+                overflow-y: auto;
             }
 
             /* Mobile menu overlay */
