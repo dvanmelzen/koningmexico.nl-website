@@ -387,40 +387,122 @@
 </head>
 <body class="font-body min-h-screen">
 
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-green to-green-light py-4 sticky top-0 z-50 shadow-lg">
-        <div class="container mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <a href="index.html" class="flex items-center gap-2 text-white font-semibold hover:text-gold-light transition">
-                    <span>←</span>
-                    <span>Terug</span>
+    <!-- Header with Navigation -->
+    <header id="main-header" class="bg-gradient-to-r from-green to-green-light shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <a href="/" class="flex-shrink-0">
+                    <img src="assets/logo-fixed.png" alt="Koning Mexico Logo" class="h-12 md:h-16 w-auto">
                 </a>
-                <h1 class="text-2xl font-heading font-bold text-white">
-                    🎲 Multiplayer Mexico <span style="background: red; color: white; padding: 4px 8px; font-size: 14px; border-radius: 4px; margin-left: 10px;">V2.0 TEST</span>
-                </h1>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden lg:flex items-center gap-2">
+                    <a href="/" class="nav-link">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">Home</span>
+                    </a>
+
+                    <!-- Spelregels Dropdown -->
+                    <div class="nav-dropdown">
+                        <button class="nav-link nav-dropdown-btn">
+                            <span class="nav-icon">📖</span>
+                            <span class="nav-text">Spelregels</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="nav-dropdown-menu">
+                            <a href="spelregels.html" class="nav-dropdown-item">
+                                <span>📜</span>
+                                <span>Spelregels</span>
+                            </a>
+                            <a href="ai_psychology.html" class="nav-dropdown-item">
+                                <span>🧠</span>
+                                <span>AI Psychologie</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="spel.html" class="nav-link">
+                        <span class="nav-icon">🎲</span>
+                        <span class="nav-text">Solo Spelen</span>
+                    </a>
+                    <a href="spel_vs_computer.html" class="nav-link">
+                        <span class="nav-icon">🤖</span>
+                        <span class="nav-text">vs Computer</span>
+                    </a>
+                    <a href="multiplayer.html" class="nav-link nav-link-primary">
+                        <span class="nav-icon">🎮</span>
+                        <span class="nav-text">Multiplayer</span>
+                    </a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" class="lg:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+
+                <!-- Multiplayer-specific controls (hidden on mobile) -->
+                <div class="hidden lg:flex gap-3 items-center ml-4">
+                    <span class="text-white text-xs px-2 py-1 rounded" style="background: rgba(255,0,0,0.8);">V2.0</span>
+
+                    <!-- Live Stats -->
+                    <span id="liveStats" class="text-white text-xs px-2 py-1 rounded-lg" style="background: rgba(255,255,255,0.1);">
+                        <span class="mr-1">🟢 <span id="onlinePlayers">--</span></span>
+                        <span class="mr-1">⏳ <span id="queuePlayers">--</span></span>
+                        <span>🎮 <span id="activeGames">--</span></span>
+                    </span>
+
+                    <span id="userDisplay" class="hidden text-white text-sm">
+                        <span class="font-semibold" id="username"></span>
+                        <span class="text-xs text-white text-opacity-80" id="eloRating"></span>
+                    </span>
+
+                    <button id="logoutBtn" class="hidden px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold text-sm shadow-md">
+                        Uitloggen
+                    </button>
+                </div>
             </div>
-            <div class="flex gap-3 items-center">
-                <!-- Icon Buttons -->
-                <button id="darkModeToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-2xl" title="Dark Mode Toggle">
-                    <span id="darkModeIcon">🌙</span>
-                </button>
-                <button id="debugToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-2xl" title="Debug Log Toggle">
-                    🐛
-                </button>
-                <!-- Live Stats -->
-                <span id="liveStats" class="text-white text-sm px-3 py-1 rounded-lg" style="background: rgba(255,255,255,0.1);">
-                    <span class="mr-2">🟢 <span id="onlinePlayers">--</span></span>
-                    <span class="mr-2">⏳ <span id="queuePlayers">--</span></span>
-                    <span>🎮 <span id="activeGames">--</span></span>
-                </span>
-                <span id="userDisplay" class="hidden text-white">
-                    <span class="font-semibold" id="username"></span>
-                    <span class="text-sm text-white text-opacity-80" id="eloRating"></span>
-                </span>
-                <button id="logoutBtn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold shadow-md">
-                    Uitloggen
-                </button>
-            </div>
+
+            <!-- Mobile Navigation -->
+            <nav id="mobile-menu" class="mobile-menu">
+                <div class="py-4 space-y-2">
+                    <!-- Mobile Live Stats -->
+                    <div class="px-4 py-2 text-white text-xs" style="background: rgba(255,255,255,0.1); border-radius: 0.5rem;">
+                        <div class="flex justify-between">
+                            <span>🟢 <span id="mobileOnlinePlayers">--</span></span>
+                            <span>⏳ <span id="mobileQueuePlayers">--</span></span>
+                            <span>🎮 <span id="mobileActiveGames">--</span></span>
+                        </div>
+                    </div>
+
+                    <a href="/" class="mobile-nav-link">
+                        <span class="text-2xl">🏠</span>
+                        <span>Home</span>
+                    </a>
+                    <a href="spelregels.html" class="mobile-nav-link">
+                        <span class="text-2xl">📖</span>
+                        <span>Spelregels</span>
+                    </a>
+                    <a href="ai_psychology.html" class="mobile-nav-link mobile-nav-subitem">
+                        <span class="text-2xl">🧠</span>
+                        <span>AI Psychologie</span>
+                    </a>
+                    <a href="spel.html" class="mobile-nav-link">
+                        <span class="text-2xl">🎲</span>
+                        <span>Solo Spelen</span>
+                    </a>
+                    <a href="spel_vs_computer.html" class="mobile-nav-link">
+                        <span class="text-2xl">🤖</span>
+                        <span>vs Computer</span>
+                    </a>
+                    <a href="multiplayer.html" class="mobile-nav-link mobile-nav-link-primary">
+                        <span class="text-2xl">🎮</span>
+                        <span>Multiplayer</span>
+                    </a>
+                </div>
+            </nav>
         </div>
     </header>
 
