@@ -125,6 +125,7 @@ const KoningMexicoNav = {
         // Initialize functionality
         this.initializeMobileMenu();
         this.highlightActivePage();
+        this.initializeSpelregelsModal();
     },
 
     injectStyles() {
@@ -379,6 +380,39 @@ const KoningMexicoNav = {
                 link.style.background = 'rgba(255, 255, 255, 0.2)';
                 link.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.5)';
             }
+        });
+    },
+
+    initializeSpelregelsModal() {
+        // Only on multiplayer.html - intercept Spelregels link to show modal
+        const currentPage = window.location.pathname.split('/').pop();
+        if (currentPage !== 'multiplayer.html') {
+            return; // Not on multiplayer page, use normal navigation
+        }
+
+        console.log('📜 Initializing Spelregels modal for multiplayer...');
+
+        // Find the Spelregels link in the dropdown
+        const spelregelsLinks = document.querySelectorAll('a[href="spelregels.html"]');
+
+        spelregelsLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                console.log('📜 Spelregels link clicked - showing modal');
+
+                // Find and show modal
+                const modal = document.getElementById('spelregelsModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    console.log('✅ Modal shown');
+                } else {
+                    console.error('❌ Modal not found!');
+                }
+            });
+
+            console.log('✅ Event listener added to Spelregels link');
         });
     }
 };

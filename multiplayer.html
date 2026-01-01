@@ -45,6 +45,9 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <link rel="icon" type="image/png" href="assets/favicon.png">
 
+    <!-- Navigation Component -->
+    <script src="navigation.js"></script>
+
     <!-- Apply dark mode immediately to prevent flash -->
     <script>
         (function() {
@@ -393,18 +396,22 @@
                     <span>Terug</span>
                 </a>
                 <h1 class="text-2xl font-heading font-bold text-white">
-                    🎲 Multiplayer Mexico
+                    🎲 Multiplayer Mexico <span style="background: red; color: white; padding: 4px 8px; font-size: 14px; border-radius: 4px; margin-left: 10px;">V2.0 TEST</span>
                 </h1>
             </div>
             <div class="flex gap-3 items-center">
+                <a href="multiplayer.html" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-2xl" title="Home">
+                    🏠
+                </a>
                 <button id="darkModeToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white" title="Dark Mode Toggle">
                     <span id="darkModeIcon">🌙</span>
                 </button>
                 <button id="debugToggle" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white" title="Debug Log Toggle">
                     🐛
                 </button>
-                <a href="spelregels.html" class="text-white hover:text-gold-light transition font-semibold">Spelregels</a>
-                <a href="spel_vs_computer.html" class="text-white hover:text-gold-light transition font-semibold">Single Player</a>
+                <a href="#" id="spelregelsLink" class="px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition text-white text-2xl" onclick="handleSpelregelsClick(event)" title="Spelregels">
+                    📖
+                </a>
                 <!-- Live Stats -->
                 <span id="liveStats" class="text-white text-sm px-3 py-1 rounded-lg" style="background: rgba(255,255,255,0.1);">
                     <span class="mr-2">🟢 <span id="onlinePlayers">--</span></span>
@@ -493,8 +500,10 @@
 
                     <!-- Guest Login -->
                     <div class="mt-6 pt-6" style="border-top: 1px solid var(--border-color);">
-                        <button id="guestLoginBtn" class="w-full py-3 px-4 font-semibold rounded-lg transition-all transform hover:scale-105"
-                            style="background: rgba(255, 215, 0, 0.1); border: 2px dashed var(--color-gold); color: var(--color-gold);">
+                        <button type="button" id="guestLoginBtn"
+                            onclick="window.handleGuestLoginClick && window.handleGuestLoginClick(event)"
+                            class="w-full py-3 px-4 font-semibold rounded-lg transition-all"
+                            style="background: rgba(255, 215, 0, 0.1); border: 2px dashed var(--color-gold); color: var(--color-gold); touch-action: manipulation; min-height: 64px; cursor: pointer; -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3); position: relative; z-index: 10;">
                             <span class="text-xl mr-2">👤</span>
                             <span>Speel als Gast</span>
                             <span class="text-sm block mt-1 opacity-75">(Geen account nodig)</span>
@@ -829,6 +838,169 @@
         </div>
         <div id="debugLog" class="overflow-y-auto space-y-1" style="max-height: 340px;"></div>
     </div>
+
+    <!-- Spelregels Parchment Modal -->
+    <div id="spelregelsModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[60] hidden" style="backdrop-filter: blur(3px);">
+        <div class="relative max-w-2xl w-full mx-4 animate-fade-in">
+            <!-- Close Button -->
+            <button id="closeSpelregelsModal" class="absolute -top-4 -right-4 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold z-10 shadow-xl transition hover:scale-110" style="background: linear-gradient(135deg, #8B0000, #B22222); color: white;">
+                ✕
+            </button>
+
+            <!-- Parchment Container -->
+            <div class="relative rounded-2xl shadow-2xl overflow-hidden" style="background: linear-gradient(to bottom, #F4E4C1, #E8D4A8, #DCC895);">
+                <!-- Ornate Border -->
+                <div class="absolute inset-0 pointer-events-none" style="background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect fill=\"none\" stroke=\"%23654321\" stroke-width=\"0.5\" x=\"2\" y=\"2\" width=\"96\" height=\"96\" rx=\"4\"/><rect fill=\"none\" stroke=\"%23654321\" stroke-width=\"0.3\" x=\"4\" y=\"4\" width=\"92\" height=\"92\" rx=\"3\"/></svg>'); background-size: 100% 100%;"></div>
+
+                <!-- Aged Paper Texture Overlay -->
+                <div class="absolute inset-0 pointer-events-none opacity-10" style="background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><filter id=\"noise\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"4\" /></filter><rect width=\"100\" height=\"100\" filter=\"url(%23noise)\" opacity=\"0.3\"/></svg>'); mix-blend-mode: multiply;"></div>
+
+                <!-- Content -->
+                <div class="relative p-8 max-h-[80vh] overflow-y-auto" style="font-family: 'Georgia', 'Times New Roman', serif;">
+                    <!-- Royal Crest -->
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-3">👑</div>
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-3xl">🎲</span>
+                            <h2 class="text-4xl font-bold tracking-wide" style="color: #654321; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); font-family: 'Cinzel', serif;">
+                                De Spelregels des Koninkrijks
+                            </h2>
+                            <span class="text-3xl">🎲</span>
+                        </div>
+                        <div class="h-1 w-32 mx-auto rounded" style="background: linear-gradient(to right, transparent, #654321, transparent);"></div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="space-y-6 text-lg leading-relaxed" style="color: #3E2723;">
+                        <!-- Intro -->
+                        <div>
+                            <h3 class="text-2xl font-bold mb-4 text-center" style="color: #8B0000; font-family: 'Cinzel', serif;">
+                                Het Legendarische B3-Verbond
+                            </h3>
+                            <p class="mb-4">
+                                Laat het bekend zijn in den lande: Mexico-regels zijn er in meer smaken dan frikandelbroodjes bij de Appie.
+                            </p>
+                            <p class="mb-4">
+                                Elke kroeg, elk dorp, elke vriendengroep zweert bij "de enige echte regels" — die toevallig altijd net iets anders zijn dan die van de buren. Zo gaat dat al eeuwen en zo zal het blijven tot het einde der tijden (of tot de tap sluit).
+                            </p>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="flex items-center gap-3 my-6">
+                            <div class="h-px flex-1" style="background: linear-gradient(to right, transparent, #654321, transparent);"></div>
+                            <span class="text-2xl">⚜️</span>
+                            <div class="h-px flex-1" style="background: linear-gradient(to right, #654321, transparent);"></div>
+                        </div>
+
+                        <!-- Big Three Section -->
+                        <div>
+                            <h4 class="text-xl font-bold mb-3" style="color: #0D5E3A; font-family: 'Cinzel', serif;">
+                                Big Three (B3)
+                            </h4>
+                            <p class="mb-4">
+                                Maar toen gebeurde het ondenkbare.
+                            </p>
+                            <p class="mb-4">
+                                Drie Oost-Groningse dorpen — <strong style="color: #0D5E3A;">Veendam</strong>, <strong style="color: #0D5E3A;">Muntendam</strong> en <strong style="color: #0D5E3A;">Oude Pekela</strong> — normaal gesproken verwikkeld in het soort rivaliteit dat je alleen begrijpt als je er vandaan komt — besloten de strijdbijl te begraven. Althans, voor even. Althans, voor México.
+                            </p>
+                            <p class="mb-4">
+                                Het resultaat? <strong style="color: #D4AF37;">Big Three</strong>. Oftewel <strong style="color: #D4AF37;">B3</strong>.
+                            </p>
+                            <p class="mb-4">
+                                Geen dorp de baas, geen ego voorrang. Gewoon drie plaatsen, drie meningen, één set regels waar iedereen zich in kon vinden. Een historisch moment, eigenlijk. Bijna ontroerend. Als je van dobbelspellen houdt.
+                            </p>
+                            <p class="mb-4 font-semibold" style="color: #8B0000;">
+                                Dit zijn de regels waarmee wij hier spelen.
+                            </p>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="flex items-center gap-3 my-6">
+                            <div class="h-px flex-1" style="background: linear-gradient(to right, transparent, #654321, transparent);"></div>
+                            <span class="text-2xl">🎲</span>
+                            <div class="h-px flex-1" style="background: linear-gradient(to right, #654321, transparent);"></div>
+                        </div>
+
+                        <!-- Andere Regels Section -->
+                        <div>
+                            <h4 class="text-xl font-bold mb-3" style="color: #0D5E3A; font-family: 'Cinzel', serif;">
+                                Andere Regels
+                            </h4>
+                            <p class="mb-4">
+                                Zijn dit de enige México-regels ter wereld? Welnee! Er bestaan ook:
+                            </p>
+                            <ul class="list-none space-y-2 mb-4 pl-4">
+                                <li>
+                                    <strong style="color: #8B0000;">→</strong> <strong>De Muntendammer Regels van Marinus</strong> — niemand weet precies wie Marinus is, maar zijn regels leven voort
+                                </li>
+                                <li>
+                                    <strong style="color: #8B0000;">→</strong> <strong>De Pekel-regels</strong> — recht uit Oude Pekela, voor de puristen
+                                </li>
+                            </ul>
+                            <p class="mb-4">
+                                Deze varianten zijn (nog) niet ingebouwd. Misschien ooit. Misschien nooit. Voorlopig is het B3 of niks.
+                            </p>
+                        </div>
+
+                        <!-- Closing -->
+                        <div class="text-center mt-8 pt-6" style="border-top: 2px solid #654321;">
+                            <p class="italic mb-2" style="color: #654321;">
+                                Heb je andere regels geleerd en voelt dit allemaal verkeerd? Wennen. Of stuur een boze mail.
+                            </p>
+                            <div class="text-4xl mt-4">
+                                🎲👑🎲
+                            </div>
+                        </div>
+
+                        <!-- CTA Button -->
+                        <div class="mt-8 pt-6 flex justify-center" style="border-top: 1px dashed #654321;">
+                            <a href="spelregels.html" class="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-xl transition transform hover:scale-105 shadow-xl" style="background: linear-gradient(135deg, #0D5E3A, #1B7A4B); color: white; text-decoration: none; font-family: 'Cinzel', serif;">
+                                <span class="text-2xl">📜</span>
+                                <span>Lees de volledige spelregels</span>
+                                <span class="text-2xl">⚔️</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out;
+        }
+
+        /* Scrollbar styling for parchment modal */
+        #spelregelsModal ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #spelregelsModal ::-webkit-scrollbar-track {
+            background: #D4AF37;
+            border-radius: 5px;
+        }
+
+        #spelregelsModal ::-webkit-scrollbar-thumb {
+            background: #654321;
+            border-radius: 5px;
+        }
+
+        #spelregelsModal ::-webkit-scrollbar-thumb:hover {
+            background: #3E2723;
+        }
+    </style>
 
     <script src="multiplayer.js"></script>
 </body>

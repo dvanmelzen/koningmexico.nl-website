@@ -19,6 +19,10 @@ dev.koningmexico.nl {
     # All other requests go to frontend
     handle {
         reverse_proxy mexico-frontend:8080
+
+        # NO CACHE for all responses (development)
+        header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        header Pragma "no-cache"
     }
 
     # Security headers
