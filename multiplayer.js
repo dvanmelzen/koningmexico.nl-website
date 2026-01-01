@@ -10,18 +10,293 @@ if (window.location.hostname === 'koningmexico.nl' || window.location.hostname.i
     console.log('📡 Using dev backend:', API_URL);
 }
 
-// Global state
-let socket = null;
-let currentUser = null;
-let accessToken = null;
-let currentGame = null;
-let isMyTurn = false;
-let currentThrowData = null;
-let debugMode = true;
+// ============================================
+// CENTRALIZED STATE MANAGEMENT
+// ============================================
 
-// Throw history tracking (per round)
-let playerThrowHistory = [];
-let opponentThrowHistory = [];
+const gameState = {
+    // Connection & Auth
+    socket: null,
+    currentUser: null,
+    accessToken: null,
+
+    // Game State
+    currentGame: null,
+    isMyTurn: false,
+    currentThrowData: null,
+
+    // Throw history (per round)
+    playerThrowHistory: [],
+    opponentThrowHistory: [],
+
+    // UI State
+    debugMode: true,
+
+    // Getters
+    getSocket() { return this.socket; },
+    getUser() { return this.currentUser; },
+    getToken() { return this.accessToken; },
+    getGame() { return this.currentGame; },
+    isPlayerTurn() { return this.isMyTurn; },
+    getThrowData() { return this.currentThrowData; },
+    getPlayerHistory() { return this.playerThrowHistory; },
+    getOpponentHistory() { return this.opponentThrowHistory; },
+    isDebugMode() { return this.debugMode; },
+
+    // Setters
+    setSocket(socket) { this.socket = socket; },
+    setUser(user) {
+        this.currentUser = user;
+        if (user) localStorage.setItem('currentUser', JSON.stringify(user));
+        else localStorage.removeItem('currentUser');
+    },
+    setToken(token) {
+        this.accessToken = token;
+        if (token) localStorage.setItem('accessToken', token);
+        else localStorage.removeItem('accessToken');
+    },
+    setGame(game) { this.currentGame = game; },
+    setTurn(isMyTurn) { this.isMyTurn = isMyTurn; },
+    setThrowData(data) { this.currentThrowData = data; },
+    setPlayerHistory(history) { this.playerThrowHistory = history; },
+    setOpponentHistory(history) { this.opponentThrowHistory = history; },
+    addPlayerThrow(dice1, dice2, value, isBlind) {
+        this.playerThrowHistory.push({ dice1, dice2, value, isBlind });
+    },
+    addOpponentThrow(dice1, dice2, value, isBlind) {
+        this.opponentThrowHistory.push({ dice1, dice2, value, isBlind });
+    },
+    clearHistory() {
+        this.playerThrowHistory = [];
+        this.opponentThrowHistory = [];
+    },
+
+    // Reset entire state
+    reset() {
+        this.currentGame = null;
+        this.isMyTurn = false;
+        this.currentThrowData = null;
+        this.clearHistory();
+    },
+
+    // Logout
+    logout() {
+        this.socket?.disconnect();
+        this.socket = null;
+        this.currentUser = null;
+        this.accessToken = null;
+        this.reset();
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('currentUser');
+    }
+};
+
+// Backward compatibility aliases (maintained for existing code)
+// NOTE: New code should use gameState getters/setters directly
+// Gradual migration strategy: update critical sections first, then expand
+let socket = gameState.socket;
+let currentUser = gameState.currentUser;
+let accessToken = gameState.accessToken;
+let currentGame = gameState.currentGame;
+let isMyTurn = gameState.isMyTurn;
+let currentThrowData = gameState.currentThrowData;
+let debugMode = gameState.debugMode;
+let playerThrowHistory = gameState.playerThrowHistory;
+let opponentThrowHistory = gameState.opponentThrowHistory;
+
+// Active timers/intervals tracking (for cleanup)
+let activeTimers = {
+    intervals: [],
+    timeouts: []
+};
+
+// ============================================
+// CENTRALIZED ERROR HANDLING
+// ============================================
+
+const ErrorHandler = {
+    // Error types
+    types: {
+        NETWORK: 'network',
+        AUTH: 'auth',
+        GAME: 'game',
+        VALIDATION: 'validation',
+        UNKNOWN: 'unknown'
+    },
+
+    // Error severity
+    severity: {
+        INFO: 'info',
+        WARNING: 'warning',
+        ERROR: 'error',
+        CRITICAL: 'critical'
+    },
+
+    // Handle error with appropriate user feedback
+    handle(error, type = this.types.UNKNOWN, severity = this.severity.ERROR) {
+        // Log to console
+        const emoji = this._getEmoji(severity);
+        console.error(`${emoji} [${type.toUpperCase()}]`, error);
+
+        // Get user-friendly message
+        const message = this._getUserMessage(error, type);
+
+        // Show appropriate UI feedback
+        switch (severity) {
+            case this.severity.INFO:
+                showToast(message, 'info', 3000);
+                break;
+            case this.severity.WARNING:
+                showToast(message, 'warning', 4000);
+                break;
+            case this.severity.ERROR:
+                showToast(message, 'error', 5000);
+                break;
+            case this.severity.CRITICAL:
+                showToast(message, 'error', 8000);
+                this._showCriticalErrorModal(message);
+                break;
+        }
+
+        // Track error for debugging
+        this._trackError(error, type, severity);
+    },
+
+    // Network error handler
+    network(error, context = '') {
+        const message = context ? `${context}: ${error.message}` : error.message;
+        this.handle(new Error(message), this.types.NETWORK, this.severity.ERROR);
+    },
+
+    // Auth error handler
+    auth(error, shouldLogout = false) {
+        this.handle(error, this.types.AUTH, this.severity.ERROR);
+        if (shouldLogout) {
+            setTimeout(() => {
+                gameState.logout();
+                showAuth();
+            }, 2000);
+        }
+    },
+
+    // Game logic error handler
+    game(error, context = '') {
+        const message = context ? `${context}: ${error.message}` : error.message;
+        this.handle(new Error(message), this.types.GAME, this.severity.WARNING);
+    },
+
+    // Validation error handler
+    validation(message) {
+        this.handle(new Error(message), this.types.VALIDATION, this.severity.INFO);
+    },
+
+    // Critical error handler
+    critical(error, context = '') {
+        const message = context ? `${context}: ${error.message}` : error.message;
+        this.handle(new Error(message), this.types.UNKNOWN, this.severity.CRITICAL);
+    },
+
+    // Get emoji for severity
+    _getEmoji(severity) {
+        switch (severity) {
+            case this.severity.INFO: return 'ℹ️';
+            case this.severity.WARNING: return '⚠️';
+            case this.severity.ERROR: return '❌';
+            case this.severity.CRITICAL: return '🚨';
+            default: return '❓';
+        }
+    },
+
+    // Get user-friendly message
+    _getUserMessage(error, type) {
+        const message = error.message || 'Er is een onbekende fout opgetreden';
+
+        // Try to extract meaningful message from common error patterns
+        if (message.includes('fetch') || message.includes('network')) {
+            return 'Netwerkfout - controleer je internetverbinding';
+        }
+        if (message.includes('timeout')) {
+            return 'Verbinding timeout - probeer het opnieuw';
+        }
+        if (message.includes('unauthorized') || message.includes('401')) {
+            return 'Sessie verlopen - log opnieuw in';
+        }
+        if (message.includes('forbidden') || message.includes('403')) {
+            return 'Geen toegang tot deze actie';
+        }
+        if (message.includes('not found') || message.includes('404')) {
+            return 'Gevraagde resource niet gevonden';
+        }
+        if (message.includes('500') || message.includes('server error')) {
+            return 'Serverfout - probeer het later opnieuw';
+        }
+
+        // Return original message if no pattern matched
+        return message;
+    },
+
+    // Show critical error modal
+    _showCriticalErrorModal(message) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-red-600 rounded-2xl shadow-2xl p-8 max-w-md text-center text-white">
+                <div class="text-6xl mb-4">🚨</div>
+                <h3 class="text-2xl font-bold mb-4">Kritieke Fout</h3>
+                <p class="mb-6">${message}</p>
+                <button onclick="location.reload()" class="bg-white text-red-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors">
+                    Pagina Herladen
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    },
+
+    // Track error for debugging (can be extended to send to logging service)
+    _trackError(error, type, severity) {
+        if (!gameState.isDebugMode()) return;
+
+        const errorLog = {
+            timestamp: new Date().toISOString(),
+            type,
+            severity,
+            message: error.message,
+            stack: error.stack,
+            user: gameState.getUser()?.username,
+            game: gameState.getGame()?.gameId
+        };
+
+        // Store in console for now (can be sent to logging service later)
+        console.log('📊 Error tracked:', errorLog);
+    }
+};
+
+// Cleanup function to prevent memory leaks
+function clearAllTimers() {
+    activeTimers.intervals.forEach(id => clearInterval(id));
+    activeTimers.timeouts.forEach(id => clearTimeout(id));
+    activeTimers.intervals = [];
+    activeTimers.timeouts = [];
+}
+
+// Track interval/timeout for cleanup
+function trackInterval(id) {
+    activeTimers.intervals.push(id);
+    return id;
+}
+
+function trackTimeout(id) {
+    activeTimers.timeouts.push(id);
+    return id;
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    clearAllTimers();
+    if (socket) {
+        socket.disconnect();
+    }
+});
 
 // ============================================
 // INITIALIZATION
@@ -32,8 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedUser = localStorage.getItem('currentUser');
 
     if (storedToken && storedUser) {
-        accessToken = storedToken;
-        currentUser = JSON.parse(storedUser);
+        gameState.setToken(storedToken);
+        gameState.setUser(JSON.parse(storedUser));
+        // Update legacy variables for backward compatibility
+        accessToken = gameState.accessToken;
+        currentUser = gameState.currentUser;
         initializeSocket();
         showLobby();
     } else {
@@ -46,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupUIListeners();
 
     // Update header user display if logged in
-    if (currentUser) {
+    if (gameState.getUser()) {
         updateHeaderUserDisplay();
     }
 
@@ -116,11 +394,11 @@ function setupAuthListeners() {
             handleGuestLogin();
 
             // Re-enable after 2 seconds
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 guestBtn.disabled = false;
                 guestBtn.style.opacity = '1';
                 guestBtn.style.pointerEvents = 'auto';
-            }, 2000);
+            }, 2000));
         }
     };
 
@@ -367,7 +645,7 @@ function setupUIListeners() {
         clearTimeout(scrollTimeout);
 
         // Wait for scroll to finish
-        scrollTimeout = setTimeout(() => {
+        scrollTimeout = trackTimeout(setTimeout(() => {
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
             if (scrollTop > lastScrollTop && scrollTop > 80) {
@@ -391,7 +669,7 @@ function setupUIListeners() {
             }
 
             lastScrollTop = scrollTop;
-        }, 100); // Debounce 100ms
+        }, 100)); // Debounce 100ms
     });
 
     // Leave Game button - allows leaving during active game
@@ -571,16 +849,16 @@ function showToast(message, type = 'info', duration = 3000) {
     container.appendChild(toast);
 
     // Trigger animation
-    setTimeout(() => {
+    trackTimeout(setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateX(0)';
-    }, 10);
+    }, 10));
 
-    setTimeout(() => {
+    trackTimeout(setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100px)';
-        setTimeout(() => toast.remove(), 300);
-    }, duration);
+        trackTimeout(setTimeout(() => toast.remove(), 300));
+    }, duration));
 }
 
 // Show inline message in turn indicator
@@ -611,10 +889,18 @@ function showInlineMessage(message, type = 'info') {
 // ============================================
 
 function initializeSocket() {
-    if (socket) socket.disconnect();
+    // Cleanup existing socket and ALL listeners to prevent duplicates
+    if (socket) {
+        socket.removeAllListeners();  // Remove all event listeners
+        socket.disconnect();
+        socket = null;
+    }
 
     socket = io(SOCKET_URL, {
-        auth: { token: accessToken }
+        auth: { token: accessToken },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
     });
 
     socket.on('connect', () => {
@@ -1105,9 +1391,9 @@ function handleThrowResult(data) {
         showWaitingMessage('Laatste worp - wacht op tegenstander...');
 
         // Auto-keep na korte delay (zodat speler de worp ziet)
-        setTimeout(() => {
+        trackTimeout(setTimeout(() => {
             keepThrow();
-        }, data.isBlind ? 800 : 1200); // Korter voor blind, langer voor open
+        }, data.isBlind ? 800 : 1200)); // Korter voor blind, langer voor open
         return; // Stop hier - geen knoppen tonen
     }
 
@@ -1985,9 +2271,9 @@ function showDice(dice1, dice2, isHidden, animate = true) {
         // Animate dice cup
         if (diceCup) {
             diceCup.classList.add('shaking');
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 diceCup.classList.remove('shaking');
-            }, 500);
+            }, 500));
         }
 
         // Make dice visible and add rolling class
@@ -1999,19 +2285,19 @@ function showDice(dice1, dice2, isHidden, animate = true) {
         // Bij BLIND: blijf ? tonen tijdens animatie
         if (isHidden) {
             // Geen rolling numbers, gewoon shake effect
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 dice1El.classList.remove('rolling');
                 dice2El.classList.remove('rolling');
                 dice1El.textContent = '?';
                 dice2El.textContent = '?';
-            }, 500);
+            }, 500));
             return; // Stop hier voor blind worpen
         }
 
         // Random rolling effect (alleen voor OPEN worpen)
         const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
         let rollCount = 0;
-        const rollInterval = setInterval(() => {
+        const rollInterval = trackInterval(setInterval(() => {
             const rand1 = Math.floor(Math.random() * 6) + 1;
             const rand2 = Math.floor(Math.random() * 6) + 1;
             dice1El.textContent = diceSymbols[rand1 - 1];
@@ -2030,7 +2316,7 @@ function showDice(dice1, dice2, isHidden, animate = true) {
                 dice1El.textContent = diceSymbols[dice1 - 1];
                 dice2El.textContent = diceSymbols[dice2 - 1];
             }
-        }, 50);
+        }, 50));
 
         return;
     }
@@ -2070,9 +2356,9 @@ function showOpponentDice(dice1, dice2, isHidden, animate = true) {
         // Animate dice cup
         if (diceCup) {
             diceCup.classList.add('shaking');
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 diceCup.classList.remove('shaking');
-            }, 500);
+            }, 500));
         }
 
         // Make dice visible and add rolling class
@@ -2084,7 +2370,7 @@ function showOpponentDice(dice1, dice2, isHidden, animate = true) {
         // Random rolling effect
         const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
         let rollCount = 0;
-        const rollInterval = setInterval(() => {
+        const rollInterval = trackInterval(setInterval(() => {
             const rand1 = Math.floor(Math.random() * 6) + 1;
             const rand2 = Math.floor(Math.random() * 6) + 1;
             dice1El.textContent = diceSymbols[rand1 - 1];
@@ -2106,7 +2392,7 @@ function showOpponentDice(dice1, dice2, isHidden, animate = true) {
                     dice2El.textContent = diceSymbols[dice2 - 1];
                 }
             }
-        }, 50);
+        }, 50));
 
         return;
     }
@@ -2290,7 +2576,7 @@ function handleVastgooier(data) {
     isMyTurn = true;
 
     // Force UI update with slight delay to ensure DOM is ready
-    setTimeout(() => {
+    trackTimeout(setTimeout(() => {
         hideAllActionButtons();
         const blindBtn = document.getElementById('throwBlindBtn');
         if (blindBtn) {
@@ -2300,7 +2586,7 @@ function handleVastgooier(data) {
             debugLog('❌ ERROR: Blind button not found!');
         }
         updateTurnIndicator();
-    }, 100);
+    }, 100));
 }
 
 function handleVastgooierReveal(data) {
@@ -2507,9 +2793,9 @@ function updateConnectionStatus(status, text) {
 
     // Auto-hide after 3 seconds if connected
     if (status === 'connected') {
-        setTimeout(() => {
+        trackTimeout(setTimeout(() => {
             statusEl.classList.add('hidden');
-        }, 3000);
+        }, 3000));
     }
 }
 
@@ -2581,20 +2867,20 @@ function showMatchFoundCountdown(opponentName) {
     let countdown = 3;
     const countdownEl = document.getElementById('matchCountdown');
 
-    const countdownInterval = setInterval(() => {
+    const countdownInterval = trackInterval(setInterval(() => {
         countdown--;
         if (countdownEl) {
             countdownEl.textContent = countdown;
             countdownEl.style.animation = 'none';
-            setTimeout(() => {
+            trackTimeout(setTimeout(() => {
                 if (countdownEl) countdownEl.style.animation = 'countdown-pulse 1s ease-in-out';
-            }, 10);
+            }, 10));
         }
 
         if (countdown <= 0) {
             clearInterval(countdownInterval);
         }
-    }, 1000);
+    }, 1000));
 }
 
 // Enhanced Searching Animation
