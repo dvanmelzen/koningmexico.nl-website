@@ -989,6 +989,68 @@ function handleThrow(game, userId, isBlind) {
         const effectiveMaxThrows = isAchterligger ? game.voorgooierThrowCount : game.maxThrows;
         const currentThrowCount = isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount;
 
+        // SPECIALE REGEL: Als voorgooier BLIND gooit op eerste worp → AUTO-KEEP
+        // Dit betekent: voorgooier commits aan blinde worp zonder opties
+        const isFirstBlindByVoorgooier = isVoorgooier && currentThrowCount === 1;
+
+        if (isFirstBlindByVoorgooier) {
+            // Auto-keep: geen keuze, automatisch doorgan
+            console.log(`   🎯 EERSTE BLINDE WORP VOORGOOIER → AUTO-KEEP`);
+
+            io.to(playerSocketId).emit('throw_result', {
+                isBlind: true,
+                dice1,
+                dice2,
+                throwCount: currentThrowCount,
+                maxThrows: currentThrowCount, // Effectief laatste worp
+                canKeep: false, // Geen opties
+                canThrowAgain: false, // Geen opties
+                message: 'Eerste blinde worp - automatisch doorgaan...'
+            });
+
+            // Opponent sees BLIND
+            io.to(opponentSocketId).emit('opponent_throw', {
+                isBlind: true,
+                throwCount: currentThrowCount,
+                message: `${currentPlayerName} gooit BLIND (verborgen) - wacht op jouw beurt`
+            });
+
+            // Auto-keep na korte delay (zodat speler het bericht ziet)
+            setTimeout(() => {
+                // Simuleer "laten staan" actie
+                console.log(`   ⏱️  Auto-keep voor ${currentPlayerName} - switch turn`);
+
+                // Switch turn naar achterligger
+                game.currentTurn = game.player1Id === userId ? game.player2Id : game.player1Id;
+                const nextPlayer = userCache.get(game.currentTurn);
+
+                // Notify both players
+                io.to(game.player1SocketId).emit('turn_changed', {
+                    gameId: game.gameId,
+                    currentTurn: game.currentTurn,
+                    currentPlayerName: nextPlayer.username,
+                    voorgooierPattern: game.voorgooierPattern,
+                    mustBlind: game.voorgooierPattern[game.achterliggerThrowCount] || false,
+                    message: `${nextPlayer.username} is nu aan de beurt`
+                });
+
+                io.to(game.player2SocketId).emit('turn_changed', {
+                    gameId: game.gameId,
+                    currentTurn: game.currentTurn,
+                    currentPlayerName: nextPlayer.username,
+                    voorgooierPattern: game.voorgooierPattern,
+                    mustBlind: game.voorgooierPattern[game.achterliggerThrowCount] || false,
+                    message: `${nextPlayer.username} is nu aan de beurt`
+                });
+
+                console.log(`   👤 Turn → ${nextPlayer.username}`);
+            }, 1500);
+
+            console.log(`   Result verborgen: ${throwResult.value} (${throwResult.name})`);
+            return; // Stop hier - auto-keep geactiveerd
+        }
+
+        // Normale blinde worp (niet eerste worp voorgooier)
         // Player sees hidden result (? marks)
         // BELANGRIJK: Geen "Laten Zien" knop! Alleen "Laten Staan" en eventueel "Gooi Opnieuw"
         io.to(playerSocketId).emit('throw_result', {
@@ -1533,10 +1595,10 @@ function compareThrows(game) {
         console.log(`   🏆 WINNAAR: ${voorgooier.username} (${voorgooierValue})`);
         console.log(`   💔 VERLIEZER: ${achterligger.username} (${achterliggerValue})`);
 
-        // VERLIEZER bepaalt penalty (achterligger verliest)
-        if (achterliggerIsMexico) {
+        // WINNAAR bepaalt penalty (als winnaar Mexico gooit, dubbele penalty!)
+        if (voorgooierIsMexico) {
             penalty = -2;
-            console.log(`   Penalty: -2 (VERLIEZER gooide MEXICO!)`);
+            console.log(`   Penalty: -2 (WINNAAR gooide MEXICO!)`);
         } else {
             penalty = -1;
             console.log(`   Penalty: -1`);
@@ -1560,10 +1622,10 @@ function compareThrows(game) {
         console.log(`   🏆 WINNAAR: ${achterligger.username} (${achterliggerValue})`);
         console.log(`   💔 VERLIEZER: ${voorgooier.username} (${voorgooierValue})`);
 
-        // VERLIEZER bepaalt penalty (voorgooier verliest)
-        if (voorgooierIsMexico) {
+        // WINNAAR bepaalt penalty (als winnaar Mexico gooit, dubbele penalty!)
+        if (achterliggerIsMexico) {
             penalty = -2;
-            console.log(`   Penalty: -2 (VERLIEZER gooide MEXICO!)`);
+            console.log(`   Penalty: -2 (WINNAAR gooide MEXICO!)`);
         } else {
             penalty = -1;
             console.log(`   Penalty: -1`);
