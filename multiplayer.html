@@ -747,16 +747,8 @@
                 <div>
                     <div class="rounded-2xl shadow-xl p-6" style="background: var(--bg-card);">
 
-                        <!-- Turn Indicator with Buttons -->
-                        <div class="relative mb-6">
-                            <button id="leaveGameBtn" class="absolute top-2 left-2 px-3 py-1 text-xs rounded-lg transition hover:opacity-80" style="background: var(--color-red); color: white;" title="Verlaat het spel">
-                                🚪 Verlaten
-                            </button>
-                            <div id="turnIndicator" class="text-center py-4 rounded-xl font-bold text-lg"></div>
-                            <button id="resetUIBtn" class="absolute top-2 right-2 px-3 py-1 text-xs rounded-lg transition" style="background: var(--color-red); color: white;" title="Reset UI als het spel vastloopt">
-                                🔄 Reset UI
-                            </button>
-                        </div>
+                        <!-- Turn Indicator -->
+                        <div id="turnIndicator" class="text-center py-4 rounded-xl font-bold text-lg mb-6"></div>
 
                         <!-- Dice Cups -->
                         <div class="flex justify-center gap-6 mb-6">
@@ -803,6 +795,9 @@
                             <!-- Result knoppen VERWIJDERD - automatische vergelijking! -->
                             <button type="button" class="btn-game btn-danger w-full hidden" id="giveUpBtn">
                                 ❌ Pas
+                            </button>
+                            <button type="button" class="btn-game w-full" id="leaveGameBtn" style="background: linear-gradient(135deg, #B22222, #8B0000); color: white;">
+                                🚪 Verlaten
                             </button>
                         </div>
 

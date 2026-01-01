@@ -394,13 +394,6 @@ function setupUIListeners() {
         }, 100); // Debounce 100ms
     });
 
-    // Reset UI button - helps if UI gets stuck
-    document.getElementById('resetUIBtn')?.addEventListener('click', () => {
-        debugLog('🔄 UI Reset aangeroepen');
-        resetGameUI();
-        showToast('🔄 UI gereset!', 'info', 2000);
-    });
-
     // Leave Game button - allows leaving during active game
     document.getElementById('leaveGameBtn')?.addEventListener('click', () => {
         showLeaveGameConfirmation();
