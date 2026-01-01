@@ -45,6 +45,9 @@ const io = new Server(server, {
     }
 });
 
+// Trust proxy (required for rate limiting behind Caddy reverse proxy)
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors({
     origin: CORS_ORIGIN,
@@ -366,11 +369,12 @@ app.post('/api/auth/guest', authLimiter, async (req, res) => {
 
         username = username.trim();
 
-        // Create in-memory guest user (NOT saved to database)
+        // Create guest user (saved to database for game_history foreign keys)
         const guestUser = {
             id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             username: username,
             email: `${username.toLowerCase()}@guest.temporary`,
+            password: 'GUEST_NO_PASSWORD', // Guest users don't need real passwords
             eloRating: 1200,
             avatarEmoji: '👤',
             stats: {
@@ -381,6 +385,9 @@ app.post('/api/auth/guest', authLimiter, async (req, res) => {
             isGuest: true, // Flag to identify guest users
             lastActivity: Date.now() // Track activity for cleanup
         };
+
+        // Save guest user to database (required for game_history foreign keys)
+        db.createUser(guestUser);
 
         // Cache guest user (temporary)
         userCache.set(guestUser.id, guestUser);
