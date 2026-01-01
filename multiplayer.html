@@ -1144,7 +1144,56 @@
         #spelregelsModal ::-webkit-scrollbar-thumb:hover {
             background: #3E2723;
         }
+
+        /* Auto-hide header on mobile for multiplayer */
+        @media (max-width: 768px) {
+            #main-header {
+                transform: translateY(0);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            #main-header.header-hidden {
+                transform: translateY(-100%);
+            }
+
+            /* Make header more compact on mobile */
+            #main-header .container {
+                padding-top: 0.5rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+
+            #main-header img {
+                height: 2.5rem !important;
+            }
+        }
     </style>
+
+    <script>
+        // Auto-hide header on scroll down for mobile multiplayer
+        if (window.innerWidth <= 768) {
+            let lastScrollTop = 0;
+            let scrollTimeout;
+
+            window.addEventListener('scroll', function() {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(function() {
+                    const header = document.getElementById('main-header');
+                    if (!header) return;
+
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+                    // Only hide when scrolling down and past 50px
+                    if (scrollTop > lastScrollTop && scrollTop > 50) {
+                        header.classList.add('header-hidden');
+                    } else {
+                        header.classList.remove('header-hidden');
+                    }
+
+                    lastScrollTop = scrollTop;
+                }, 100); // Debounce for better performance
+            });
+        }
+    </script>
 
     <script src="multiplayer.js"></script>
 </body>
