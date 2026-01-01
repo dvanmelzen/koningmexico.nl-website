@@ -2258,13 +2258,45 @@ function updateTurnIndicator() {
     const indicator = document.getElementById('turnIndicator');
     if (!indicator) return;
 
+    // Get current game info for context
+    const round = currentGame?.currentRound || 1;
+    const throwsLeft = 3; // Default, kan extended worden met state tracking
+
     if (isMyTurn) {
-        indicator.textContent = '🎯 Jouw beurt!';
-        indicator.className = 'text-center text-lg font-bold text-green';
+        // Jouw beurt - prominent en animerend
+        indicator.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1B7A4B, #0D5E3A); padding: 16px; border-radius: 12px; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(27, 122, 75, 0.4);">
+                <div style="font-size: 1.5rem; margin-bottom: 4px;">🎯</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: white;">JOUW BEURT!</div>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8); margin-top: 4px;">Ronde ${round} • Kies je actie</div>
+            </div>
+        `;
+        indicator.className = 'text-center mb-6';
     } else {
-        indicator.textContent = '⏳ Wachten op tegenstander...';
-        indicator.className = 'text-center text-lg font-bold text-gray-500';
+        // Wachten op tegenstander - neutraal
+        const opponentName = currentGame?.players?.find(p => p.userId !== currentUser?.id)?.username || 'tegenstander';
+        indicator.innerHTML = `
+            <div style="background: rgba(156, 163, 175, 0.2); padding: 14px; border-radius: 12px; border: 2px dashed rgba(156, 163, 175, 0.4);">
+                <div style="font-size: 1.2rem; margin-bottom: 4px;">⏳</div>
+                <div style="font-size: 1rem; font-weight: 600; color: var(--text-secondary);">Wachten op ${opponentName}...</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.7; margin-top: 4px;">Ronde ${round}</div>
+            </div>
+        `;
+        indicator.className = 'text-center mb-6';
     }
+}
+
+// Add pulse animation style if not exists
+if (!document.getElementById('pulseAnimation')) {
+    const style = document.createElement('style');
+    style.id = 'pulseAnimation';
+    style.textContent = `
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(27, 122, 75, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 6px 20px rgba(27, 122, 75, 0.6); }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // Helper function to calculate throw display value
@@ -2305,7 +2337,8 @@ function updateThrowHistory() {
         } else {
             playerThrowHistory.forEach((throwData, index) => {
                 // Check if this is still blind (not revealed)
-                const isStillBlind = throwData.isBlind;
+                // A throw is still blind if: isBlind is true AND wasRevealed is not true
+                const isStillBlind = throwData.isBlind && !throwData.wasRevealed;
 
                 let displayValue, typeLabel, mexicoLabel;
 
@@ -2316,8 +2349,14 @@ function updateThrowHistory() {
                     mexicoLabel = '';
                 } else {
                     // Throw has been revealed (or was open from start)
-                    displayValue = throwData.displayValue;
-                    typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                    // Ensure we have dice values
+                    if (!throwData.displayValue && throwData.dice1 && throwData.dice2) {
+                        const result = calculateThrowDisplay(throwData.dice1, throwData.dice2);
+                        throwData.displayValue = result.displayValue;
+                        throwData.isMexico = result.isMexico;
+                    }
+                    displayValue = throwData.displayValue || '???';
+                    typeLabel = throwData.isBlind ? '🙈→👁️' : '👁️';
                     mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
                 }
 
@@ -2346,7 +2385,8 @@ function updateThrowHistory() {
         } else {
             opponentThrowHistory.forEach((throwData, index) => {
                 // Check if this throw is still blind (not revealed yet)
-                const isStillBlind = throwData.isBlind;
+                // A throw is still blind if: isBlind is true AND wasRevealed is not true
+                const isStillBlind = throwData.isBlind && !throwData.wasRevealed;
 
                 let displayValue, typeLabel, mexicoLabel;
 
@@ -2357,8 +2397,14 @@ function updateThrowHistory() {
                     mexicoLabel = '';
                 } else {
                     // Throw has been revealed
-                    displayValue = throwData.displayValue;
-                    typeLabel = throwData.wasBlind ? '🙈→👁️' : '👁️';
+                    // Ensure we have dice values
+                    if (!throwData.displayValue && throwData.dice1 && throwData.dice2) {
+                        const result = calculateThrowDisplay(throwData.dice1, throwData.dice2);
+                        throwData.displayValue = result.displayValue;
+                        throwData.isMexico = result.isMexico;
+                    }
+                    displayValue = throwData.displayValue || '???';
+                    typeLabel = throwData.isBlind ? '🙈→👁️' : '👁️';
                     mexicoLabel = throwData.isMexico ? ' <span style="color: var(--color-gold-light);" class="font-bold">🎉</span>' : '';
                 }
 
