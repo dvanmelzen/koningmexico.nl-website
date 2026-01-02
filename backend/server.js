@@ -1113,6 +1113,26 @@ io.on('connection', (socket) => {
         socket.to(gameId).emit('opponent_reconnected', {
             username: user.username
         });
+
+        // CRITICAL FIX: Emit turn_changed to BOTH players to sync UI after reconnection
+        const player1Turn = game.currentTurn === game.player1Id;
+        const player2Turn = game.currentTurn === game.player2Id;
+
+        io.to(game.player1SocketId).emit('turn_changed', {
+            isYourTurn: player1Turn,
+            currentTurn: game.currentTurn,
+            voorgooier: game.voorgooier,
+            roundNumber: game.roundNumber
+        });
+
+        io.to(game.player2SocketId).emit('turn_changed', {
+            isYourTurn: player2Turn,
+            currentTurn: game.currentTurn,
+            voorgooier: game.voorgooier,
+            roundNumber: game.roundNumber
+        });
+
+        console.log(`🔄 Turn state synced after reconnection: currentTurn=${game.currentTurn}`);
     });
 
     // ============================================
