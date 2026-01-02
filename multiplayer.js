@@ -1274,8 +1274,8 @@ async function loadLeaderboard() {
         const sortBy = document.getElementById('leaderboardSort')?.value || 'elo';
         const minGames = document.getElementById('leaderboardMinGames')?.value || '0';
 
-        // Fetch leaderboard with filters
-        const response = await fetch(`${API_URL}/api/leaderboard?sortBy=${sortBy}&minGames=${minGames}&limit=10`);
+        // Fetch leaderboard with filters (top 5)
+        const response = await fetch(`${API_URL}/api/leaderboard?sortBy=${sortBy}&minGames=${minGames}&limit=5`);
         const data = await response.json();
 
         const leaderboardDiv = document.getElementById('leaderboardList');
@@ -1303,7 +1303,7 @@ async function loadLeaderboard() {
                 statIcon = '🎮';
             } else {
                 statDisplay = player.eloRating;
-                statIcon = '🎯';
+                statIcon = '⚡'; // Power
             }
 
             // Medal colors for top 3
@@ -1342,7 +1342,7 @@ async function loadLeaderboard() {
 
 async function loadRecentGames() {
     try {
-        const response = await fetch(`${API_URL}/api/games/recent`, {
+        const response = await fetch(`${API_URL}/api/games/recent?limit=3`, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
