@@ -547,6 +547,69 @@ function setupAuthListeners() {
     // Logout buttons (header and lobby)
     document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
     document.getElementById('lobbyLogoutBtn')?.addEventListener('click', handleLogout);
+
+    // Disclaimer Modal Logic
+    const gamblingCheckbox = document.getElementById('gamblingCheckbox');
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const disclaimerAcceptCheckbox = document.getElementById('disclaimerAcceptCheckbox');
+    const disclaimerAcceptBtn = document.getElementById('disclaimerAcceptBtn');
+
+    // Check if user has already accepted the disclaimer
+    const disclaimerAccepted = localStorage.getItem('disclaimerAccepted') === 'true';
+
+    // Handle gambling checkbox clicks
+    if (gamblingCheckbox) {
+        gamblingCheckbox.addEventListener('click', (e) => {
+            if (!disclaimerAccepted) {
+                // Prevent checkbox from being checked
+                e.preventDefault();
+                gamblingCheckbox.checked = false;
+
+                // Show disclaimer modal
+                if (disclaimerModal) {
+                    disclaimerModal.classList.remove('hidden');
+                }
+            }
+            // If already accepted, allow checkbox to toggle normally
+        });
+    }
+
+    // Handle disclaimer acceptance checkbox
+    if (disclaimerAcceptCheckbox && disclaimerAcceptBtn) {
+        disclaimerAcceptCheckbox.addEventListener('change', () => {
+            if (disclaimerAcceptCheckbox.checked) {
+                disclaimerAcceptBtn.disabled = false;
+                disclaimerAcceptBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                disclaimerAcceptBtn.classList.add('hover:brightness-110', 'cursor-pointer');
+            } else {
+                disclaimerAcceptBtn.disabled = true;
+                disclaimerAcceptBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                disclaimerAcceptBtn.classList.remove('hover:brightness-110', 'cursor-pointer');
+            }
+        });
+    }
+
+    // Handle disclaimer accept button click
+    if (disclaimerAcceptBtn) {
+        disclaimerAcceptBtn.addEventListener('click', () => {
+            if (disclaimerAcceptCheckbox && disclaimerAcceptCheckbox.checked) {
+                // Store acceptance in localStorage
+                localStorage.setItem('disclaimerAccepted', 'true');
+
+                // Close modal
+                if (disclaimerModal) {
+                    disclaimerModal.classList.add('hidden');
+                }
+
+                // Check the gambling checkbox
+                if (gamblingCheckbox) {
+                    gamblingCheckbox.checked = true;
+                }
+
+                showToast('Disclaimer geaccepteerd - je kunt nu spelen voor credits!', 'success');
+            }
+        });
+    }
 }
 
 async function handleLogin() {
