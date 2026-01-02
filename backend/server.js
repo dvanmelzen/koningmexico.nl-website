@@ -689,7 +689,7 @@ app.post('/api/credits/purchase', authenticateToken, purchaseLimiter, async (req
 // Get user's inventory
 app.get('/api/inventory', authenticateToken, (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const inventory = db.getUserInventory(userId);
 
         // Add counts by item type
@@ -723,7 +723,7 @@ app.get('/api/inventory', authenticateToken, (req, res) => {
 // Use a power-up
 app.post('/api/inventory/use', authenticateToken, (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { itemId } = req.body;
 
         if (!itemId) {
@@ -754,7 +754,7 @@ app.post('/api/inventory/use', authenticateToken, (req, res) => {
 // Check disclaimer acceptance status
 app.get('/api/disclaimer/status', authenticateToken, (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
 
         // Guests don't need to accept disclaimer
         if (!userId || userId.startsWith('guest-')) {
@@ -781,7 +781,7 @@ app.get('/api/disclaimer/status', authenticateToken, (req, res) => {
 // Accept disclaimer
 app.post('/api/disclaimer/accept', authenticateToken, (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
 
         // Skip guests
         if (!userId || userId.startsWith('guest-')) {
