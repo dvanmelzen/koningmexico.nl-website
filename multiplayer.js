@@ -840,7 +840,7 @@ function setupUIListeners() {
     });
 }
 
-// Update header user display (username and Power)
+// Update header user display (username, Power, and Credits)
 function updateHeaderUserDisplay() {
     const userDisplay = document.getElementById('userDisplay');
     const usernameEl = document.getElementById('username');
@@ -855,10 +855,50 @@ function updateHeaderUserDisplay() {
         // Update content
         if (usernameEl) usernameEl.textContent = currentUser.username;
         if (eloRatingEl) eloRatingEl.textContent = `(${currentUser.eloRating || 1200} Power)`;
+
+        // Fetch and update credits (Phase 3)
+        updateCreditsDisplay();
     } else {
         // Hide when logged out
         userDisplay?.classList.add('hidden');
         logoutBtn?.classList.add('hidden');
+    }
+}
+
+// Fetch and update credits display (Phase 3)
+async function updateCreditsDisplay() {
+    const creditsDisplay = document.getElementById('creditsDisplay');
+    const creditsBalance = document.getElementById('creditsBalance');
+
+    if (!creditsDisplay || !creditsBalance) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/credits/balance`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to fetch credits:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+
+        // Update display
+        if (data.isGuest) {
+            // Hide for guests
+            creditsDisplay.classList.add('hidden');
+        } else {
+            // Show for registered users
+            creditsDisplay.classList.remove('hidden');
+            creditsBalance.textContent = data.balance || 0;
+        }
+    } catch (error) {
+        console.error('Error fetching credits:', error);
+        // Hide on error
+        creditsDisplay.classList.add('hidden');
     }
 }
 
