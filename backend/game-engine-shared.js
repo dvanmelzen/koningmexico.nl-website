@@ -99,6 +99,27 @@ class GameEngine {
         const canThrowAgain = this.player.throwCount < this.maxThrows;
         const isLastThrow = this.player.throwCount >= this.maxThrows;
 
+        // 🎯 UX IMPROVEMENT: First round blind throw auto-keeps (no user action needed)
+        // User can't throw again (maxThrows=1) and can't reveal until opponent throws
+        if (this.isFirstRound && isBlind && isLastThrow) {
+            console.log(`[GameEngine] Auto-keeping first round blind throw`);
+            const keepResult = await this.keepThrow();
+            return {
+                dice1, dice2,
+                value: this.player.currentThrow,
+                displayValue: this.player.displayThrow,
+                isBlind: this.player.isBlind,
+                isMexico: this.player.isMexico,
+                throwCount: this.player.throwCount,
+                canKeep: false, // Already kept
+                canThrowAgain: false,
+                isLastThrow: true,
+                autoKept: true, // Signal that it was auto-kept
+                message: '🙈 Blind throw auto-kept! Waiting for opponent...',
+                ...keepResult // Include bot result if in bot mode
+            };
+        }
+
         return {
             dice1, dice2,
             value: this.player.currentThrow,
