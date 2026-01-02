@@ -5142,7 +5142,17 @@ const BotAdapter = Object.create(GameModeAdapter);
 BotAdapter.mode = 'bot';
 
 BotAdapter.getOpponentState = function() {
-    // Bot state from botGame object
+    // Bot state from gameEngine (if available) or botGame object (fallback)
+    if (gameEngine) {
+        return {
+            lives: gameEngine.opponent.lives,
+            currentThrow: gameEngine.opponent.currentThrow,
+            displayThrow: gameEngine.opponent.displayThrow,
+            isBlind: gameEngine.opponent.isBlind,
+            isMexico: gameEngine.opponent.isMexico,
+            throwCount: gameEngine.opponent.throwCount
+        };
+    }
     return {
         lives: botGame.botState.lives,
         currentThrow: botGame.botState.currentThrow,
@@ -5185,17 +5195,44 @@ BotAdapter.rollDice = function(isBlind) {
     });
 };
 
-BotAdapter.executeOpponentTurn = function() {
+BotAdapter.executeOpponentTurn = async function() {
     // Execute bot's turn
-    return new Promise((resolve) => {
-        if (botGame.currentTurn !== 'bot') {
-            resolve();
-            return;
-        }
+    debugLog('[BotAdapter] Executing bot turn...');
 
-        // Bot takes its turn (uses existing bot AI logic)
-        botTurnThrowSequence().then(resolve);
-    });
+    // For now, use simple bot AI (just throw once and keep)
+    // TODO: Integrate advanced AI psychology later
+    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate thinking
+
+    const dice1 = Math.ceil(Math.random() * 6);
+    const dice2 = Math.ceil(Math.random() * 6);
+
+    debugLog(`[BotAdapter] Bot rolled: ${dice1}-${dice2}`);
+
+    // Update gameEngine opponent state directly
+    if (gameEngine) {
+        gameEngine.opponent.dice1 = dice1;
+        gameEngine.opponent.dice2 = dice2;
+        gameEngine.opponent.currentThrow = gameEngine.calculateThrowValue(dice1, dice2);
+        gameEngine.opponent.displayThrow = gameEngine.opponent.currentThrow === 1000 ? 'MEXICO' : String(gameEngine.opponent.currentThrow);
+        gameEngine.opponent.throwCount = 1;
+        gameEngine.opponent.isBlind = false;
+        gameEngine.opponent.isMexico = (gameEngine.opponent.currentThrow === 1000);
+
+        // Show opponent dice
+        showOpponentDice(dice1, dice2, false, gameEngine.opponent.isMexico);
+
+        // Add to opponent history
+        const throwInfo = calculateThrowDisplay(dice1, dice2);
+        opponentThrowHistory.push({
+            displayValue: throwInfo.displayValue,
+            isMexico: throwInfo.isMexico,
+            isBlind: false,
+            wasBlind: false
+        });
+        updateThrowHistory();
+    }
+
+    debugLog('[BotAdapter] Bot turn complete');
 };
 
 BotAdapter.startGame = function(config) {
