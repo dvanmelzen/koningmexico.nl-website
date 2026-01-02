@@ -5797,7 +5797,21 @@ class GameEngine {
 
         debugLog(`[GameEngine] Round ${this.roundNumber} started. Voorgooier: ${this.voorgooierId}`);
 
-        // Call adapter for mode-specific logic
+        // 🤖 BOT MODE: If bot is voorgooier, auto-play bot's turn immediately
+        if (this.mode === 'bot' && this.currentTurnId === this.opponent.id) {
+            debugLog(`[GameEngine] Bot is voorgooier - auto-playing bot's turn`);
+            // Disable ALL player buttons and show waiting message
+            disableAllButtons();
+            showInlineMessage(`🎲 Ronde ${this.roundNumber} - Bot is voorgooier...`, 'info');
+            showWaitingMessage('Bot gooit...');
+            // Execute bot turn after short delay (don't call adapter to prevent duplicate)
+            setTimeout(() => {
+                executeBotTurn();
+            }, 1000);
+            return; // Skip adapter call to prevent double round start logic
+        }
+
+        // Call adapter for mode-specific logic (multiplayer or player is voorgooier)
         this.adapter.startNextRound();
     }
 
