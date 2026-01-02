@@ -2716,12 +2716,12 @@ async function throwDice(isBlind) {
         const state = gameEngine.getState();
         if (!state.isPlayerTurn) {
             showInlineMessage('Niet jouw beurt!', 'error');
-            disableAllButtons();
+            hideAllActionButtons();
             return;
         }
         if (state.player.throwCount >= gameEngine.maxThrows) {
             showInlineMessage(`Je hebt al ${gameEngine.maxThrows}x gegooid!`, 'error');
-            disableAllButtons();
+            hideAllActionButtons();
             return;
         }
 
@@ -2770,8 +2770,8 @@ async function throwDice(isBlind) {
             debugLog(`❌ [GameEngine] Throw error:`, err);
             showInlineMessage(err.message || 'Fout bij gooien', 'error');
             hideWaitingMessage();
-            // 🔒 CRITICAL: Disable all buttons after error to prevent repeat clicks
-            disableAllButtons();
+            // 🔒 CRITICAL: Hide all buttons after error to prevent repeat clicks
+            hideAllActionButtons();
             return;
         }
     }
@@ -5800,8 +5800,8 @@ class GameEngine {
         // 🤖 BOT MODE: If bot is voorgooier, auto-play bot's turn immediately
         if (this.mode === 'bot' && this.currentTurnId === this.opponent.id) {
             debugLog(`[GameEngine] Bot is voorgooier - auto-playing bot's turn`);
-            // Disable ALL player buttons and show waiting message
-            disableAllButtons();
+            // Hide ALL player buttons and show waiting message
+            hideAllActionButtons();
             showInlineMessage(`🎲 Ronde ${this.roundNumber} - Bot is voorgooier...`, 'info');
             showWaitingMessage('Bot gooit...');
             // Execute bot turn after short delay (don't call adapter to prevent duplicate)
@@ -6296,8 +6296,8 @@ function startBotNextRound() {
     } else {
         showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Bot is voorgooier...`, 'info');
         showWaitingMessage('Bot gooit...');
-        // 🔒 CRITICAL: Disable ALL player buttons when bot is voorgooier
-        disableAllButtons();
+        // 🔒 CRITICAL: Hide ALL player buttons when bot is voorgooier
+        hideAllActionButtons();
         setTimeout(() => {
             executeBotTurn();
         }, 1000);
