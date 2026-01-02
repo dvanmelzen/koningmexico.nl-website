@@ -1859,12 +1859,17 @@ function handleGameRejoined(data) {
         }
     }
 
-    // Update turn indicator
-    if (data.isYourTurn) {
-        updateStatusMessage("Jouw beurt!");
-    } else {
-        const opponent = data.game.player1.userId === currentUser?.id ? data.game.player2 : data.game.player1;
-        updateStatusMessage(`${opponent.username} is aan de beurt...`);
+    // Update turn indicator (clear waiting message from before disconnect)
+    const turnIndicator = document.getElementById('turnIndicator');
+    if (turnIndicator) {
+        if (data.isYourTurn) {
+            turnIndicator.textContent = "Jouw beurt!";
+            turnIndicator.className = 'text-center text-lg font-bold text-green-600';
+        } else {
+            const opponent = data.game.player1.userId === currentUser?.id ? data.game.player2 : data.game.player1;
+            turnIndicator.textContent = `${opponent.username} is aan de beurt...`;
+            turnIndicator.className = 'text-center text-lg font-bold text-gray-500';
+        }
     }
 
     // Update action buttons based on game state
