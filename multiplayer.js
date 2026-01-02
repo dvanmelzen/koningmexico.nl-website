@@ -5958,7 +5958,7 @@ async function startBotGame() {
 
     // First round: player starts (blind throw only)
     showInlineMessage('🤖 Ronde 1 - Eerste ronde! Jij moet blind gooien', 'info');
-    showThrowButtons(false, true);  // Only blind throw in first round
+    showThrowButtons(true, false);  // ✅ FIX: mustBlind=true for first round
 
     debugLog('✅ GameEngine initialized in bot mode:', gameEngine.getState());
 }
