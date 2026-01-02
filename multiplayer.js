@@ -2737,20 +2737,13 @@ async function throwDice(isBlind) {
 
             // Update UI directly (same as handleThrowResult would do)
             currentThrowData = result;
-            updateThrowCounter(result.throwCount, gameEngine.maxThrows);
 
-            // Add to player history
-            const throwInfo = calculateThrowDisplay(result.dice1, result.dice2);
-            playerThrowHistory.push({
-                displayValue: throwInfo.displayValue,
-                isMexico: throwInfo.isMexico,
-                isBlind: result.isBlind,
-                wasBlind: result.isBlind
-            });
-
-            // Show dice
-            showDice(result.dice1, result.dice2, result.isBlind, result.isMexico);
-            updateThrowHistory();
+            // ⚠️ REMOVED: GameEngine.throwDice() already handles:
+            // - playerThrowHistory.push() at line 5557
+            // - showDice() at line 5573
+            // - updateThrowHistory() at line 5565
+            // - updateThrowCounter() at line 5566
+            // Calling these again causes DUPLICATE dice display and throwHistory entries!
 
             hideWaitingMessage();
 
