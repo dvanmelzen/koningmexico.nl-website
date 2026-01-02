@@ -2614,6 +2614,20 @@ function handleGameStart(data) {
         gamblingPot: data.gamblingPot || 0
     };
 
+    // ✅ INITIALIZE GAMEENGINE IN MULTIPLAYER MODE
+    const opponent = data.players?.find(p => p.id !== currentUser?.id);
+    gameEngine = new GameEngine('multiplayer');
+
+    gameEngine.initialize({
+        gameId: data.gameId,
+        playerId: currentUser.id,
+        playerName: currentUser.username,
+        opponentId: opponent?.id,
+        opponentName: opponent?.username
+    });
+
+    debugLog('[GameEngine] Initialized for multiplayer:', gameEngine.getState());
+
     // Display gambling pot if this is a gambling game (Phase 3)
     const gamblingPotDisplay = document.getElementById('gamblingPotDisplay');
     const gamblingPotAmount = document.getElementById('gamblingPotAmount');
@@ -2772,6 +2786,12 @@ async function throwDice(isBlind) {
 }
 
 function handleThrowResult(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('🎲 Throw result:', data);
     debugLog(`📊 Player throw count: ${playerThrowHistory.length + 1}, dice: ${data.dice1}-${data.dice2}, blind: ${data.isBlind}`);
 
@@ -2934,6 +2954,12 @@ async function revealDice() {
 }
 
 function handleDiceRevealed(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('👁️  Dice revealed:', data);
 
     showDice(data.dice1, data.dice2, false, true); // Animate reveal
@@ -3039,6 +3065,12 @@ async function keepThrow() {
 // handleChooseResultPrompt en chooseResult VERWIJDERD - automatische vergelijking!
 
 function handleOpponentThrow(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('🎲 Opponent threw:', data);
     debugLog(`📊 Opponent throw count: ${opponentThrowHistory.length + 1}, dice: ${data.dice1}-${data.dice2}, blind: ${data.isBlind}`);
 
@@ -3078,6 +3110,12 @@ function handleOpponentThrow(data) {
 }
 
 function handleOpponentDiceRevealed(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('👁️  Opponent revealed:', data);
     showOpponentDice(data.dice1, data.dice2, false, true); // Animate reveal
 
@@ -3101,6 +3139,12 @@ function handleOpponentDiceRevealed(data) {
 }
 
 function handleThrowRevealed(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('👁️  Blind throw auto-revealed:', data);
 
     // Show the dice values (no longer hidden)
@@ -3119,6 +3163,12 @@ function handleThrowRevealed(data) {
 }
 
 function handleOpponentThrowRevealed(data) {
+    // ✅ Skip legacy handler if GameEngine is active
+    if (gameEngine) {
+        debugLog('[Legacy Handler] Skipped - GameEngine active');
+        return;
+    }
+
     debugLog('👁️  Opponent blind throw auto-revealed:', data);
 
     // Show the opponent's dice values (no longer hidden)
@@ -3150,6 +3200,19 @@ function handleOpponentThrowRevealed(data) {
 
 function handleRoundResult(data) {
     debugLog('📊 Round result:', data);
+
+    // ✅ SYNC GAMEENGINE LIVES WITH SERVER STATE
+    if (gameEngine && data.player1Lives !== undefined && data.player2Lives !== undefined) {
+        // Determine which player is me
+        const isPlayer1 = currentGame.player1Id === currentUser.id;
+        gameEngine.player.lives = isPlayer1 ? data.player1Lives : data.player2Lives;
+        gameEngine.opponent.lives = isPlayer1 ? data.player2Lives : data.player1Lives;
+
+        debugLog('[GameEngine] Lives synced:', {
+            player: gameEngine.player.lives,
+            opponent: gameEngine.opponent.lives
+        });
+    }
 
     // Update last round summary (NEW!)
     updateLastRoundSummary(data);
@@ -3207,6 +3270,28 @@ function handleNewRound(data) {
     try {
         currentGame = { ...currentGame, ...data };
         debugLog('✅ Step 1: Game state updated');
+
+        // ✅ SYNC GAMEENGINE WITH SERVER STATE
+        if (gameEngine) {
+            gameEngine.roundNumber = data.roundNumber;
+            gameEngine.isFirstRound = data.isFirstRound || false;
+            gameEngine.maxThrows = data.isFirstRound ? 1 : 3;
+            gameEngine.voorgooierId = data.voorgooier;
+            gameEngine.currentTurnId = data.currentTurn;
+            gameEngine.isSimultaneous = data.isSimultaneous || false;
+
+            // Sync lives from server data if available
+            const myPlayer = data.players?.find(p => p.id === currentUser.id);
+            const opponentPlayer = data.players?.find(p => p.id !== currentUser.id);
+            if (myPlayer) gameEngine.player.lives = myPlayer.lives;
+            if (opponentPlayer) gameEngine.opponent.lives = opponentPlayer.lives;
+
+            debugLog('[GameEngine] Synced with server state:', {
+                round: gameEngine.roundNumber,
+                voorgooier: gameEngine.voorgooierId,
+                currentTurn: gameEngine.currentTurnId
+            });
+        }
 
         updateGameUI();
         debugLog('✅ Step 2: UI updated');
