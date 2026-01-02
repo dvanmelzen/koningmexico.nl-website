@@ -1993,13 +1993,43 @@ function formatTimeAgo(timestamp) {
     return then.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 }
 
-function updateUserStats() {
+async function updateUserStats() {
     if (!currentUser) return;
 
     document.getElementById('lobbyElo').textContent = currentUser.eloRating || 1200;
     document.getElementById('lobbyWins').textContent = currentUser.stats?.wins || 0;
     document.getElementById('lobbyLosses').textContent = currentUser.stats?.losses || 0;
     document.getElementById('lobbyUsername').textContent = currentUser.username || '';
+
+    // Set avatar emoji
+    const avatarEmoji = currentUser.avatarEmoji || '👤';
+    document.getElementById('lobbyEmoji').textContent = avatarEmoji;
+
+    // Fetch and display credits
+    const lobbyCreditsEl = document.getElementById('lobbyCredits');
+    if (lobbyCreditsEl) {
+        try {
+            const response = await fetch(`${API_URL}/api/credits/balance`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.isGuest) {
+                    lobbyCreditsEl.textContent = '--';
+                } else {
+                    lobbyCreditsEl.textContent = data.balance || 0;
+                }
+            } else {
+                lobbyCreditsEl.textContent = '--';
+            }
+        } catch (error) {
+            console.error('Error fetching credits for lobby:', error);
+            lobbyCreditsEl.textContent = '--';
+        }
+    }
 }
 
 // Update live stats display
