@@ -428,6 +428,9 @@ function showLobby() {
     if (queueSearching) queueSearching.classList.add('hidden');
     if (queueIdle) queueIdle.classList.remove('hidden');
 
+    // Hide game result section (shown after game ends)
+    document.getElementById('gameResult')?.classList.add('hidden');
+
     // Show/hide gambling opt-in (Phase 3: Only for registered users)
     updateGamblingOptInVisibility();
 
@@ -467,6 +470,9 @@ function updateGamblingOptInVisibility() {
 function showGame() {
     hideAllScreens();
     document.getElementById('gameScreen')?.classList.remove('hidden');
+
+    // Hide game result section (shown after game ends)
+    document.getElementById('gameResult')?.classList.add('hidden');
 }
 
 function hideAllScreens() {
@@ -3387,6 +3393,23 @@ function handleGameOver(data) {
         // Normal game end
         showInlineMessage(title, iWon ? 'success' : 'error');
         showToast(toastMessage, iWon ? 'success' : 'error', 7000);
+    }
+
+    // Show game result section with buttons
+    const gameResult = document.getElementById('gameResult');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+
+    if (gameResult && resultTitle && resultMessage) {
+        resultTitle.textContent = title;
+
+        let message = `Power: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`;
+        if (data.isGambling && data.gamblingWinnings && iWon) {
+            message += `\n💰 Je wint ${data.gamblingWinnings} credits!`;
+        }
+        resultMessage.textContent = message;
+
+        gameResult.classList.remove('hidden');
     }
 
     // Show rematch and return buttons
