@@ -748,6 +748,65 @@ app.post('/api/inventory/use', authenticateToken, (req, res) => {
 });
 
 // ============================================
+// DISCLAIMER ENDPOINTS
+// ============================================
+
+// Check disclaimer acceptance status
+app.get('/api/disclaimer/status', authenticateToken, (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Guests don't need to accept disclaimer
+        if (!userId || userId.startsWith('guest-')) {
+            return res.json({
+                accepted: false,
+                isGuest: true,
+                currentVersion: db.CURRENT_DISCLAIMER_VERSION
+            });
+        }
+
+        const accepted = db.hasAcceptedCurrentDisclaimer(userId);
+
+        res.json({
+            accepted,
+            isGuest: false,
+            currentVersion: db.CURRENT_DISCLAIMER_VERSION
+        });
+    } catch (error) {
+        console.error('❌ Error checking disclaimer status:', error);
+        res.status(500).json({ error: 'Kon disclaimer status niet ophalen' });
+    }
+});
+
+// Accept disclaimer
+app.post('/api/disclaimer/accept', authenticateToken, (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Skip guests
+        if (!userId || userId.startsWith('guest-')) {
+            return res.status(403).json({ error: 'Gasten hoeven geen disclaimer te accepteren' });
+        }
+
+        const success = db.acceptDisclaimer(userId);
+
+        if (!success) {
+            return res.status(500).json({ error: 'Kon disclaimer acceptatie niet opslaan' });
+        }
+
+        console.log(`✅ User ${userId} accepted disclaimer`);
+
+        res.json({
+            success: true,
+            message: 'Disclaimer geaccepteerd'
+        });
+    } catch (error) {
+        console.error('❌ Error accepting disclaimer:', error);
+        res.status(500).json({ error: 'Kon disclaimer acceptatie niet opslaan' });
+    }
+});
+
+// ============================================
 // INPUT VALIDATION HELPERS (Socket.IO)
 // ============================================
 

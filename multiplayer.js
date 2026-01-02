@@ -549,67 +549,7 @@ function setupAuthListeners() {
     document.getElementById('lobbyLogoutBtn')?.addEventListener('click', handleLogout);
 
     // Disclaimer Modal Logic
-    const gamblingCheckbox = document.getElementById('gamblingCheckbox');
-    const disclaimerModal = document.getElementById('disclaimerModal');
-    const disclaimerAcceptCheckbox = document.getElementById('disclaimerAcceptCheckbox');
-    const disclaimerAcceptBtn = document.getElementById('disclaimerAcceptBtn');
-
-    // Check if user has already accepted the disclaimer
-    const disclaimerAccepted = localStorage.getItem('disclaimerAccepted') === 'true';
-
-    // Handle gambling checkbox clicks
-    if (gamblingCheckbox) {
-        gamblingCheckbox.addEventListener('click', (e) => {
-            if (!disclaimerAccepted) {
-                // Prevent checkbox from being checked
-                e.preventDefault();
-                gamblingCheckbox.checked = false;
-
-                // Show disclaimer modal
-                if (disclaimerModal) {
-                    disclaimerModal.classList.remove('hidden');
-                }
-            }
-            // If already accepted, allow checkbox to toggle normally
-        });
-    }
-
-    // Handle disclaimer acceptance checkbox
-    if (disclaimerAcceptCheckbox && disclaimerAcceptBtn) {
-        disclaimerAcceptCheckbox.addEventListener('change', () => {
-            if (disclaimerAcceptCheckbox.checked) {
-                disclaimerAcceptBtn.disabled = false;
-                disclaimerAcceptBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                disclaimerAcceptBtn.classList.add('hover:brightness-110', 'cursor-pointer');
-            } else {
-                disclaimerAcceptBtn.disabled = true;
-                disclaimerAcceptBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                disclaimerAcceptBtn.classList.remove('hover:brightness-110', 'cursor-pointer');
-            }
-        });
-    }
-
-    // Handle disclaimer accept button click
-    if (disclaimerAcceptBtn) {
-        disclaimerAcceptBtn.addEventListener('click', () => {
-            if (disclaimerAcceptCheckbox && disclaimerAcceptCheckbox.checked) {
-                // Store acceptance in localStorage
-                localStorage.setItem('disclaimerAccepted', 'true');
-
-                // Close modal
-                if (disclaimerModal) {
-                    disclaimerModal.classList.add('hidden');
-                }
-
-                // Check the gambling checkbox
-                if (gamblingCheckbox) {
-                    gamblingCheckbox.checked = true;
-                }
-
-                showToast('Disclaimer geaccepteerd - je kunt nu spelen voor credits!', 'success');
-            }
-        });
-    }
+    setupDisclaimerModal();
 }
 
 async function handleLogin() {
@@ -640,10 +580,14 @@ async function handleLogin() {
 
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('token', accessToken); // Also store as 'token' for API calls
 
         initializeSocket();
         updateHeaderUserDisplay();
         showLobby();
+
+        // Check if user needs to accept disclaimer
+        await checkDisclaimerStatus();
     } catch (error) {
         console.error('Login error:', error);
         showToast('Verbinding mislukt - is de server actief?', 'error');
@@ -654,9 +598,16 @@ async function handleRegister() {
     const username = document.getElementById('registerUsername')?.value;
     const email = document.getElementById('registerEmail')?.value;
     const password = document.getElementById('registerPassword')?.value;
+    const disclaimerCheckbox = document.getElementById('registerDisclaimerCheckbox');
 
     if (!username || !email || !password) {
         showToast('Vul alle velden in', 'warning');
+        return;
+    }
+
+    // Check if disclaimer is accepted
+    if (!disclaimerCheckbox || !disclaimerCheckbox.checked) {
+        showToast('Je moet akkoord gaan met de disclaimer om te registreren', 'warning');
         return;
     }
 
@@ -679,6 +630,21 @@ async function handleRegister() {
 
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('token', accessToken); // Also store as 'token' for API calls
+
+        // Accept disclaimer for new user
+        try {
+            await fetch(`${API_URL}/api/disclaimer/accept`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (disclaimerError) {
+            console.error('Error accepting disclaimer:', disclaimerError);
+            // Don't block registration if disclaimer acceptance fails
+        }
 
         showToast(`Welkom ${currentUser.username}!`, 'success');
         initializeSocket();
@@ -734,6 +700,146 @@ async function handleGuestLogin() {
     } catch (error) {
         console.error('❌ Guest login error:', error);
         showToast('Verbinding mislukt - is de server actief?', 'error');
+    }
+}
+
+// ============================================
+// DISCLAIMER MANAGEMENT
+// ============================================
+
+function setupDisclaimerModal() {
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const disclaimerAcceptCheckbox = document.getElementById('disclaimerAcceptCheckbox');
+    const disclaimerAcceptBtn = document.getElementById('disclaimerAcceptBtn');
+    const disclaimerFooterLink = document.getElementById('disclaimerFooterLink');
+    const disclaimerLinkFromRegister = document.getElementById('disclaimerLinkFromRegister');
+
+    // Setup checkbox to enable/disable accept button
+    if (disclaimerAcceptCheckbox && disclaimerAcceptBtn) {
+        disclaimerAcceptCheckbox.addEventListener('change', () => {
+            if (disclaimerAcceptCheckbox.checked) {
+                disclaimerAcceptBtn.disabled = false;
+                disclaimerAcceptBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                disclaimerAcceptBtn.classList.add('hover:brightness-110', 'cursor-pointer');
+            } else {
+                disclaimerAcceptBtn.disabled = true;
+                disclaimerAcceptBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                disclaimerAcceptBtn.classList.remove('hover:brightness-110', 'cursor-pointer');
+            }
+        });
+    }
+
+    // Setup footer link to open disclaimer modal (read-only mode)
+    if (disclaimerFooterLink) {
+        disclaimerFooterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDisclaimerModal(true); // true = read-only mode
+        });
+    }
+
+    // Setup disclaimer link from registration form
+    if (disclaimerLinkFromRegister) {
+        disclaimerLinkFromRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDisclaimerModal(true); // true = read-only mode
+        });
+    }
+
+    // Handle accept button click
+    if (disclaimerAcceptBtn) {
+        disclaimerAcceptBtn.addEventListener('click', async () => {
+            if (!disclaimerAcceptCheckbox || !disclaimerAcceptCheckbox.checked) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/disclaimer/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    // Close modal
+                    closeDisclaimerModal();
+
+                    showToast('Disclaimer geaccepteerd!', 'success');
+                } else {
+                    const data = await response.json();
+                    showToast(data.error || 'Kon disclaimer niet accepteren', 'error');
+                }
+            } catch (error) {
+                console.error('Error accepting disclaimer:', error);
+                showToast('Kon disclaimer niet accepteren', 'error');
+            }
+        });
+    }
+}
+
+function openDisclaimerModal(readOnly = false) {
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const disclaimerAcceptCheckbox = document.getElementById('disclaimerAcceptCheckbox');
+    const disclaimerAcceptBtn = document.getElementById('disclaimerAcceptBtn');
+
+    if (!disclaimerModal) return;
+
+    // Reset checkbox
+    if (disclaimerAcceptCheckbox) {
+        disclaimerAcceptCheckbox.checked = false;
+    }
+
+    // Disable button by default
+    if (disclaimerAcceptBtn) {
+        disclaimerAcceptBtn.disabled = true;
+        disclaimerAcceptBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        disclaimerAcceptBtn.classList.remove('hover:brightness-110', 'cursor-pointer');
+    }
+
+    // Show modal
+    disclaimerModal.classList.remove('hidden');
+
+    // If read-only mode, just show the modal (user can close manually)
+    // If required mode, user MUST accept
+    if (readOnly) {
+        // Could add a close button in read-only mode, but for now modal stays open until user accepts or closes
+    }
+}
+
+function closeDisclaimerModal() {
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    if (disclaimerModal) {
+        disclaimerModal.classList.add('hidden');
+    }
+}
+
+async function checkDisclaimerStatus() {
+    // Check if user needs to accept disclaimer
+    if (!currentUser || !accessToken) return;
+
+    // Guests don't need to accept
+    if (currentUser.id.startsWith('guest-')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/disclaimer/status`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (!data.accepted && !data.isGuest) {
+                // User hasn't accepted current version, show modal
+                setTimeout(() => {
+                    openDisclaimerModal(false); // false = required mode
+                }, 500); // Small delay to let lobby load first
+            }
+        }
+    } catch (error) {
+        console.error('Error checking disclaimer status:', error);
     }
 }
 

@@ -10,6 +10,13 @@ const db = new Database(dbPath);
 db.pragma('foreign_keys = ON');
 
 // ============================================
+// CONSTANTS
+// ============================================
+
+// Current disclaimer/terms version - increment this when terms are updated
+const CURRENT_DISCLAIMER_VERSION = 1;
+
+// ============================================
 // SCHEMA INITIALIZATION
 // ============================================
 
@@ -26,6 +33,8 @@ function initializeDatabase() {
             wins INTEGER DEFAULT 0,
             losses INTEGER DEFAULT 0,
             gamesPlayed INTEGER DEFAULT 0,
+            disclaimerVersion INTEGER DEFAULT NULL,
+            disclaimerAcceptedAt TEXT DEFAULT NULL,
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
@@ -891,6 +900,41 @@ function getUnusedPowerupCount(userId, itemId) {
 }
 
 // ============================================
+// DISCLAIMER ACCEPTANCE
+// ============================================
+
+function acceptDisclaimer(userId, version = CURRENT_DISCLAIMER_VERSION) {
+    const stmt = db.prepare(`
+        UPDATE users
+        SET disclaimerVersion = ?,
+            disclaimerAcceptedAt = datetime('now')
+        WHERE id = ?
+    `);
+
+    const result = stmt.run(version, userId);
+    return result.changes > 0;
+}
+
+function hasAcceptedCurrentDisclaimer(userId) {
+    const stmt = db.prepare(`
+        SELECT disclaimerVersion, disclaimerAcceptedAt
+        FROM users
+        WHERE id = ?
+    `);
+
+    const result = stmt.get(userId);
+
+    // Check if user has accepted AND if version matches current version
+    return result &&
+           result.disclaimerVersion !== null &&
+           result.disclaimerVersion >= CURRENT_DISCLAIMER_VERSION;
+}
+
+function getCurrentDisclaimerVersion() {
+    return CURRENT_DISCLAIMER_VERSION;
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
@@ -925,5 +969,10 @@ module.exports = {
     hasUnusedPowerup,
     usePowerup,
     getUnusedPowerupCount,
+    // Disclaimer functions
+    acceptDisclaimer,
+    hasAcceptedCurrentDisclaimer,
+    getCurrentDisclaimerVersion,
+    CURRENT_DISCLAIMER_VERSION,
     db // Export db instance for direct queries if needed
 };
