@@ -783,7 +783,8 @@ io.on('connection', (socket) => {
     socket.on('join_queue', (data) => {
         // Input validation
         const validation = validateSocketInput(data, {
-            gameMode: { type: 'string', enum: ['ranked', 'casual'], required: true }
+            gameMode: { type: 'string', enum: ['ranked', 'casual'], required: true },
+            gambling: { type: 'boolean', required: false }
         });
 
         if (!validation.valid) {
@@ -791,8 +792,23 @@ io.on('connection', (socket) => {
             return socket.emit('error', { message: 'Invalid input: ' + validation.errors.join(', ') });
         }
 
-        const { gameMode } = data;
-        console.log(`🔍 ${user.username} joined matchmaking queue`);
+        const { gameMode, gambling } = data;
+        const isGambling = gambling || false;
+
+        // If gambling, check credits
+        if (isGambling) {
+            // Skip if guest
+            if (!userId || userId.startsWith('guest_')) {
+                return socket.emit('error', { message: 'Gasten kunnen niet spelen voor credits' });
+            }
+
+            const credits = db.getUserCredits(userId);
+            if (!credits || credits.balance < 100) {
+                return socket.emit('error', { message: 'Onvoldoende credits (min. 100 vereist)' });
+            }
+        }
+
+        console.log(`🔍 ${user.username} joined matchmaking queue ${isGambling ? '(GAMBLING 🎰)' : ''}`);
 
         // Remove from queue if already there
         const existingIndex = matchmakingQueue.findIndex(p => p.userId === userId);
@@ -806,10 +822,11 @@ io.on('connection', (socket) => {
             username: user.username,
             eloRating: user.eloRating,
             socketId: socket.id,
-            gameMode
+            gameMode,
+            gambling: isGambling
         });
 
-        socket.emit('queue_joined', { queueSize: matchmakingQueue.length });
+        socket.emit('queue_joined', { queueSize: matchmakingQueue.length, gambling: isGambling });
 
         // Broadcast updated stats
         broadcastStats();
@@ -1246,11 +1263,36 @@ function tryMatchmaking() {
     // Sort by Elo for better matching
     matchmakingQueue.sort((a, b) => a.eloRating - b.eloRating);
 
-    // Match first two players
-    const player1 = matchmakingQueue.shift();
-    const player2 = matchmakingQueue.shift();
+    // Try to match players with same gambling preference first
+    let player1 = null;
+    let player2 = null;
 
-    createGame(player1, player2);
+    // Find two gambling players
+    const gamblingPlayers = matchmakingQueue.filter(p => p.gambling);
+    if (gamblingPlayers.length >= 2) {
+        player1 = gamblingPlayers[0];
+        player2 = gamblingPlayers[1];
+        // Remove from queue
+        matchmakingQueue.splice(matchmakingQueue.indexOf(player1), 1);
+        matchmakingQueue.splice(matchmakingQueue.indexOf(player2), 1);
+    }
+
+    // Otherwise match two non-gambling players
+    if (!player1 || !player2) {
+        const nonGamblingPlayers = matchmakingQueue.filter(p => !p.gambling);
+        if (nonGamblingPlayers.length >= 2) {
+            player1 = nonGamblingPlayers[0];
+            player2 = nonGamblingPlayers[1];
+            // Remove from queue
+            matchmakingQueue.splice(matchmakingQueue.indexOf(player1), 1);
+            matchmakingQueue.splice(matchmakingQueue.indexOf(player2), 1);
+        }
+    }
+
+    // If we found a match, create game
+    if (player1 && player2) {
+        createGame(player1, player2);
+    }
 }
 
 function createGame(player1Data, player2Data) {
@@ -1258,6 +1300,32 @@ function createGame(player1Data, player2Data) {
 
     const player1 = userCache.get(player1Data.userId);
     const player2 = userCache.get(player2Data.userId);
+
+    // Check if this is a gambling game (both players opted in)
+    const isGambling = player1Data.gambling && player2Data.gambling;
+    let gamblingPot = 0;
+
+    // If gambling, freeze credits
+    if (isGambling) {
+        const success1 = db.freezeGamblingCredits(player1.id, 100, gameId);
+        const success2 = db.freezeGamblingCredits(player2.id, 100, gameId);
+
+        if (!success1 || !success2) {
+            // Refund if one failed
+            if (success1) db.updateCredits(player1.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
+            if (success2) db.updateCredits(player2.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
+
+            console.log(`❌ Gambling game failed to start - refunding credits`);
+
+            // Notify players
+            io.to(player1Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
+            io.to(player2Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
+            return;
+        }
+
+        gamblingPot = 200; // 100 from each player
+        console.log(`🎰 Gambling game starting! Pot: ${gamblingPot} credits`);
+    }
 
     const game = {
         gameId,
@@ -1287,6 +1355,9 @@ function createGame(player1Data, player2Data) {
         // Result choices (beide spelers moeten kiezen)
         voorgooierResult: null, // 'won', 'lost', or 'vast'
         achterliggerResult: null, // 'won', 'lost', or 'vast'
+        // Gambling game tracking (Phase 3)
+        isGambling,
+        gamblingPot,
         status: 'active',
         startedAt: new Date(),
         createdAt: Date.now() // For cleanup tracking
@@ -1346,13 +1417,19 @@ function startGame(game) {
         isFirstRound: game.isFirstRound,
         maxThrows: 1, // Ronde 1 = 1 blinde worp per speler
         mustBlind: game.isFirstRound, // Eerste ronde = verplicht blind!
-        isSimultaneous: game.isFirstRound // Beide spelers tegelijk!
+        isSimultaneous: game.isFirstRound, // Beide spelers tegelijk!
+        // Gambling game info (Phase 3)
+        isGambling: game.isGambling || false,
+        gamblingPot: game.gamblingPot || 0
     };
 
     io.to(game.player1SocketId).emit('game_start', gameStartData);
     io.to(game.player2SocketId).emit('game_start', gameStartData);
 
     console.log(`▶️  Game started: ${player1.username} vs ${player2.username}`);
+    if (game.isGambling) {
+        console.log(`   🎰 GAMBLING GAME! Pot: ${game.gamblingPot} credits`);
+    }
     console.log(`   Ronde ${game.roundNumber}: SIMULTAAN - beide spelers gooien tegelijk blind!`);
     console.log(`   Eerste ronde = BLIND verplicht!`);
 }
@@ -2443,6 +2520,18 @@ function endGame(game, winnerId, reason) {
     console.log(`  Elo changes: Winner +${winnerChange}, Loser ${loserChange}`);
     console.log(`  New Elos: ${winner.username}=${winner.eloRating}, ${loser.username}=${loser.eloRating}`);
 
+    // Award gambling pot to winner (Phase 3)
+    let gamblingWinnings = 0;
+    if (game.isGambling && game.gamblingPot > 0) {
+        const success = db.awardGamblingPot(winnerId, loserId, game.gamblingPot, game.gameId);
+        if (success) {
+            gamblingWinnings = game.gamblingPot;
+            console.log(`  🎰 Gambling pot (${game.gamblingPot} credits) awarded to ${winner.username}!`);
+        } else {
+            console.error(`  ❌ Failed to award gambling pot!`);
+        }
+    }
+
     // Save to database
     db.updateUserStats(winnerId, {
         eloRating: winner.eloRating,
@@ -2482,7 +2571,10 @@ function endGame(game, winnerId, reason) {
         finalLives: {
             player1: game.player1Lives,
             player2: game.player2Lives
-        }
+        },
+        // Gambling game info (Phase 3)
+        isGambling: game.isGambling || false,
+        gamblingWinnings
     };
 
     io.to(game.player1SocketId).emit('game_over', gameOverData);
