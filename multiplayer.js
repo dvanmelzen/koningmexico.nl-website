@@ -4496,6 +4496,895 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================================================================
+// BOT OPPONENT SYSTEM (Client-Side AI)
+// ===================================================================
+
+// Bot names pool
+const BOT_NAMES = ['Bot Alex', 'Bot Sarah', 'Bot Mike', 'Bot Emma', 'Bot Lucas', 'Bot Nina', 'Bot Tom', 'Bot Lisa'];
+
+// AI Personalities (from AI_PSYCHOLOGY.md)
+const AI_PERSONALITIES = {
+    SCARED: {
+        name: 'Voorzichtig',
+        thresholds: { 1: 61, 2: 61, 3: 31 },  // Safe: 50% grens
+        bluffChance: 0.05,  // Blufft bijna nooit (5%)
+        psychologyFactor: 0,  // Geen psychologische aanpassing
+        description: 'Speelt veilig, wil niet verliezen'
+    },
+    RATIONAL: {
+        name: 'Rationeel',
+        thresholds: { 1: 61, 2: 65, 3: 22 },  // Exact volgens Mexico regels
+        bluffChance: 0.15,  // Blufft soms (15%)
+        psychologyFactor: 0.5,  // Matige psychologische aanpassing
+        description: 'Speelt volgens de regels en statistiek'
+    },
+    AGGRESSIVE: {
+        name: 'Agressief',
+        thresholds: { 1: 54, 2: 61, 3: 12 },  // Gokt meer
+        bluffChance: 0.30,  // Blufft regelmatig (30%)
+        psychologyFactor: 1.0,  // Volledige psychologische aanpassing
+        description: 'Durft risico te nemen, intimideert tegenstander'
+    }
+};
+
+// Bot game state
+let botGame = {
+    active: false,
+    botPlayer: null,  // Bot data
+    botState: {
+        dice1: 1,
+        dice2: 1,
+        currentThrow: null,
+        displayThrow: null,
+        throwCount: 0,
+        isBlind: false,
+        isMexico: false,
+        lives: 6,
+        throwHistory: []
+    },
+    playerState: {
+        dice1: 1,
+        dice2: 1,
+        currentThrow: null,
+        displayThrow: null,
+        throwCount: 0,
+        isBlind: false,
+        isMexico: false,
+        lives: 6,
+        throwHistory: []
+    },
+    roundNumber: 1,
+    isFirstRound: true,
+    voorgooier: null,  // 'player' or 'bot'
+    currentTurn: null,  // 'player' or 'bot'
+    maxThrows: 3,
+    voorgooierPattern: [],
+    aiPersonality: null,
+    aiPsychology: {
+        consecutiveLosses: 0,
+        roundsSinceLoss: 0,
+        lastRoundOutcome: null,
+        tiltLevel: 0,
+        livesAdvantage: 0,
+        isWinning: false,
+        recentThrowHistory: [],
+        recentBadThrows: 0,
+        consecutiveGoodThrows: 0,
+        lastThrowQuality: 0,
+        firstThrowOfRound: null,
+        recentWins: 0
+    }
+};
+
+// Select random bot name
+function getRandomBotName() {
+    return BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+}
+
+// Select AI personality (30% SCARED, 50% RATIONAL, 20% AGGRESSIVE)
+function selectAIPersonality() {
+    const rand = Math.random();
+    if (rand < 0.30) {
+        return AI_PERSONALITIES.SCARED;
+    } else if (rand < 0.80) {
+        return AI_PERSONALITIES.RATIONAL;
+    } else {
+        return AI_PERSONALITIES.AGGRESSIVE;
+    }
+}
+
+// Calculate throw value (same logic as Mexico game)
+function calculateBotThrowValue(dice1, dice2) {
+    if ((dice1 === 2 && dice2 === 1) || (dice1 === 1 && dice2 === 2)) {
+        return 1000; // Mexico
+    }
+    // Pair
+    if (dice1 === dice2) {
+        return dice1 * 100;
+    }
+    // Normal throw: higher die first
+    return Math.max(dice1, dice2) * 10 + Math.min(dice1, dice2);
+}
+
+// Throw quality for psychology (0.0 to 1.0)
+function calculateThrowQuality(throwValue) {
+    if (throwValue === 1000) return 1.0;  // Mexico
+    if (throwValue >= 65) return 0.50; // Top normal throws
+    if (throwValue >= 54) return 0.40;
+    if (throwValue >= 43) return 0.30;
+    if (throwValue >= 32) return 0.20;
+    return 0.10; // Bad throws
+}
+
+// AI Psychology Functions (from AI_PSYCHOLOGY.md)
+
+// 1. Loss Aversion: Extra voorzichtig als winnend
+function applyLossAversion(threshold) {
+    const psych = botGame.aiPsychology;
+    const botLives = botGame.botState.lives;
+    const playerLives = botGame.playerState.lives;
+
+    psych.livesAdvantage = botLives - playerLives;
+    psych.isWinning = psych.livesAdvantage > 0;
+
+    if (psych.isWinning) {
+        // 80% kans om te triggeren
+        if (Math.random() < 0.80) {
+            // Loss aversion: 2.5x sterker gewicht aan verliezen
+            const baseAdjustment = Math.min(psych.livesAdvantage * 3, 10);
+            const adjustment = Math.round(baseAdjustment * (0.8 + Math.random() * 0.4));
+            debugLog(`[Bot Psychology] Loss Aversion TRIGGERED: +${adjustment} voorzichtiger`);
+            return threshold + adjustment;
+        }
+    }
+    return threshold;
+}
+
+// 2. Tilt Mechanics: Emotioneel na herhaalde verliezen
+function applyTiltMechanics(threshold, bluffChance) {
+    const psych = botGame.aiPsychology;
+
+    // Tilt levels: 0=none, 1=mild (2 losses), 2=moderate (3 losses), 3=severe (4+ losses)
+    if (psych.consecutiveLosses >= 4) {
+        psych.tiltLevel = 3;
+    } else if (psych.consecutiveLosses >= 3) {
+        psych.tiltLevel = 2;
+    } else if (psych.consecutiveLosses >= 2) {
+        psych.tiltLevel = 1;
+    } else {
+        psych.tiltLevel = 0;
+    }
+
+    // Tilt decay: herstel na 3 rondes zonder loss
+    if (psych.roundsSinceLoss >= 3) {
+        psych.tiltLevel = Math.max(0, psych.tiltLevel - 1);
+    }
+
+    if (psych.tiltLevel > 0) {
+        // Tijdens tilt: agressiever (lager threshold) + meer bluffen
+        const thresholdReduction = psych.tiltLevel * 5;
+        const bluffIncrease = psych.tiltLevel * 0.15;
+
+        debugLog(`[Bot Psychology] TILT Level ${psych.tiltLevel}: -${thresholdReduction} threshold, +${Math.round(bluffIncrease * 100)}% bluff`);
+
+        return {
+            threshold: threshold - thresholdReduction,
+            bluffChance: Math.min(bluffChance + bluffIncrease, 0.6)
+        };
+    }
+
+    return { threshold, bluffChance };
+}
+
+// 3. Gambler's Fallacy: "Ik heb 5x slecht gegooid, nu moet ik wel goed gooien"
+function applyGamblersFallacy(threshold) {
+    const psych = botGame.aiPsychology;
+
+    if (psych.recentBadThrows >= 3) {
+        if (Math.random() < 0.65) {
+            const baseAdjustment = Math.min(psych.recentBadThrows * 3, 12);
+            const adjustment = Math.round(baseAdjustment * (0.7 + Math.random() * 0.6));
+            debugLog(`[Bot Psychology] Gambler's Fallacy TRIGGERED: -${adjustment}`);
+            return threshold - adjustment;
+        }
+    }
+    return threshold;
+}
+
+// 4. Hot Hand Fallacy: "Ik ben on fire, dit gaat gewoon door"
+function applyHotHandFallacy(threshold) {
+    const psych = botGame.aiPsychology;
+
+    if (psych.consecutiveGoodThrows >= 3) {
+        if (Math.random() < 0.70) {
+            const baseAdjustment = Math.min(psych.consecutiveGoodThrows * 2, 10);
+            const adjustment = Math.round(baseAdjustment * (0.75 + Math.random() * 0.5));
+            debugLog(`[Bot Psychology] Hot Hand Fallacy TRIGGERED: -${adjustment}`);
+            return threshold - adjustment;
+        }
+    }
+    return threshold;
+}
+
+// Update psychology after bot throw
+function updateBotPsychologyAfterThrow(throwValue) {
+    const psych = botGame.aiPsychology;
+    const quality = calculateThrowQuality(throwValue);
+
+    if (!psych.firstThrowOfRound) {
+        psych.firstThrowOfRound = throwValue;
+    }
+
+    psych.recentThrowHistory.push(throwValue);
+    if (psych.recentThrowHistory.length > 5) {
+        psych.recentThrowHistory.shift();
+    }
+
+    psych.recentBadThrows = psych.recentThrowHistory.filter(t => calculateThrowQuality(t) < 0.4).length;
+
+    if (quality > 0.5) {
+        psych.consecutiveGoodThrows++;
+    } else {
+        psych.consecutiveGoodThrows = 0;
+    }
+
+    psych.lastThrowQuality = quality * 100;
+}
+
+// Update psychology after round
+function updateBotPsychologyAfterRound(didBotWin) {
+    const psych = botGame.aiPsychology;
+
+    psych.firstThrowOfRound = null;
+
+    if (didBotWin) {
+        psych.lastRoundOutcome = 'win';
+        psych.consecutiveLosses = 0;
+        psych.roundsSinceLoss++;
+        psych.recentWins = Math.min(psych.recentWins + 1, 3);
+        debugLog(`[Bot Psychology] Round won! Reset losses`);
+    } else {
+        psych.lastRoundOutcome = 'loss';
+        psych.consecutiveLosses++;
+        psych.roundsSinceLoss = 0;
+        psych.recentWins = Math.max(psych.recentWins - 1, 0);
+        debugLog(`[Bot Psychology] Round lost! Consecutive losses: ${psych.consecutiveLosses}`);
+    }
+}
+
+// Bot decision: should throw again?
+function botShouldThrowAgain() {
+    const bot = botGame.botState;
+
+    // If Mexico, never throw again
+    if (bot.currentThrow === 1000) {
+        return false;
+    }
+
+    // If no throw yet, always throw
+    if (!bot.currentThrow) {
+        return true;
+    }
+
+    // If reached max throws, stop
+    if (bot.throwCount >= botGame.maxThrows) {
+        return false;
+    }
+
+    // Select or keep personality
+    if (!botGame.aiPersonality) {
+        botGame.aiPersonality = selectAIPersonality();
+        debugLog(`[Bot AI] Personality: ${botGame.aiPersonality.name}`);
+    }
+
+    const personality = botGame.aiPersonality;
+    let bluffChance = personality.bluffChance;
+
+    // Get base threshold
+    let threshold = personality.thresholds[bot.throwCount] || 61;
+
+    // Apply psychological principles
+    threshold = applyLossAversion(threshold);
+    const tiltResult = applyTiltMechanics(threshold, bluffChance);
+    threshold = tiltResult.threshold;
+    bluffChance = tiltResult.bluffChance;
+    threshold = applyGamblersFallacy(threshold);
+    threshold = applyHotHandFallacy(threshold);
+
+    debugLog(`[Bot AI] Decision: throw=${bot.currentThrow}, threshold=${threshold}`);
+
+    // Bluff option
+    if (Math.random() < bluffChance) {
+        if (bot.currentThrow >= 43 && bot.currentThrow <= 62) {
+            debugLog(`[Bot AI] BLUFF: Stop at ${bot.currentThrow}`);
+            return false;
+        }
+    }
+
+    // Normal decision: throw again if below threshold
+    return bot.currentThrow < threshold;
+}
+
+// Start bot game
+function startBotGame() {
+    debugLog('🤖 Starting bot game...');
+
+    // Hide gambling checkbox for bot games
+    const gamblingCheckbox = document.getElementById('gamblingCheckbox');
+    if (gamblingCheckbox) {
+        gamblingCheckbox.checked = false;
+        gamblingCheckbox.disabled = true;
+    }
+
+    // Initialize bot
+    botGame.active = true;
+    botGame.botPlayer = {
+        id: 'bot-' + Date.now(),
+        username: getRandomBotName(),
+        eloRating: 1200
+    };
+
+    // Reset states
+    botGame.botState = {
+        dice1: 1,
+        dice2: 1,
+        currentThrow: null,
+        displayThrow: null,
+        throwCount: 0,
+        isBlind: false,
+        isMexico: false,
+        lives: 6,
+        throwHistory: []
+    };
+
+    botGame.playerState = {
+        dice1: 1,
+        dice2: 1,
+        currentThrow: null,
+        displayThrow: null,
+        throwCount: 0,
+        isBlind: false,
+        isMexico: false,
+        lives: 6,
+        throwHistory: []
+    };
+
+    botGame.roundNumber = 1;
+    botGame.isFirstRound = true;
+    botGame.voorgooier = 'player';  // Player goes first in first round
+    botGame.currentTurn = 'player';
+    botGame.maxThrows = 3;
+    botGame.voorgooierPattern = [];
+    botGame.aiPersonality = null;
+    botGame.aiPsychology = {
+        consecutiveLosses: 0,
+        roundsSinceLoss: 0,
+        lastRoundOutcome: null,
+        tiltLevel: 0,
+        livesAdvantage: 0,
+        isWinning: false,
+        recentThrowHistory: [],
+        recentBadThrows: 0,
+        consecutiveGoodThrows: 0,
+        lastThrowQuality: 0,
+        firstThrowOfRound: null,
+        recentWins: 0
+    };
+
+    // Set fake game ID
+    currentGame = {
+        gameId: 'bot-game-' + Date.now(),
+        players: [
+            { id: currentUser.id, username: currentUser.username, lives: 6 },
+            { id: botGame.botPlayer.id, username: botGame.botPlayer.username, lives: 6 }
+        ],
+        roundNumber: 1,
+        voorgooier: currentUser.id,
+        currentTurn: currentUser.id,
+        isFirstRound: true,
+        isGambling: false,
+        gamblingPot: 0
+    };
+
+    // Show game screen
+    showGame();
+
+    // Update UI
+    updateOpponentName(botGame.botPlayer.username, botGame.botPlayer.eloRating);
+    updateLives(currentUser.id, 6);
+    updateLives(botGame.botPlayer.id, 6);
+    updateRoundInfo();
+
+    // Show gambling pot as 0
+    const gamblingPotDisplay = document.getElementById('gamblingPotDisplay');
+    if (gamblingPotDisplay) {
+        gamblingPotDisplay.classList.add('hidden');
+    }
+
+    // First round: player starts (blind throw only)
+    showInlineMessage('🤖 Ronde 1 - Eerste ronde! Jij moet blind gooien', 'info');
+    showThrowButtons(false, true);  // Only blind throw in first round
+}
+
+// Bot throw dice (simulates rolling)
+function botThrowDice(isBlind) {
+    const bot = botGame.botState;
+
+    bot.throwCount++;
+    bot.dice1 = Math.ceil(Math.random() * 6);
+    bot.dice2 = Math.ceil(Math.random() * 6);
+    bot.currentThrow = calculateBotThrowValue(bot.dice1, bot.dice2);
+    bot.isBlind = isBlind;
+    bot.isMexico = (bot.currentThrow === 1000);
+
+    debugLog(`[Bot] Worp ${bot.throwCount}: ${bot.dice1}-${bot.dice2} = ${bot.currentThrow} (${isBlind ? 'BLIND' : 'OPEN'})`);
+
+    // Update psychology
+    updateBotPsychologyAfterThrow(bot.currentThrow);
+
+    // Determine display value
+    if (bot.isBlind) {
+        bot.displayThrow = '???';
+    } else {
+        bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
+    }
+
+    // Track throw in pattern if voorgooier
+    if (botGame.voorgooier === 'bot') {
+        botGame.voorgooierPattern.push(isBlind);
+    }
+
+    // Add to history
+    bot.throwHistory.push({
+        dice1: bot.dice1,
+        dice2: bot.dice2,
+        value: bot.currentThrow,
+        isBlind: isBlind
+    });
+}
+
+// Bot turn sequence
+function executeBotTurn() {
+    debugLog('🤖 Bot turn starting...');
+
+    showInlineMessage('🤖 Bot denkt na...', 'info');
+
+    // Thinking time (800-1500ms)
+    const thinkTime = 800 + Math.random() * 700;
+
+    setTimeout(() => {
+        botTurnThrowSequence();
+    }, thinkTime);
+}
+
+// Bot throw sequence (recursive until done)
+function botTurnThrowSequence() {
+    const bot = botGame.botState;
+
+    // First round: only 1 blind throw
+    if (botGame.isFirstRound) {
+        botThrowDice(true);  // Blind
+        showOpponentDice('', '', false, true);  // Hidden for blind
+        showInlineMessage('🤖 Bot gooide blind...', 'info');
+
+        // Compare after short delay
+        setTimeout(() => {
+            compareBotRound();
+        }, 1500);
+        return;
+    }
+
+    // Check if bot reached max throws
+    if (bot.throwCount >= botGame.maxThrows) {
+        debugLog(`[Bot] Reached max throws (${botGame.maxThrows})`);
+        compareBotRound();
+        return;
+    }
+
+    // Decide if should throw blind (pattern enforcement)
+    let mustBlind = false;
+    if (botGame.voorgooier === 'player' && bot.throwCount < botGame.voorgooierPattern.length) {
+        mustBlind = botGame.voorgooierPattern[bot.throwCount];
+        debugLog(`[Bot] Must follow pattern: ${mustBlind ? 'BLIND' : 'OPEN'}`);
+    }
+
+    // Check if should throw again (only after first throw)
+    if (bot.throwCount > 0 && !mustBlind) {
+        const shouldContinue = botShouldThrowAgain();
+        if (!shouldContinue) {
+            debugLog(`[Bot] Decision: KEEP at ${bot.currentThrow}`);
+            // Set max throws if voorgooier
+            if (botGame.voorgooier === 'bot') {
+                botGame.maxThrows = bot.throwCount;
+                debugLog(`[Bot] Voorgooier sets max throws: ${botGame.maxThrows}`);
+            }
+            compareBotRound();
+            return;
+        }
+    }
+
+    // Throw dice
+    botThrowDice(mustBlind);
+
+    // Show dice (or hide if blind)
+    if (bot.isBlind) {
+        showOpponentDice('', '', false, true);
+        showInlineMessage(`🤖 Bot gooide blind...`, 'info');
+
+        // If not last throw, reveal after delay
+        if (bot.throwCount < botGame.maxThrows) {
+            setTimeout(() => {
+                bot.isBlind = false;
+                bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
+                showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+                showInlineMessage(`🤖 Bot onthult: ${bot.displayThrow}`, 'info');
+
+                // Continue sequence
+                setTimeout(() => {
+                    botTurnThrowSequence();
+                }, 1200);
+            }, 1000);
+        } else {
+            // Last throw stays blind until comparison
+            setTimeout(() => {
+                botTurnThrowSequence();
+            }, 1000);
+        }
+    } else {
+        // Open throw
+        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+        showInlineMessage(`🤖 Bot gooide: ${bot.displayThrow}`, 'info');
+
+        // Continue sequence after delay
+        setTimeout(() => {
+            botTurnThrowSequence();
+        }, 1500);
+    }
+}
+
+// Compare round results with bot
+function compareBotRound() {
+    const player = botGame.playerState;
+    const bot = botGame.botState;
+
+    debugLog(`[Bot] Comparing: Player ${player.currentThrow} vs Bot ${bot.currentThrow}`);
+
+    // Reveal blind throws
+    if (player.isBlind) {
+        player.isBlind = false;
+        player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
+        showDice(player.dice1, player.dice2, player.isMexico, false);
+    }
+
+    if (bot.isBlind) {
+        bot.isBlind = false;
+        bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
+        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+    }
+
+    showInlineMessage(`Vergelijken: Jij ${player.displayThrow} vs Bot ${bot.displayThrow}`, 'info');
+
+    setTimeout(() => {
+        let winner = null;
+        let loser = null;
+        let resultMessage = '';
+
+        if (player.currentThrow > bot.currentThrow) {
+            winner = 'player';
+            loser = 'bot';
+            resultMessage = '🎉 Jij wint deze ronde!';
+            player.lives = Math.max(0, player.lives);  // Winner keeps lives
+            bot.lives--;  // Loser loses life
+        } else if (bot.currentThrow > player.currentThrow) {
+            winner = 'bot';
+            loser = 'player';
+            resultMessage = '😔 Bot wint deze ronde';
+            bot.lives = Math.max(0, bot.lives);  // Winner keeps lives
+            player.lives--;  // Loser loses life
+        } else {
+            // Tie - overgooien
+            resultMessage = '🤝 Gelijkspel! Overgooien (1 worp)';
+            showInlineMessage(resultMessage, 'info');
+
+            // Reset for overgooien
+            setTimeout(() => {
+                startBotOvergooien();
+            }, 2000);
+            return;
+        }
+
+        // Update lives display
+        updateLives(currentUser.id, player.lives);
+        updateLives(botGame.botPlayer.id, bot.lives);
+
+        // Update psychology
+        updateBotPsychologyAfterRound(winner === 'bot');
+
+        showInlineMessage(resultMessage, winner === 'player' ? 'success' : 'error');
+
+        // Check for game over
+        if (player.lives <= 0 || bot.lives <= 0) {
+            setTimeout(() => {
+                endBotGame(player.lives > bot.lives);
+            }, 2000);
+        } else {
+            // Next round
+            setTimeout(() => {
+                startBotNextRound();
+            }, 2500);
+        }
+    }, 1500);
+}
+
+// Start next round with bot
+function startBotNextRound() {
+    botGame.roundNumber++;
+    botGame.isFirstRound = false;
+
+    // Alternate voorgooier
+    botGame.voorgooier = (botGame.voorgooier === 'player') ? 'bot' : 'player';
+    botGame.currentTurn = botGame.voorgooier;
+    botGame.voorgooierPattern = [];
+    botGame.maxThrows = 3;
+    botGame.aiPersonality = null;  // New personality each round
+
+    // Reset throw states
+    botGame.playerState.currentThrow = null;
+    botGame.playerState.displayThrow = null;
+    botGame.playerState.throwCount = 0;
+    botGame.playerState.isBlind = false;
+    botGame.playerState.dice1 = 1;
+    botGame.playerState.dice2 = 1;
+    botGame.playerState.throwHistory = [];
+
+    botGame.botState.currentThrow = null;
+    botGame.botState.displayThrow = null;
+    botGame.botState.throwCount = 0;
+    botGame.botState.isBlind = false;
+    botGame.botState.dice1 = 1;
+    botGame.botState.dice2 = 1;
+    botGame.botState.throwHistory = [];
+
+    // Update UI
+    showDice('', '', false, false);
+    showOpponentDice('', '', false, false);
+    updateRoundInfo();
+
+    currentGame.roundNumber = botGame.roundNumber;
+    currentGame.voorgooier = botGame.voorgooier === 'player' ? currentUser.id : botGame.botPlayer.id;
+
+    if (botGame.voorgooier === 'player') {
+        showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Jij bent voorgooier!`, 'info');
+        showThrowButtons(false, false);
+    } else {
+        showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Bot is voorgooier...`, 'info');
+        showWaitingMessage('Bot gooit...');
+        setTimeout(() => {
+            executeBotTurn();
+        }, 1000);
+    }
+}
+
+// Overgooien with bot
+function startBotOvergooien() {
+    debugLog('[Bot] Starting overgooien (1 throw each)');
+
+    botGame.maxThrows = 1;
+
+    // Reset throw states
+    botGame.playerState.currentThrow = null;
+    botGame.playerState.displayThrow = null;
+    botGame.playerState.throwCount = 0;
+    botGame.playerState.isBlind = false;
+
+    botGame.botState.currentThrow = null;
+    botGame.botState.displayThrow = null;
+    botGame.botState.throwCount = 0;
+    botGame.botState.isBlind = false;
+
+    // Show UI
+    showDice('', '', false, false);
+    showOpponentDice('', '', false, false);
+
+    // Voorgooier goes first
+    if (botGame.voorgooier === 'player') {
+        showInlineMessage('Overgooien! Jouw beurt (1 worp)', 'info');
+        showThrowButtons(false, false);
+    } else {
+        showInlineMessage('Overgooien! Bot gooit eerst (1 worp)...', 'info');
+        setTimeout(() => {
+            executeBotTurn();
+        }, 1000);
+    }
+}
+
+// End bot game
+function endBotGame(playerWon) {
+    const title = playerWon ? '🏆 Je hebt gewonnen!' : '😔 Game Over';
+    const message = playerWon
+        ? `Je versloeg ${botGame.botPlayer.username}! 🎉`
+        : `${botGame.botPlayer.username} heeft gewonnen.`;
+
+    showInlineMessage(title, playerWon ? 'success' : 'error');
+    showToast(`${title}\n${message}`, playerWon ? 'success' : 'error', 5000);
+
+    // Show game result screen
+    const gameResult = document.getElementById('gameResult');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+
+    if (gameResult && resultTitle && resultMessage) {
+        resultTitle.textContent = title;
+        resultMessage.textContent = message + '\n(Bot games tellen niet mee voor statistieken)';
+        gameResult.classList.remove('hidden');
+    }
+
+    document.getElementById('returnLobbyBtn')?.classList.remove('hidden');
+
+    // Clear bot game state
+    botGame.active = false;
+}
+
+// Override throwDice to handle bot games
+const originalThrowDice = throwDice;
+window.throwDice = function(isBlind) {
+    if (botGame.active) {
+        // Bot game logic
+        const player = botGame.playerState;
+
+        player.throwCount++;
+        player.dice1 = Math.ceil(Math.random() * 6);
+        player.dice2 = Math.ceil(Math.random() * 6);
+        player.currentThrow = calculateBotThrowValue(player.dice1, player.dice2);
+        player.isBlind = isBlind;
+        player.isMexico = (player.currentThrow === 1000);
+
+        if (player.isBlind) {
+            player.displayThrow = '???';
+        } else {
+            player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
+        }
+
+        // Track in pattern if voorgooier
+        if (botGame.voorgooier === 'player') {
+            botGame.voorgooierPattern.push(isBlind);
+        }
+
+        // Add to history
+        player.throwHistory.push({
+            dice1: player.dice1,
+            dice2: player.dice2,
+            value: player.currentThrow,
+            isBlind: isBlind
+        });
+
+        debugLog(`[Player] Worp ${player.throwCount}: ${player.dice1}-${player.dice2} = ${player.currentThrow} (${isBlind ? 'BLIND' : 'OPEN'})`);
+
+        // Show dice
+        if (player.isBlind) {
+            showDice('', '', false, true);
+            showInlineMessage('🙈 Je gooide blind', 'info');
+            // Show reveal button
+            setTimeout(() => {
+                const revealBtn = document.getElementById('revealBtn');
+                if (revealBtn) {
+                    revealBtn.classList.remove('hidden');
+                    revealBtn.disabled = false;
+                }
+            }, 500);
+        } else {
+            showDice(player.dice1, player.dice2, player.isMexico, false);
+            showInlineMessage(`Je gooide: ${player.displayThrow}`, player.isMexico ? 'success' : 'info');
+
+            // Show action buttons
+            setTimeout(() => {
+                if (player.throwCount < botGame.maxThrows) {
+                    showThrowButtons(false, false);
+                    const keepBtn = document.getElementById('keepBtn');
+                    if (keepBtn) {
+                        keepBtn.classList.remove('hidden');
+                        keepBtn.disabled = false;
+                    }
+                } else {
+                    // Auto-keep at max throws
+                    setTimeout(() => {
+                        window.keepThrow();
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        return;
+    }
+
+    // Normal multiplayer logic
+    originalThrowDice.call(this, isBlind);
+};
+
+// Override keepThrow for bot games
+const originalKeepThrow = keepThrow;
+window.keepThrow = function() {
+    if (botGame.active) {
+        const player = botGame.playerState;
+
+        debugLog(`[Player] KEEP at ${player.currentThrow} (${player.throwCount} throws)`);
+
+        // Set max throws if voorgooier
+        if (botGame.voorgooier === 'player') {
+            botGame.maxThrows = player.throwCount;
+            debugLog(`[Player] Voorgooier sets max throws: ${botGame.maxThrows}`);
+        }
+
+        hideAllActionButtons();
+        showWaitingMessage('Bot is aan de beurt...');
+
+        // Bot's turn
+        setTimeout(() => {
+            executeBotTurn();
+        }, 1000);
+
+        return;
+    }
+
+    // Normal multiplayer logic
+    originalKeepThrow.call(this);
+};
+
+// Override revealDice for bot games
+const originalRevealDice = revealDice;
+window.revealDice = function() {
+    if (botGame.active) {
+        const player = botGame.playerState;
+
+        player.isBlind = false;
+        player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
+
+        showDice(player.dice1, player.dice2, player.isMexico, false);
+        showInlineMessage(`Je onthult: ${player.displayThrow}`, player.isMexico ? 'success' : 'info');
+
+        debugLog(`[Player] REVEAL: ${player.displayThrow}`);
+
+        // First round: auto-keep after reveal
+        if (botGame.isFirstRound) {
+            hideAllActionButtons();
+            setTimeout(() => {
+                window.keepThrow();
+            }, 1200);
+        } else {
+            // Show action buttons
+            setTimeout(() => {
+                if (player.throwCount < botGame.maxThrows) {
+                    showThrowButtons(false, false);
+                    const keepBtn = document.getElementById('keepBtn');
+                    if (keepBtn) {
+                        keepBtn.classList.remove('hidden');
+                        keepBtn.disabled = false;
+                    }
+                } else {
+                    // Auto-keep at max throws
+                    setTimeout(() => {
+                        window.keepThrow();
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        return;
+    }
+
+    // Normal multiplayer logic
+    originalRevealDice.call(this);
+};
+
+// Bot event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const playVsBotBtn = document.getElementById('playVsBotBtn');
+    if (playVsBotBtn) {
+        playVsBotBtn.addEventListener('click', startBotGame);
+    }
+});
+
+// ===================================================================
 // SPELREGELS PARCHMENT MODAL
 // ===================================================================
 
