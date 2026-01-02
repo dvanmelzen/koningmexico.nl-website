@@ -428,11 +428,30 @@ function showLobby() {
     if (queueSearching) queueSearching.classList.add('hidden');
     if (queueIdle) queueIdle.classList.remove('hidden');
 
+    // Show/hide gambling opt-in (Phase 3: Only for registered users)
+    updateGamblingOptInVisibility();
+
     loadLeaderboard();
     loadRecentGames();
     loadRecentUsers();
     updateUserStats();
     loadUserStats(); // Phase 2: Load stats dashboard
+}
+
+// Show gambling opt-in for registered users only (Phase 3)
+function updateGamblingOptInVisibility() {
+    const gamblingOptIn = document.getElementById('gamblingOptIn');
+    if (!gamblingOptIn) return;
+
+    // Only show for registered users (not guests)
+    if (currentUser && !currentUser.id.startsWith('guest-')) {
+        gamblingOptIn.classList.remove('hidden');
+    } else {
+        gamblingOptIn.classList.add('hidden');
+        // Uncheck if hidden
+        const gamblingCheckbox = document.getElementById('gamblingCheckbox');
+        if (gamblingCheckbox) gamblingCheckbox.checked = false;
+    }
 }
 
 function showGame() {
@@ -1484,8 +1503,13 @@ function setupLobbyListeners() {
             showToast('Niet verbonden met server', 'error');
             return;
         }
-        debugLog('🔍 Joining matchmaking queue...', 'info');
-        socket.emit('join_queue', { gameMode: 'ranked' });
+
+        // Check gambling opt-in (Phase 3)
+        const gamblingCheckbox = document.getElementById('gamblingCheckbox');
+        const gambling = gamblingCheckbox ? gamblingCheckbox.checked : false;
+
+        debugLog(`🔍 Joining matchmaking queue... ${gambling ? '🎰 (GAMBLING)' : ''}`, 'info');
+        socket.emit('join_queue', { gameMode: 'ranked', gambling });
 
         // Show enhanced searching UI
         startSearchingAnimation();
@@ -1881,8 +1905,17 @@ function handleGameStart(data) {
         currentTurn: data.currentTurn,
         isFirstRound: data.isFirstRound,
         isSimultaneous: data.isSimultaneous,
-        mustBlind: data.mustBlind
+        mustBlind: data.mustBlind,
+        // Phase 3: Gambling game info
+        isGambling: data.isGambling || false,
+        gamblingPot: data.gamblingPot || 0
     };
+
+    // Display gambling pot if this is a gambling game (Phase 3)
+    if (data.isGambling && data.gamblingPot > 0) {
+        showToast(`🎰 Gambling Game! Pot: ${data.gamblingPot} credits (winner takes all!)`, 'success');
+        console.log(`🎰 GAMBLING GAME - Pot: ${data.gamblingPot} credits`);
+    }
 
     // Update opponent name in UI labels
     const opponent = data.players?.find(p => p.id !== currentUser?.id);
@@ -2584,6 +2617,16 @@ function handleGameOver(data) {
     const title = iWon ? '🏆 Je hebt gewonnen!' : '😔 Helaas, je hebt verloren';
     const eloChange = iWon ? `+${data.eloChange}` : `${data.eloChange}`;
 
+    // Display gambling winnings if applicable (Phase 3)
+    let toastMessage = `${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`;
+    if (data.isGambling && data.gamblingWinnings && iWon) {
+        toastMessage += `\n💰 Gambling winnings: +${data.gamblingWinnings} credits!`;
+        // Update credits display
+        setTimeout(() => {
+            updateCreditsDisplay();
+        }, 1000);
+    }
+
     // Check if game ended because opponent left
     if (data.reason === 'player_left') {
         if (iWon) {
@@ -2592,12 +2635,12 @@ function handleGameOver(data) {
         } else {
             // You left - show regular message
             showInlineMessage(title, 'error');
-            showToast(`${title}\nPower: ${eloChange} (Nieuw: ${data.loserElo})`, 'error', 7000);
+            showToast(toastMessage, 'error', 7000);
         }
     } else {
         // Normal game end
         showInlineMessage(title, iWon ? 'success' : 'error');
-        showToast(`${title}\nPower: ${eloChange} (Nieuw: ${iWon ? data.winnerElo : data.loserElo})`, iWon ? 'success' : 'error', 7000);
+        showToast(toastMessage, iWon ? 'success' : 'error', 7000);
     }
 
     // Show rematch and return buttons
