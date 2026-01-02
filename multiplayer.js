@@ -711,8 +711,35 @@ function setupDisclaimerModal() {
     const disclaimerModal = document.getElementById('disclaimerModal');
     const disclaimerAcceptCheckbox = document.getElementById('disclaimerAcceptCheckbox');
     const disclaimerAcceptBtn = document.getElementById('disclaimerAcceptBtn');
+    const disclaimerCloseBtn = document.getElementById('disclaimerCloseBtn');
     const disclaimerFooterLink = document.getElementById('disclaimerFooterLink');
     const disclaimerLinkFromRegister = document.getElementById('disclaimerLinkFromRegister');
+
+    // Setup close button
+    if (disclaimerCloseBtn) {
+        disclaimerCloseBtn.addEventListener('click', () => {
+            console.log('🔴 Disclaimer close button clicked');
+            closeDisclaimerModal();
+        });
+    }
+
+    // Setup ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && disclaimerModal && !disclaimerModal.classList.contains('hidden')) {
+            console.log('🔴 ESC pressed - closing disclaimer');
+            closeDisclaimerModal();
+        }
+    });
+
+    // Setup click outside to close (click on backdrop)
+    if (disclaimerModal) {
+        disclaimerModal.addEventListener('click', (e) => {
+            if (e.target === disclaimerModal) {
+                console.log('🔴 Clicked outside modal - closing disclaimer');
+                closeDisclaimerModal();
+            }
+        });
+    }
 
     // Setup checkbox to enable/disable accept button
     if (disclaimerAcceptCheckbox && disclaimerAcceptBtn) {
@@ -733,6 +760,7 @@ function setupDisclaimerModal() {
     if (disclaimerFooterLink) {
         disclaimerFooterLink.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log('📜 Footer disclaimer link clicked');
             openDisclaimerModal(true); // true = read-only mode
         });
     }
@@ -741,6 +769,7 @@ function setupDisclaimerModal() {
     if (disclaimerLinkFromRegister) {
         disclaimerLinkFromRegister.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log('📜 Register disclaimer link clicked');
             openDisclaimerModal(true); // true = read-only mode
         });
     }
@@ -749,17 +778,23 @@ function setupDisclaimerModal() {
     if (disclaimerAcceptBtn) {
         disclaimerAcceptBtn.addEventListener('click', async () => {
             if (!disclaimerAcceptCheckbox || !disclaimerAcceptCheckbox.checked) {
+                console.log('⚠️ Accept clicked but checkbox not checked');
                 return;
             }
+
+            console.log('✅ Accepting disclaimer...');
+            console.log('Token:', accessToken ? 'Present' : 'Missing');
 
             try {
                 const response = await fetch(`${API_URL}/api/disclaimer/accept`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${accessToken || localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
                 });
+
+                console.log('API Response status:', response.status);
 
                 if (response.ok) {
                     // Close modal
@@ -768,6 +803,7 @@ function setupDisclaimerModal() {
                     showToast('Disclaimer geaccepteerd!', 'success');
                 } else {
                     const data = await response.json();
+                    console.error('API Error:', data);
                     showToast(data.error || 'Kon disclaimer niet accepteren', 'error');
                 }
             } catch (error) {
@@ -815,31 +851,52 @@ function closeDisclaimerModal() {
 }
 
 async function checkDisclaimerStatus() {
+    console.log('🔍 Checking disclaimer status...');
+    console.log('Current user:', currentUser ? currentUser.username : 'None');
+    console.log('Access token:', accessToken ? 'Present' : 'Missing');
+
     // Check if user needs to accept disclaimer
-    if (!currentUser || !accessToken) return;
+    if (!currentUser || !accessToken) {
+        console.log('⚠️ No user or token, skipping disclaimer check');
+        return;
+    }
 
     // Guests don't need to accept
-    if (currentUser.id.startsWith('guest-')) return;
+    if (currentUser.id.startsWith('guest-')) {
+        console.log('👤 Guest user, skipping disclaimer');
+        return;
+    }
 
     try {
+        const token = accessToken || localStorage.getItem('accessToken') || localStorage.getItem('token');
+        console.log('📡 Calling disclaimer status API...');
+
         const response = await fetch(`${API_URL}/api/disclaimer/status`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             }
         });
 
+        console.log('API Response status:', response.status);
+
         if (response.ok) {
             const data = await response.json();
+            console.log('Disclaimer status:', data);
 
             if (!data.accepted && !data.isGuest) {
                 // User hasn't accepted current version, show modal
+                console.log('⚠️ User needs to accept disclaimer - showing modal');
                 setTimeout(() => {
                     openDisclaimerModal(false); // false = required mode
                 }, 500); // Small delay to let lobby load first
+            } else {
+                console.log('✅ User has already accepted disclaimer');
             }
+        } else {
+            console.error('❌ Disclaimer status API failed:', response.status);
         }
     } catch (error) {
-        console.error('Error checking disclaimer status:', error);
+        console.error('❌ Error checking disclaimer status:', error);
     }
 }
 
