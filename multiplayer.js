@@ -6089,6 +6089,10 @@ function botTurnThrowSequence() {
 
         // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
         if (botGame.voorgooier === 'bot') {
+            // 🔥 CRITICAL: Switch turn to PLAYER in GameEngine!
+            gameEngine.currentTurnId = gameEngine.player.id;
+            debugLog(`[Bot] Switched turn to player (${gameEngine.player.username})`);
+
             showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
             showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
             showThrowButtons(false, false); // Enable open/blind throw for player
@@ -6118,6 +6122,10 @@ function botTurnThrowSequence() {
             if (botGame.voorgooier === 'bot') {
                 botGame.maxThrows = bot.throwCount;
                 debugLog(`[Bot] Voorgooier sets max throws: ${botGame.maxThrows}`);
+
+                // 🔥 CRITICAL: Switch turn to PLAYER in GameEngine!
+                gameEngine.currentTurnId = gameEngine.player.id;
+                debugLog(`[Bot] Switched turn to player (${gameEngine.player.username})`);
 
                 // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
                 showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
