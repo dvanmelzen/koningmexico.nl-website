@@ -5804,6 +5804,13 @@ class GameEngine {
             hideAllActionButtons();
             showInlineMessage(`🎲 Ronde ${this.roundNumber} - Bot is voorgooier...`, 'info');
             showWaitingMessage('Bot gooit...');
+
+            // 🔧 CRITICAL: Sync GameEngine state to botGame before calling executeBotTurn
+            botGame.maxThrows = this.maxThrows;
+            botGame.voorgooier = (this.voorgooierId === this.opponent.id) ? 'bot' : 'player';
+            botGame.roundNumber = this.roundNumber;
+            debugLog(`[GameEngine] Synced to botGame: maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}`);
+
             // Execute bot turn after short delay (don't call adapter to prevent duplicate)
             setTimeout(() => {
                 executeBotTurn();
