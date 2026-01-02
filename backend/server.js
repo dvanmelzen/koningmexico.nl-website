@@ -88,9 +88,9 @@ const activeSockets = new Map(); // socketId -> userId
  */
 function logThrowDetails(game, playerId, throwData) {
     // Skip if either player is a guest
-    if (!playerId || playerId.startsWith('guest_') ||
-        !game.player1Id || game.player1Id.startsWith('guest_') ||
-        !game.player2Id || game.player2Id.startsWith('guest_')) {
+    if (!playerId || playerId.startsWith('guest-') ||
+        !game.player1Id || game.player1Id.startsWith('guest-') ||
+        !game.player2Id || game.player2Id.startsWith('guest-')) {
         return;
     }
 
@@ -121,8 +121,8 @@ function logThrowDetails(game, playerId, throwData) {
  */
 function updateRoundWinner(game, roundNumber, winnerId) {
     // Skip if either player is a guest
-    if (!game.player1Id || game.player1Id.startsWith('guest_') ||
-        !game.player2Id || game.player2Id.startsWith('guest_')) {
+    if (!game.player1Id || game.player1Id.startsWith('guest-') ||
+        !game.player2Id || game.player2Id.startsWith('guest-')) {
         return;
     }
 
@@ -488,7 +488,7 @@ app.get('/api/leaderboard', (req, res) => {
     // Get all users and filter/sort
     let players = db.getAllUsers()
         // Exclude guests
-        .filter(user => !user.id.startsWith('guest_'))
+        .filter(user => !user.id.startsWith('guest-'))
         // Filter by minimum games
         .filter(user => user.stats.gamesPlayed >= minGames)
         // Calculate win rate
@@ -533,7 +533,7 @@ app.get('/api/user/stats', authenticateToken, (req, res) => {
     const userId = req.userId;
 
     // Skip if guest
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return res.json({
             isGuest: true,
             message: 'Registreer om statistieken te bekijken'
@@ -581,7 +581,7 @@ app.get('/api/credits/balance', authenticateToken, (req, res) => {
     const userId = req.user.id;
 
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return res.json({
             isGuest: true,
             balance: 0,
@@ -615,7 +615,7 @@ app.get('/api/credits/transactions', authenticateToken, (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
 
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return res.json({
             isGuest: true,
             transactions: [],
@@ -652,7 +652,7 @@ app.post('/api/credits/purchase', authenticateToken, purchaseLimiter, async (req
     const { itemId } = req.body;
 
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return res.status(403).json({ error: 'Gasten kunnen geen power-ups kopen' });
     }
 
@@ -798,7 +798,7 @@ io.on('connection', (socket) => {
         // If gambling, check credits
         if (isGambling) {
             // Skip if guest
-            if (!userId || userId.startsWith('guest_')) {
+            if (!userId || userId.startsWith('guest-')) {
                 return socket.emit('error', { message: 'Gasten kunnen niet spelen voor credits' });
             }
 

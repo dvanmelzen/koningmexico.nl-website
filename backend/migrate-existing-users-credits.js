@@ -15,7 +15,7 @@ function migrateExistingUsers() {
 
     for (const user of allUsers) {
         // Skip guests
-        if (user.id.startsWith('guest_')) {
+        if (user.id.startsWith('guest-')) {
             continue;
         }
 

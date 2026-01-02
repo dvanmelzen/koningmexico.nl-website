@@ -439,8 +439,8 @@ function getRecentUsers(limit = 3) {
 // Save throw details (NOT for guest players)
 function saveThrowDetails(throwData) {
     // Skip if either player is a guest
-    if (!throwData.playerId || throwData.playerId.startsWith('guest_') ||
-        !throwData.opponentId || throwData.opponentId.startsWith('guest_')) {
+    if (!throwData.playerId || throwData.playerId.startsWith('guest-') ||
+        !throwData.opponentId || throwData.opponentId.startsWith('guest-')) {
         return false;
     }
 
@@ -547,7 +547,7 @@ function getRecentGamesWithDetails(userId, limit = 10) {
 // Get user credits
 function getUserCredits(userId) {
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return null;
     }
 
@@ -558,7 +558,7 @@ function getUserCredits(userId) {
 // Update credits with transaction logging (atomic operation)
 function updateCredits(userId, amount, type, description, relatedId = null) {
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return false;
     }
 
@@ -599,7 +599,7 @@ function updateCredits(userId, amount, type, description, relatedId = null) {
 // Get user transaction history
 function getUserTransactions(userId, limit = 50) {
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return [];
     }
 
@@ -633,7 +633,7 @@ function getShopItems() {
 // Purchase power-up with validation
 function purchasePowerup(userId, itemId) {
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return { success: false, error: 'Gasten kunnen geen power-ups kopen' };
     }
 
@@ -691,8 +691,8 @@ function purchasePowerup(userId, itemId) {
 // Award gambling pot to winner
 function awardGamblingPot(winnerId, loserId, potAmount, gameId) {
     // Skip if guests
-    if (!winnerId || winnerId.startsWith('guest_') ||
-        !loserId || loserId.startsWith('guest_')) {
+    if (!winnerId || winnerId.startsWith('guest-') ||
+        !loserId || loserId.startsWith('guest-')) {
         return false;
     }
 
@@ -709,7 +709,7 @@ function awardGamblingPot(winnerId, loserId, potAmount, gameId) {
 // Freeze credits for gambling (deduct from balance)
 function freezeGamblingCredits(userId, amount, gameId) {
     // Skip guests
-    if (!userId || userId.startsWith('guest_')) {
+    if (!userId || userId.startsWith('guest-')) {
         return false;
     }
 
