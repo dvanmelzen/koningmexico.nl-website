@@ -5281,6 +5281,7 @@ class GameEngine {
         this.maxThrows = 1; // First round: 1 blind throw only!
         this.voorgooierId = null;
         this.currentTurnId = null;
+        this.isSimultaneous = true; // First round is simultaneous in multiplayer
         this.isGambling = false;
         this.gamblingPot = 0;
 
@@ -5337,7 +5338,8 @@ class GameEngine {
      * Throw dice (works for both modes!)
      */
     async throwDice(isBlind) {
-        if (!this.isPlayerTurn()) {
+        // In simultaneous mode (first round), both players can throw at the same time
+        if (!this.isSimultaneous && !this.isPlayerTurn()) {
             throw new Error('Not your turn!');
         }
 
@@ -5588,6 +5590,7 @@ class GameEngine {
     async startNextRound() {
         this.roundNumber++;
         this.isFirstRound = false;
+        this.isSimultaneous = false; // After first round: turn-based
         this.maxThrows = 3; // After first round: 3 throws allowed
 
         // Alternate voorgooier
