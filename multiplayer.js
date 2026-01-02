@@ -1799,19 +1799,37 @@ function handleGameRejoined(data) {
     // Show game screen
     showGame();
 
-    // Update UI with current game state
-    if (data.game.players) {
-        const player1 = data.game.players[0];
-        const player2 = data.game.players[1];
+    // Update UI with current game state (new format: player1 and player2 objects)
+    if (data.game.player1 && data.game.player2) {
+        const player1 = data.game.player1;
+        const player2 = data.game.player2;
 
         // Determine which player is me and which is opponent
         const isPlayer1Me = player1.userId === currentUser?.id;
         const me = isPlayer1Me ? player1 : player2;
         const opponent = isPlayer1Me ? player2 : player1;
 
-        // Update lives using the correct function
-        updateLives(me.userId, me.lives);
-        updateLives(opponent.userId, opponent.lives);
+        // Update round display
+        const roundElement = document.getElementById('currentRound');
+        if (roundElement) {
+            roundElement.textContent = `Ronde ${data.game.currentRound || 1}`;
+        }
+
+        // Update lives display
+        const myLives = me.lives;
+        const opponentLives = opponent.lives;
+
+        // Update player lives
+        const playerLivesEl = document.getElementById('playerLives');
+        if (playerLivesEl) {
+            playerLivesEl.textContent = '❤️'.repeat(myLives);
+        }
+
+        // Update opponent lives
+        const opponentLivesEl = document.getElementById('opponentLives');
+        if (opponentLivesEl) {
+            opponentLivesEl.textContent = '❤️'.repeat(opponentLives);
+        }
 
         // Update opponent name in UI labels
         const opponentName = opponent.username || 'Tegenstander';
@@ -1827,6 +1845,8 @@ function handleGameRejoined(data) {
         if (opponentCardLabel) {
             opponentCardLabel.textContent = `🎯 ${opponentName.toUpperCase()}`;
         }
+
+        console.log(`✅ Game restored: Round ${data.game.currentRound}, Lives: Me=${myLives} Opponent=${opponentLives}, MyTurn=${data.isYourTurn}`);
     }
 
     // Restore dice display if available
@@ -1840,15 +1860,25 @@ function handleGameRejoined(data) {
     }
 
     // Update turn indicator
-    updateTurnIndicator();
+    if (data.isYourTurn) {
+        updateStatusMessage("Jouw beurt!");
+    } else {
+        const opponent = data.game.player1.userId === currentUser?.id ? data.game.player2 : data.game.player1;
+        updateStatusMessage(`${opponent.username} is aan de beurt...`);
+    }
 
     // Update action buttons based on game state
-    if (data.availableActions) {
-        hideAllActionButtons();
+    hideAllActionButtons();
+    if (data.availableActions && data.availableActions.length > 0) {
         data.availableActions.forEach(action => {
             const btn = document.getElementById(`${action}Btn`);
-            if (btn) btn.classList.remove('hidden');
+            if (btn) {
+                btn.classList.remove('hidden');
+                console.log(`✅ Showing button: ${action}Btn`);
+            }
         });
+    } else {
+        console.log('⏳ No actions available - waiting for opponent');
     }
 
     showToast('✅ Game hersteld!', 'success', 3000);

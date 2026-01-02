@@ -995,22 +995,24 @@ io.on('connection', (socket) => {
         }
 
         // Check if user is part of this game
-        const isPlayer = game.players.some(p => p.userId === userId);
-        if (!isPlayer) {
+        const isPlayer1 = game.player1Id === userId;
+        const isPlayer2 = game.player2Id === userId;
+        if (!isPlayer1 && !isPlayer2) {
             console.log(`❌ ${user.username} not part of game: ${gameId}`);
             return socket.emit('rejoin_failed', { reason: 'Je bent geen speler in deze game' });
         }
 
         // Check if game is still active
-        if (game.isFinished) {
+        if (game.status !== 'active') {
             console.log(`❌ ${user.username} tried to rejoin finished game: ${gameId}`);
             return socket.emit('rejoin_failed', { reason: 'Game is al afgelopen' });
         }
 
         // Update socket reference for this player
-        const playerIndex = game.players.findIndex(p => p.userId === userId);
-        if (playerIndex !== -1) {
-            game.players[playerIndex].socketId = socket.id;
+        if (isPlayer1) {
+            game.player1SocketId = socket.id;
+        } else {
+            game.player2SocketId = socket.id;
         }
 
         // Join socket room for this game
@@ -1031,42 +1033,44 @@ io.on('connection', (socket) => {
             delete game.disconnectTimer;
 
             // Notify opponent that grace period is cancelled
-            const opponentSocketId = game.player1Id === userId ? game.player2SocketId : game.player1SocketId;
+            const opponentSocketId = isPlayer1 ? game.player2SocketId : game.player1SocketId;
             io.to(opponentSocketId).emit('opponent_reconnected_grace_cancelled', {
                 username: user.username,
                 message: `${user.username} is terug! Het spel gaat verder.`
             });
         }
 
-        // Determine current dice state for UI restoration
-        const playerState = game.players[playerIndex];
-        const opponentIndex = playerIndex === 0 ? 1 : 0;
-        const opponentState = game.players[opponentIndex];
+        // Get player info
+        const player1 = userCache.get(game.player1Id);
+        const player2 = userCache.get(game.player2Id);
+        const myInfo = isPlayer1 ? player1 : player2;
+        const opponentInfo = isPlayer1 ? player2 : player1;
 
-        const currentDice = {
-            player: playerState.currentThrow ? {
-                dice1: playerState.currentThrow.dice1,
-                dice2: playerState.currentThrow.dice2,
-                isBlind: playerState.currentThrow.isBlind
-            } : null,
-            opponent: opponentState.currentThrow ? {
-                dice1: opponentState.currentThrow.isBlind ? '?' : opponentState.currentThrow.dice1,
-                dice2: opponentState.currentThrow.isBlind ? '?' : opponentState.currentThrow.dice2,
-                isBlind: opponentState.currentThrow.isBlind
-            } : null
-        };
-
-        // Determine available actions based on game state
+        // Determine current turn and available actions
+        const isMyTurn = game.currentTurn === userId;
         const availableActions = [];
-        const isPlayerTurn = game.currentTurn === userId;
 
-        if (isPlayerTurn) {
-            if (!playerState.hasThrown) {
+        // First round logic (simultaneous throws)
+        if (game.isFirstRound) {
+            const myThrow = isPlayer1 ? game.firstRoundThrows.player1 : game.firstRoundThrows.player2;
+            if (!myThrow) {
                 availableActions.push('throwOpen', 'throwBlind');
-            } else if (playerState.throwsLeft > 0) {
-                availableActions.push('reThrow', 'keepThrow');
-                if (playerState.currentThrow?.isBlind && !playerState.hasRevealed) {
-                    availableActions.push('reveal');
+            }
+        } else {
+            // Turn-based logic (round 2+)
+            const isVoorgooier = game.voorgooier === userId;
+
+            if (isMyTurn) {
+                // Check how many throws I've done
+                const myThrows = isVoorgooier ? game.voorgooierThrows : game.achterliggerThrows;
+                const myThrowCount = isVoorgooier ? game.voorgooierThrowCount : game.achterliggerThrowCount;
+
+                if (myThrowCount === 0) {
+                    // Haven't thrown yet this round
+                    availableActions.push('throwOpen', 'throwBlind');
+                } else if (myThrowCount < game.maxThrows) {
+                    // Can still throw more
+                    availableActions.push('reThrow', 'keepThrow');
                 }
             }
         }
@@ -1075,21 +1079,28 @@ io.on('connection', (socket) => {
         socket.emit('game_rejoined', {
             game: {
                 gameId: game.gameId,
-                players: game.players.map(p => ({
-                    userId: p.userId,
-                    username: p.username,
-                    lives: p.lives,
-                    eloRating: p.eloRating
-                })),
-                currentRound: game.currentRound,
+                player1: {
+                    userId: player1.id,
+                    username: player1.username,
+                    lives: game.player1Lives,
+                    eloRating: player1.eloRating
+                },
+                player2: {
+                    userId: player2.id,
+                    username: player2.username,
+                    lives: game.player2Lives,
+                    eloRating: player2.eloRating
+                },
+                currentRound: game.roundNumber,
                 isFirstRound: game.isFirstRound,
-                isVastgooier: game.isVastgooier || false
+                isVastgooier: game.waitingForResult || false,
+                voorgooier: game.voorgooier
             },
-            isYourTurn: isPlayerTurn,
-            currentDice,
+            isYourTurn: isMyTurn,
+            currentDice: null, // Simplified for now
             availableActions,
-            playerHistory: playerState.throwHistory || [],
-            opponentHistory: opponentState.throwHistory || []
+            playerHistory: [],
+            opponentHistory: []
         });
 
         // Notify opponent that player reconnected
