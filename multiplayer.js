@@ -397,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAuthListeners();
     setupLobbyListeners();
     setupGameListeners();
+    initializeShop(); // Phase 3: Credits system
     setupUIListeners();
 
     // Update header user display if logged in
@@ -846,11 +847,13 @@ function updateHeaderUserDisplay() {
     const usernameEl = document.getElementById('username');
     const eloRatingEl = document.getElementById('eloRating');
     const logoutBtn = document.getElementById('logoutBtn');
+    const shopBtn = document.getElementById('shopBtn'); // Phase 3: Shop button
 
     if (currentUser) {
         // Show user info
         userDisplay?.classList.remove('hidden');
         logoutBtn?.classList.remove('hidden');
+        shopBtn?.classList.remove('hidden'); // Phase 3: Show shop for logged in users
 
         // Update content
         if (usernameEl) usernameEl.textContent = currentUser.username;
@@ -862,6 +865,7 @@ function updateHeaderUserDisplay() {
         // Hide when logged out
         userDisplay?.classList.add('hidden');
         logoutBtn?.classList.add('hidden');
+        shopBtn?.classList.add('hidden'); // Phase 3: Hide shop for guests
     }
 }
 
@@ -900,6 +904,215 @@ async function updateCreditsDisplay() {
         // Hide on error
         creditsDisplay.classList.add('hidden');
     }
+}
+
+// ============================================
+// SHOP MODAL FUNCTIONS (Phase 3)
+// ============================================
+
+// Open shop modal
+function openShopModal() {
+    const shopModal = document.getElementById('shopModal');
+    const shopBtn = document.getElementById('shopBtn');
+    const creditsDisplay = document.getElementById('creditsDisplay');
+
+    if (!shopModal) return;
+
+    // Show modal
+    shopModal.classList.remove('hidden');
+
+    // Load shop items and update credits
+    loadShopItems();
+    updateShopCreditsDisplay();
+}
+
+// Close shop modal
+function closeShopModal() {
+    const shopModal = document.getElementById('shopModal');
+    if (shopModal) {
+        shopModal.classList.add('hidden');
+    }
+}
+
+// Update credits display in shop modal
+async function updateShopCreditsDisplay() {
+    const shopCreditsBalance = document.getElementById('shopCreditsBalance');
+
+    if (!shopCreditsBalance) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/credits/balance`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            shopCreditsBalance.textContent = data.balance || 0;
+        }
+    } catch (error) {
+        console.error('Error fetching credits for shop:', error);
+        shopCreditsBalance.textContent = '--';
+    }
+}
+
+// Load and display shop items
+async function loadShopItems() {
+    const shopItemsContainer = document.getElementById('shopItemsContainer');
+
+    if (!shopItemsContainer) return;
+
+    try {
+        // Show loading state
+        shopItemsContainer.innerHTML = `
+            <div class="col-span-2 text-center text-white py-8">
+                <div class="text-4xl mb-2">⏳</div>
+                <p>Laden...</p>
+            </div>
+        `;
+
+        const response = await fetch(`${API_URL}/api/shop/items`);
+
+        if (!response.ok) {
+            throw new Error('Failed to load shop items');
+        }
+
+        const data = await response.json();
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            shopItemsContainer.innerHTML = `
+                <div class="col-span-2 text-center text-white py-8">
+                    <div class="text-4xl mb-2">🛒</div>
+                    <p>Geen items beschikbaar</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Display items
+        shopItemsContainer.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${items.map(item => createShopItemCard(item)).join('')}
+            </div>
+        `;
+
+        // Add click handlers
+        items.forEach(item => {
+            const buyBtn = document.getElementById(`buy-${item.id}`);
+            if (buyBtn) {
+                buyBtn.addEventListener('click', () => purchaseItem(item));
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading shop items:', error);
+        shopItemsContainer.innerHTML = `
+            <div class="col-span-2 text-center text-red-400 py-8">
+                <div class="text-4xl mb-2">❌</div>
+                <p>Fout bij laden van shop items</p>
+            </div>
+        `;
+    }
+}
+
+// Create HTML for shop item card
+function createShopItemCard(item) {
+    const icons = {
+        'penalty_reduction': '🛡️',
+        'mexico_shield': '⚡'
+    };
+
+    const icon = icons[item.id] || '🎁';
+
+    return `
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border-2 border-purple-600 hover:border-purple-400 transition shadow-lg">
+            <div class="text-center mb-4">
+                <div class="text-5xl mb-2">${icon}</div>
+                <h3 class="text-xl font-bold text-white mb-2">${item.name}</h3>
+                <p class="text-sm text-gray-300">${item.description}</p>
+            </div>
+
+            <div class="flex items-center justify-between mt-4">
+                <div class="flex items-center gap-2 text-yellow-500 font-bold text-lg">
+                    <span>💰</span>
+                    <span>${item.cost}</span>
+                </div>
+                <button id="buy-${item.id}" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition font-bold shadow-md">
+                    Koop
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Purchase item
+async function purchaseItem(item) {
+    try {
+        const response = await fetch(`${API_URL}/api/credits/purchase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ itemId: item.id })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(`❌ ${data.error || 'Aankoop mislukt'}`);
+            return;
+        }
+
+        // Success!
+        alert(`✅ ${data.message}`);
+
+        // Update displays
+        updateShopCreditsDisplay();
+        updateCreditsDisplay();
+
+        // TODO Phase 3.5: Activate power-up in game state
+        console.log('Power-up purchased:', item);
+
+    } catch (error) {
+        console.error('Error purchasing item:', error);
+        alert('❌ Fout bij aankoop. Probeer het opnieuw.');
+    }
+}
+
+// Initialize shop event listeners
+function initializeShop() {
+    // Shop button click
+    const shopBtn = document.getElementById('shopBtn');
+    if (shopBtn) {
+        shopBtn.addEventListener('click', openShopModal);
+    }
+
+    // Credits display click (also opens shop)
+    const creditsDisplay = document.getElementById('creditsDisplay');
+    if (creditsDisplay) {
+        creditsDisplay.addEventListener('click', openShopModal);
+    }
+
+    // Close button click
+    const closeShopModalBtn = document.getElementById('closeShopModal');
+    if (closeShopModalBtn) {
+        closeShopModalBtn.addEventListener('click', closeShopModal);
+    }
+
+    // Click outside modal to close
+    const shopModal = document.getElementById('shopModal');
+    if (shopModal) {
+        shopModal.addEventListener('click', (e) => {
+            if (e.target === shopModal) {
+                closeShopModal();
+            }
+        });
+    }
+
+    console.log('✅ Shop initialized');
 }
 
 // Debug logging function
