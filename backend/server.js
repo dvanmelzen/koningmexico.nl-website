@@ -267,6 +267,24 @@ function authenticateToken(req, res, next) {
     }
 }
 
+// Optional authentication - doesn't fail if no token
+function optionalAuth(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+        try {
+            const verified = jwt.verify(token, JWT_SECRET);
+            req.user = verified;
+        } catch (error) {
+            // Token is invalid, but we allow the request to continue
+            console.log('⚠️ Invalid token in optional auth, continuing anyway');
+        }
+    }
+
+    next();
+}
+
 // ============================================
 // REST API ENDPOINTS
 // ============================================
@@ -813,7 +831,7 @@ app.post('/api/disclaimer/accept', authenticateToken, (req, res) => {
 });
 
 // Debug log submission endpoint
-app.post('/api/debug-log/submit', (req, res) => {
+app.post('/api/debug-log/submit', optionalAuth, (req, res) => {
     try {
         const { logContent, userNotes } = req.body;
 
