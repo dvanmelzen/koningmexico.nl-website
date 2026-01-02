@@ -544,8 +544,9 @@ function setupAuthListeners() {
         document.getElementById('loginTab').style.color = 'var(--text-secondary)';
     });
 
-    // Logout button
+    // Logout buttons (header and lobby)
     document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+    document.getElementById('lobbyLogoutBtn')?.addEventListener('click', handleLogout);
 }
 
 async function handleLogin() {
