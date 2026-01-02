@@ -34,6 +34,15 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Rate limiting for purchase endpoints (prevent abuse)
+const purchaseLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // max 10 purchases per minute
+    message: { message: 'Te veel aankopen. Wacht even voordat je opnieuw probeert.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Initialize Express & Socket.io
 const app = express();
 const server = http.createServer(app);
@@ -560,6 +569,116 @@ app.get('/api/user/stats', authenticateToken, (req, res) => {
     } catch (error) {
         console.error('❌ Error fetching user stats:', error);
         res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+});
+
+// ============================================
+// CREDITS SYSTEM API ENDPOINTS (Phase 3)
+// ============================================
+
+// Get user credit balance
+app.get('/api/credits/balance', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    // Skip guests
+    if (!userId || userId.startsWith('guest_')) {
+        return res.json({
+            isGuest: true,
+            balance: 0,
+            message: 'Registreer om credits te verdienen'
+        });
+    }
+
+    try {
+        const credits = db.getUserCredits(userId);
+
+        if (!credits) {
+            return res.status(404).json({ error: 'Credits account niet gevonden' });
+        }
+
+        res.json({
+            isGuest: false,
+            balance: credits.balance,
+            lifetimeEarned: credits.lifetimeEarned,
+            lifetimeSpent: credits.lifetimeSpent,
+            lastUpdated: credits.lastUpdated
+        });
+    } catch (error) {
+        console.error('❌ Error fetching credits:', error);
+        res.status(500).json({ error: 'Failed to fetch credits' });
+    }
+});
+
+// Get user transaction history
+app.get('/api/credits/transactions', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 50;
+
+    // Skip guests
+    if (!userId || userId.startsWith('guest_')) {
+        return res.json({
+            isGuest: true,
+            transactions: [],
+            message: 'Registreer om je transacties te bekijken'
+        });
+    }
+
+    try {
+        const transactions = db.getUserTransactions(userId, limit);
+        res.json({
+            isGuest: false,
+            transactions
+        });
+    } catch (error) {
+        console.error('❌ Error fetching transactions:', error);
+        res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+});
+
+// Get shop items (power-ups catalog)
+app.get('/api/shop/items', (req, res) => {
+    try {
+        const items = db.getShopItems();
+        res.json({ items });
+    } catch (error) {
+        console.error('❌ Error fetching shop items:', error);
+        res.status(500).json({ error: 'Failed to fetch shop items' });
+    }
+});
+
+// Purchase power-up
+app.post('/api/credits/purchase', authenticateToken, purchaseLimiter, async (req, res) => {
+    const userId = req.user.id;
+    const { itemId } = req.body;
+
+    // Skip guests
+    if (!userId || userId.startsWith('guest_')) {
+        return res.status(403).json({ error: 'Gasten kunnen geen power-ups kopen' });
+    }
+
+    // Validate input
+    if (!itemId) {
+        return res.status(400).json({ error: 'Item ID is verplicht' });
+    }
+
+    try {
+        const result = db.purchasePowerup(userId, itemId);
+
+        if (!result.success) {
+            return res.status(400).json({ error: result.error });
+        }
+
+        console.log(`✅ User ${userId} purchased ${result.item.name} for ${result.item.cost} credits`);
+
+        res.json({
+            success: true,
+            message: `${result.item.name} gekocht! 🎉`,
+            item: result.item,
+            newBalance: result.newBalance
+        });
+    } catch (error) {
+        console.error('❌ Error purchasing power-up:', error);
+        res.status(500).json({ error: 'Purchase mislukt. Probeer het opnieuw.' });
     }
 });
 
