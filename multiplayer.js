@@ -1134,6 +1134,156 @@ function initializeShop() {
     console.log('✅ Shop initialized');
 }
 
+// ============================================
+// POWER-UPS IN-GAME (Phase 3.5)
+// ============================================
+
+let playerInventory = []; // Store player's unused power-ups
+
+// Load player's inventory from API
+async function loadPlayerInventory() {
+    if (!currentUser || currentUser.id.startsWith('guest-')) {
+        playerInventory = [];
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/inventory`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to load inventory:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+
+        // Filter only unused power-ups
+        playerInventory = data.inventory.filter(item => !item.isUsed);
+
+        console.log('✅ Inventory loaded:', playerInventory.length, 'unused power-ups');
+    } catch (error) {
+        console.error('Error loading inventory:', error);
+        playerInventory = [];
+    }
+}
+
+// Display power-ups in game UI
+function displayPowerupsInGame() {
+    const powerupsSection = document.getElementById('powerupsSection');
+    const powerupsContainer = document.getElementById('powerupsContainer');
+
+    if (!powerupsContainer) return;
+
+    // Clear existing buttons
+    powerupsContainer.innerHTML = '';
+
+    // Count unused power-ups by type
+    const powerupCounts = {};
+    playerInventory.forEach(item => {
+        if (!powerupCounts[item.itemId]) {
+            powerupCounts[item.itemId] = {
+                count: 0,
+                name: item.name,
+                description: item.description
+            };
+        }
+        powerupCounts[item.itemId].count++;
+    });
+
+    // Show section only if player has power-ups
+    if (Object.keys(powerupCounts).length === 0) {
+        powerupsSection?.classList.add('hidden');
+        return;
+    }
+
+    powerupsSection?.classList.remove('hidden');
+
+    // Create button for each power-up type
+    const icons = {
+        'penalty_reduction': '🛡️',
+        'mexico_shield': '⚡'
+    };
+
+    for (const [itemId, data] of Object.entries(powerupCounts)) {
+        const icon = icons[itemId] || '🎁';
+        const button = document.createElement('button');
+        button.id = `powerup-${itemId}`;
+        button.className = 'px-4 py-3 rounded-lg font-bold text-sm shadow-lg transition hover:scale-105 active:scale-95';
+        button.style.background = 'linear-gradient(135deg, #7C3AED, #9333EA)';
+        button.style.color = 'white';
+        button.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">${icon}</span>
+                <div class="text-left">
+                    <div class="text-xs">${data.name}</div>
+                    <div class="text-xs opacity-75">× ${data.count}</div>
+                </div>
+            </div>
+        `;
+        button.title = data.description;
+        button.addEventListener('click', () => activatePowerup(itemId));
+        powerupsContainer.appendChild(button);
+    }
+}
+
+// Activate a power-up
+function activatePowerup(itemId) {
+    if (!socket || !currentGame.gameId) {
+        showToast('❌ Geen actieve game', 'error');
+        return;
+    }
+
+    // Check if player has this power-up
+    const hasPowerup = playerInventory.some(item => item.itemId === itemId);
+    if (!hasPowerup) {
+        showToast('❌ Je hebt deze power-up niet meer', 'error');
+        return;
+    }
+
+    // Send activation to server
+    socket.emit('activate_powerup', {
+        gameId: currentGame.gameId,
+        itemId
+    });
+
+    console.log(`✨ Activating power-up: ${itemId}`);
+}
+
+// Handle power-up activation event from server
+function handlePowerupActivated(data) {
+    const { playerId, itemId, playerUsername } = data;
+
+    // Remove from inventory if it's us
+    if (playerId === currentUser.id) {
+        const index = playerInventory.findIndex(item => item.itemId === itemId);
+        if (index !== -1) {
+            playerInventory.splice(index, 1);
+        }
+
+        // Update UI
+        displayPowerupsInGame();
+
+        const powerupNames = {
+            'penalty_reduction': '🛡️ Draaisteen Plussen',
+            'mexico_shield': '⚡ Mexico Shield'
+        };
+        const name = powerupNames[itemId] || itemId;
+        showToast(`✅ ${name} geactiveerd!`, 'success');
+    } else {
+        // Opponent activated
+        const powerupNames = {
+            'penalty_reduction': '🛡️ Draaisteen Plussen',
+            'mexico_shield': '⚡ Mexico Shield'
+        };
+        const name = powerupNames[itemId] || itemId;
+        showToast(`⚠️ ${playerUsername} gebruikt ${name}!`, 'warning');
+    }
+}
+
 // Debug logging function
 function debugLog(message, type = 'info') {
     if (!debugMode) return;
@@ -1343,6 +1493,7 @@ function initializeSocket() {
     socket.on('vast_extra_throw', handleVastExtraThrow);
     socket.on('opponent_vast', handleOpponentVast);
     socket.on('game_over', handleGameOver);
+    socket.on('powerup_activated', handlePowerupActivated); // Phase 3.5
 
     // First round simultaneous events
     socket.on('first_round_reveal', handleFirstRoundReveal);
@@ -1938,6 +2089,11 @@ function handleGameStart(data) {
 
     showGame();
     updateGameUI();
+
+    // Load and display power-ups (Phase 3.5)
+    loadPlayerInventory().then(() => {
+        displayPowerupsInGame();
+    });
 
     // Reset dice displays for new game
     showDice('', '', false, false); // No animation - just clear
@@ -2554,7 +2710,17 @@ function handleFirstRoundResult(data) {
     const winnerName = iWon ? 'Jij' : currentGame.opponent.username;
     const loserName = iLost ? 'Jij' : currentGame.opponent.username;
 
-    const penaltyText = data.penalty === 2 ? ' (MEXICO! -2 levens)' : '';
+    let penaltyText = data.penalty === 2 ? ' (MEXICO! -2 levens)' : '';
+
+    // Add power-up info (Phase 3.5)
+    if (data.powerupUsed) {
+        if (data.powerupUsed === 'mexico_shield') {
+            penaltyText += ' ⚡ Mexico Shield geblokkeerd!';
+        } else if (data.powerupUsed === 'penalty_reduction') {
+            penaltyText += ` 🛡️ Penalty verminderd (was ${data.penalty + 1})`;
+        }
+    }
+
     const message = `${winnerName} wint! ${loserName} verliest${penaltyText}`;
 
     showInlineMessage(message, iWon ? 'success' : 'error');
@@ -3328,7 +3494,18 @@ function handleVastgooierResult(data) {
 
         // Show penalty message
         if (!isWinner) {
-            showToast(`-${data.penalty} leven (geen Mexico penalty bij overgooien)`, 'warning', 3000);
+            let penaltyMessage = `-${data.penalty} leven (geen Mexico penalty bij overgooien)`;
+
+            // Add power-up info (Phase 3.5)
+            if (data.powerupUsed) {
+                if (data.powerupUsed === 'mexico_shield') {
+                    penaltyMessage += ' ⚡ Mexico Shield geblokkeerd!';
+                } else if (data.powerupUsed === 'penalty_reduction') {
+                    penaltyMessage += ` 🛡️ (penalty was ${data.penalty + 1})`;
+                }
+            }
+
+            showToast(penaltyMessage, 'warning', 3000);
         }
     }
 
