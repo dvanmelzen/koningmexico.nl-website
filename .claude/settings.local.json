@@ -6,7 +6,9 @@
       "Bash(git push)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(ssh root@46.224.179.228 \"cd /opt/koningmexico/backend && sqlite3 data/mexico.db ''SELECT id, username, substr\\(logContent, 1, 500\\) FROM debug_logs ORDER BY createdAt DESC LIMIT 1''\")",
+      "Bash(ssh root@46.224.179.228 \"cd /opt/koningmexico && ls -la backend/\")"
     ],
     "deny": [],
     "ask": []

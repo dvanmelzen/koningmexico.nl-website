@@ -11,6 +11,9 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('./database');
 require('dotenv').config();
 
+// ✅ UNIFIED GAME ENGINE
+const { GameEngine } = require('./game-engine-shared');
+
 // Configuration
 const PORT = process.env.PORT || 3001;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://dev.koningmexico.nl';
@@ -76,6 +79,7 @@ db.initializeDatabase();
 // In-memory caches (for active sessions)
 const userCache = new Map(); // userId -> user object (cached from DB) + { lastActivity: timestamp }
 const games = new Map(); // gameId -> game object + { createdAt: timestamp }
+const gameEngines = new Map(); // gameId -> GameEngine instance (UNIFIED LOGIC)
 const matchmakingQueue = []; // Array of { userId, eloRating, socketId }
 const activeSockets = new Map(); // socketId -> userId
 
@@ -1808,12 +1812,24 @@ function createGame(player1Data, player2Data) {
     });
 
     // Start game after short delay
-    setTimeout(() => startGame(game), 2000);
+    setTimeout(async () => await startGame(game), 2000);
 }
 
-function startGame(game) {
+async function startGame(game) {
     const player1 = userCache.get(game.player1Id);
     const player2 = userCache.get(game.player2Id);
+
+    // ✅ UNIFIED: Create GameEngine instance for this multiplayer game
+    const gameEngine = new GameEngine('multiplayer');
+    await gameEngine.initialize({
+        gameId: game.gameId,
+        playerId: game.player1Id,
+        playerName: player1.username,
+        opponentId: game.player2Id,
+        opponentName: player2.username
+    });
+    gameEngines.set(game.gameId, gameEngine);
+    console.log(`🎮 GameEngine created for multiplayer game: ${game.gameId}`);
 
     const gameStartData = {
         gameId: game.gameId,
