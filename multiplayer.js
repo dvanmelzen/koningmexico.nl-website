@@ -6066,6 +6066,9 @@ function executeBotTurn() {
 function botTurnThrowSequence() {
     const bot = botGame.botState;
 
+    // 🔍 DEBUG: Log entry state
+    debugLog(`[botTurnThrowSequence] ENTRY: throwCount=${bot.throwCount}, maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}, isFirstRound=${botGame.isFirstRound}`);
+
     // First round: only 1 blind throw
     if (botGame.isFirstRound) {
         botThrowDice(true);  // Blind
@@ -6102,8 +6105,10 @@ function botTurnThrowSequence() {
         mustBlind = botGame.voorgooierPattern[bot.throwCount];
         debugLog(`[Bot] Must follow pattern: ${mustBlind ? 'BLIND' : 'OPEN'}`);
     }
+    debugLog(`[botTurnThrowSequence] mustBlind=${mustBlind} (voorgooier=${botGame.voorgooier}, throwCount=${bot.throwCount})`);
 
     // Check if should throw again (only after first throw)
+    debugLog(`[botTurnThrowSequence] Checking shouldContinue: throwCount=${bot.throwCount}, mustBlind=${mustBlind}`);
     if (bot.throwCount > 0 && !mustBlind) {
         const shouldContinue = botShouldThrowAgain();
         if (!shouldContinue) {
@@ -6127,6 +6132,7 @@ function botTurnThrowSequence() {
     }
 
     // Throw dice
+    debugLog(`[botTurnThrowSequence] About to throw: mustBlind=${mustBlind}`);
     botThrowDice(mustBlind);
 
     // Show dice (or hide if blind)
