@@ -2712,6 +2712,19 @@ async function throwDice(isBlind) {
 
     // ✅ USE GAMEENGINE IF AVAILABLE (BOT MODE)
     if (gameEngine) {
+        // 🔒 CRITICAL: Validate player can throw BEFORE calling engine
+        const state = gameEngine.getState();
+        if (!state.isPlayerTurn) {
+            showInlineMessage('Niet jouw beurt!', 'error');
+            disableAllButtons();
+            return;
+        }
+        if (state.player.throwCount >= gameEngine.maxThrows) {
+            showInlineMessage(`Je hebt al ${gameEngine.maxThrows}x gegooid!`, 'error');
+            disableAllButtons();
+            return;
+        }
+
         debugLog(`🎲 [GameEngine] Throwing dice (${isBlind ? 'BLIND' : 'OPEN'})`);
 
         try {
@@ -2755,8 +2768,10 @@ async function throwDice(isBlind) {
             return;
         } catch (err) {
             debugLog(`❌ [GameEngine] Throw error:`, err);
-            showInlineMessage(err.message, 'error');
+            showInlineMessage(err.message || 'Fout bij gooien', 'error');
             hideWaitingMessage();
+            // 🔒 CRITICAL: Disable all buttons after error to prevent repeat clicks
+            disableAllButtons();
             return;
         }
     }
@@ -6267,6 +6282,8 @@ function startBotNextRound() {
     } else {
         showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Bot is voorgooier...`, 'info');
         showWaitingMessage('Bot gooit...');
+        // 🔒 CRITICAL: Disable ALL player buttons when bot is voorgooier
+        disableAllButtons();
         setTimeout(() => {
             executeBotTurn();
         }, 1000);
