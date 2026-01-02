@@ -35,6 +35,11 @@ const authLimiter = rateLimit({
     message: { message: 'Te veel login pogingen. Probeer het over 15 minuten opnieuw.' },
     standardHeaders: true,
     legacyHeaders: false,
+    // Skip rate limiting for automated test accounts (all Gast_ users)
+    skip: (req) => {
+        const username = req.body?.username;
+        return username && username.startsWith('Gast_');
+    }
 });
 
 // Rate limiting for purchase endpoints (prevent abuse)
