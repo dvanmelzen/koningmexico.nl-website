@@ -3721,6 +3721,24 @@ function showWinByForfeitPopup(data) {
 // UI UPDATES
 // ============================================
 
+function updateRoundInfo() {
+    // Update round number from GameEngine or currentGame
+    const roundNumberEl = document.getElementById('roundNumber');
+    if (roundNumberEl) {
+        const roundNumber = gameEngine?.roundNumber || currentGame?.roundNumber || 1;
+        roundNumberEl.textContent = roundNumber;
+    }
+
+    // Update voorgooier indicator if exists
+    const voorgooierEl = document.getElementById('voorgooierIndicator');
+    if (voorgooierEl && gameEngine) {
+        const voorgooierName = gameEngine.voorgooierId === gameEngine.player.id
+            ? 'Jij'
+            : gameEngine.opponent.username;
+        voorgooierEl.textContent = `👑 Voorgooier: ${voorgooierName}`;
+    }
+}
+
 function updateGameUI() {
     if (!currentGame) return;
 
