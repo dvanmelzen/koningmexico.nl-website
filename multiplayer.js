@@ -4527,6 +4527,190 @@ const AI_PERSONALITIES = {
     }
 };
 
+// ============================================
+// GAME MODE ADAPTER PATTERN
+// ============================================
+// Single source of truth for gameplay logic
+// Bot and Multiplayer use same core functions via adapters
+
+/**
+ * GameModeAdapter Interface
+ * Provides abstraction between gameplay and opponent handling
+ */
+const GameModeAdapter = {
+    mode: 'base',
+
+    /**
+     * Get opponent state data
+     * @returns {Object} Opponent state (lives, throw, etc)
+     */
+    getOpponentState() {
+        throw new Error('getOpponentState must be implemented');
+    },
+
+    /**
+     * Get opponent name and rating
+     * @returns {Object} {username, eloRating}
+     */
+    getOpponentInfo() {
+        throw new Error('getOpponentInfo must be implemented');
+    },
+
+    /**
+     * Check if it's player's turn
+     * @returns {Boolean}
+     */
+    isPlayerTurn() {
+        throw new Error('isPlayerTurn must be implemented');
+    },
+
+    /**
+     * Notify opponent of player action
+     * @param {String} action - 'throw', 'keep', 'reveal'
+     * @param {Object} data - Action data
+     */
+    notifyOpponent(action, data) {
+        throw new Error('notifyOpponent must be implemented');
+    },
+
+    /**
+     * Execute opponent turn
+     * @returns {Promise} Resolves when opponent turn complete
+     */
+    executeOpponentTurn() {
+        throw new Error('executeOpponentTurn must be implemented');
+    },
+
+    /**
+     * Start new game
+     * @param {Object} config - Game configuration
+     */
+    startGame(config) {
+        throw new Error('startGame must be implemented');
+    },
+
+    /**
+     * End current game
+     * @param {Object} result - Game result
+     */
+    endGame(result) {
+        throw new Error('endGame must be implemented');
+    },
+
+    /**
+     * Start next round
+     */
+    startNextRound() {
+        throw new Error('startNextRound must be implemented');
+    }
+};
+
+/**
+ * MultiplayerAdapter
+ * Handles real opponent via socket.io
+ */
+const MultiplayerAdapter = Object.create(GameModeAdapter);
+MultiplayerAdapter.mode = 'multiplayer';
+
+MultiplayerAdapter.getOpponentState = function() {
+    // Opponent state comes from socket events
+    return {
+        lives: opponentLives || 0,
+        currentThrow: opponentCurrentThrow || null,
+        isRevealed: opponentThrowRevealed || false
+    };
+};
+
+MultiplayerAdapter.getOpponentInfo = function() {
+    const game = gameState.getGame();
+    if (!game) return { username: 'Tegenstander', eloRating: 1200 };
+
+    const opponent = game.players.find(p => p.id !== currentUser.id);
+    return {
+        username: opponent ? opponent.username : 'Tegenstander',
+        eloRating: opponent ? opponent.eloRating : 1200
+    };
+};
+
+MultiplayerAdapter.isPlayerTurn = function() {
+    return gameState.isPlayerTurn();
+};
+
+MultiplayerAdapter.notifyOpponent = function(action, data) {
+    const socket = gameState.getSocket();
+    if (!socket) return;
+
+    // Emit appropriate socket event
+    switch (action) {
+        case 'throw':
+            socket.emit('throw-dice', data);
+            break;
+        case 'keep':
+            socket.emit('keep-throw', data);
+            break;
+        case 'reveal':
+            socket.emit('reveal-dice', data);
+            break;
+    }
+};
+
+MultiplayerAdapter.rollDice = function(isBlind) {
+    // Roll dice via socket (server handles the actual roll)
+    return new Promise((resolve) => {
+        const socket = gameState.getSocket();
+        if (!socket) {
+            // Fallback: local roll if no socket
+            const dice1 = Math.ceil(Math.random() * 6);
+            const dice2 = Math.ceil(Math.random() * 6);
+            resolve({ dice1, dice2, isBlind });
+            return;
+        }
+
+        // Emit to server and wait for response
+        socket.emit('throw_dice', {
+            gameId: gameState.getGame()?.gameId,
+            isBlind
+        });
+
+        // Listen for throw result (once)
+        socket.once('throw_result', (data) => {
+            resolve({
+                dice1: data.dice1,
+                dice2: data.dice2,
+                isBlind: data.isBlind
+            });
+        });
+    });
+};
+
+MultiplayerAdapter.executeOpponentTurn = function() {
+    // Opponent turn happens via socket events
+    // This is just a placeholder - real logic is in socket handlers
+    return Promise.resolve();
+};
+
+MultiplayerAdapter.startGame = function(config) {
+    // Multiplayer games start via matchmaking/socket
+    // This is handled elsewhere
+};
+
+MultiplayerAdapter.endGame = function(result) {
+    // End game via socket
+    const socket = gameState.getSocket();
+    if (socket && result) {
+        socket.emit('game-ended', result);
+    }
+};
+
+MultiplayerAdapter.startNextRound = function() {
+    // Round transitions handled by server in multiplayer
+    // Just update UI
+    updateRoundInfo();
+};
+
+// Current active game mode
+let currentGameMode = MultiplayerAdapter;
+
 // Bot game state
 let botGame = {
     active: false,
@@ -4805,9 +4989,536 @@ function botShouldThrowAgain() {
     return bot.currentThrow < threshold;
 }
 
+/**
+ * BotAdapter
+ * Handles AI opponent with local simulation
+ */
+const BotAdapter = Object.create(GameModeAdapter);
+BotAdapter.mode = 'bot';
+
+BotAdapter.getOpponentState = function() {
+    // Bot state from botGame object
+    return {
+        lives: botGame.botState.lives,
+        currentThrow: botGame.botState.currentThrow,
+        displayThrow: botGame.botState.displayThrow,
+        isBlind: botGame.botState.isBlind,
+        isMexico: botGame.botState.isMexico,
+        throwCount: botGame.botState.throwCount
+    };
+};
+
+BotAdapter.getOpponentInfo = function() {
+    return {
+        username: botGame.botPlayer ? botGame.botPlayer.username : '🤖 Bot',
+        eloRating: botGame.botPlayer ? botGame.botPlayer.eloRating : 1200
+    };
+};
+
+BotAdapter.isPlayerTurn = function() {
+    return botGame.currentTurn === 'player';
+};
+
+BotAdapter.notifyOpponent = function(action, data) {
+    // Bot doesn't need notifications during player turn
+    // Bot will act when executeOpponentTurn is called
+    debugLog(`[BotAdapter] Player action: ${action}`, data);
+};
+
+BotAdapter.rollDice = function(isBlind) {
+    // Roll dice locally (bot mode)
+    const dice1 = Math.ceil(Math.random() * 6);
+    const dice2 = Math.ceil(Math.random() * 6);
+
+    debugLog(`[BotAdapter] Player rolled: ${dice1}-${dice2} (${isBlind ? 'BLIND' : 'OPEN'})`);
+
+    // Return as resolved promise for consistency with MultiplayerAdapter
+    return Promise.resolve({
+        dice1,
+        dice2,
+        isBlind
+    });
+};
+
+BotAdapter.executeOpponentTurn = function() {
+    // Execute bot's turn
+    return new Promise((resolve) => {
+        if (botGame.currentTurn !== 'bot') {
+            resolve();
+            return;
+        }
+
+        // Bot takes its turn (uses existing bot AI logic)
+        botTurnThrowSequence().then(resolve);
+    });
+};
+
+BotAdapter.startGame = function(config) {
+    // Initialize bot game
+    debugLog('[BotAdapter] Starting bot game');
+    botGame.active = true;
+    currentGameMode = BotAdapter;
+
+    // Bot game initialization happens in startBotGame()
+};
+
+BotAdapter.endGame = function(result) {
+    debugLog('[BotAdapter] Ending bot game', result);
+    botGame.active = false;
+    currentGameMode = MultiplayerAdapter;
+
+    // Show result to player
+    if (result) {
+        const message = result.winnerId === currentUser.id
+            ? `🎉 Je hebt gewonnen tegen ${botGame.botPlayer.username}!`
+            : `😔 Je hebt verloren van ${botGame.botPlayer.username}`;
+        showToast(message, result.winnerId === currentUser.id ? 'success' : 'error', 3000);
+    }
+};
+
+BotAdapter.startNextRound = function() {
+    // Bot round transition (uses existing logic)
+    startBotNextRound();
+};
+
+// ============================================
+// UNIFIED GAME ENGINE
+// ============================================
+// Single source of truth for ALL game logic
+// Works for both multiplayer and bot modes
+
+class GameEngine {
+    constructor(mode) {
+        this.mode = mode; // 'multiplayer' or 'bot'
+        this.adapter = mode === 'bot' ? BotAdapter : MultiplayerAdapter;
+
+        // Game state
+        this.gameId = null;
+        this.roundNumber = 1;
+        this.isFirstRound = true;
+        this.maxThrows = 3;
+        this.voorgooierId = null;
+        this.currentTurnId = null;
+        this.isGambling = false;
+        this.gamblingPot = 0;
+
+        // Player state
+        this.player = {
+            id: null,
+            username: null,
+            lives: 6,
+            dice1: null,
+            dice2: null,
+            currentThrow: null,
+            displayThrow: null,
+            throwCount: 0,
+            isBlind: false,
+            isMexico: false,
+            throwHistory: []
+        };
+
+        // Opponent state (populated via adapter)
+        this.opponent = {
+            id: null,
+            username: null,
+            lives: 6,
+            currentThrow: null,
+            displayThrow: null,
+            isBlind: false,
+            isMexico: false
+        };
+
+        debugLog(`[GameEngine] Created (${mode} mode)`);
+    }
+
+    /**
+     * Initialize game with player data
+     */
+    async initialize(config) {
+        this.gameId = config.gameId || `game-${Date.now()}`;
+        this.player.id = config.playerId;
+        this.player.username = config.playerName;
+        this.voorgooierId = this.player.id;
+        this.currentTurnId = this.player.id;
+
+        // Get opponent info from adapter
+        const opponentInfo = this.adapter.getOpponentInfo();
+        this.opponent.id = config.opponentId || opponentInfo.id || 'opponent-' + Date.now();
+        this.opponent.username = opponentInfo.username;
+
+        debugLog(`[GameEngine] Initialized: ${this.player.username} vs ${this.opponent.username}`);
+
+        return this.getState();
+    }
+
+    /**
+     * Throw dice (works for both modes!)
+     */
+    async throwDice(isBlind) {
+        if (!this.isPlayerTurn()) {
+            throw new Error('Not your turn!');
+        }
+
+        debugLog(`[GameEngine] Player throws ${isBlind ? 'BLIND' : 'OPEN'}`);
+
+        // Roll dice via adapter (local or server)
+        const result = await this.adapter.rollDice(isBlind);
+
+        // Update player state
+        this.player.throwCount++;
+        this.player.dice1 = result.dice1;
+        this.player.dice2 = result.dice2;
+        this.player.currentThrow = this.calculateThrowValue(result.dice1, result.dice2);
+        this.player.isBlind = isBlind;
+        this.player.isMexico = (this.player.currentThrow === 1000);
+
+        if (this.player.isBlind) {
+            this.player.displayThrow = '???';
+        } else {
+            this.player.displayThrow = this.player.isMexico ? '🎉 Mexico!' : this.player.currentThrow.toString();
+        }
+
+        // Add to throw history
+        this.player.throwHistory.push({
+            dice1: result.dice1,
+            dice2: result.dice2,
+            value: this.player.currentThrow,
+            isBlind: isBlind,
+            wasBlind: isBlind
+        });
+
+        // Add to UI history (for display)
+        const throwInfo = calculateThrowDisplay(result.dice1, result.dice2);
+        playerThrowHistory.push({
+            displayValue: throwInfo.displayValue,
+            isMexico: throwInfo.isMexico,
+            isBlind: isBlind,
+            wasBlind: isBlind
+        });
+
+        // Update UI
+        updateThrowHistory();
+        updateThrowCounter(this.player.throwCount, this.maxThrows);
+
+        // Show dice
+        if (this.player.isBlind) {
+            showDice('', '', false, true);
+            showInlineMessage('🙈 Je gooide blind', 'info');
+        } else {
+            showDice(this.player.dice1, this.player.dice2, this.player.isMexico, false);
+            showInlineMessage(`Je gooide: ${this.player.displayThrow}`, this.player.isMexico ? 'success' : 'info');
+        }
+
+        debugLog(`[GameEngine] Throw result: ${this.player.dice1}-${this.player.dice2} = ${this.player.currentThrow}`);
+
+        // Determine next actions
+        const canKeep = true;
+        const canThrowAgain = this.player.throwCount < this.maxThrows;
+        const isLastThrow = this.player.throwCount >= this.maxThrows;
+
+        return {
+            dice1: this.player.dice1,
+            dice2: this.player.dice2,
+            value: this.player.currentThrow,
+            isBlind: this.player.isBlind,
+            isMexico: this.player.isMexico,
+            throwCount: this.player.throwCount,
+            canKeep,
+            canThrowAgain,
+            isLastThrow,
+            state: this.getState()
+        };
+    }
+
+    /**
+     * Keep current throw
+     */
+    async keepThrow() {
+        if (!this.isPlayerTurn()) {
+            throw new Error('Not your turn!');
+        }
+
+        debugLog(`[GameEngine] Player keeps throw: ${this.player.displayThrow}`);
+
+        // Notify opponent via adapter
+        this.adapter.notifyOpponent('keep', {
+            throw: this.player.currentThrow,
+            isBlind: this.player.isBlind
+        });
+
+        // Switch turn to opponent
+        this.currentTurnId = this.opponent.id;
+
+        // Execute opponent turn via adapter
+        await this.adapter.executeOpponentTurn();
+
+        // After opponent turn, compare round
+        await this.compareRound();
+
+        return {
+            roundComplete: true,
+            state: this.getState()
+        };
+    }
+
+    /**
+     * Reveal blind throw
+     */
+    revealDice() {
+        if (!this.player.isBlind) {
+            throw new Error('Throw is not blind!');
+        }
+
+        debugLog(`[GameEngine] Player reveals: ${this.player.currentThrow}`);
+
+        this.player.isBlind = false;
+        this.player.displayThrow = this.player.isMexico ? '🎉 Mexico!' : this.player.currentThrow.toString();
+
+        // Update throw history
+        if (playerThrowHistory.length > 0) {
+            playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+            updateThrowHistory();
+        }
+
+        // Show dice
+        showDice(this.player.dice1, this.player.dice2, this.player.isMexico, false);
+        showInlineMessage(`Je onthult: ${this.player.displayThrow}`, this.player.isMexico ? 'success' : 'info');
+
+        return {
+            revealed: true,
+            value: this.player.currentThrow,
+            state: this.getState()
+        };
+    }
+
+    /**
+     * Compare round results
+     */
+    async compareRound() {
+        debugLog(`[GameEngine] Comparing round ${this.roundNumber}`);
+
+        // Get opponent state from adapter
+        const opponentState = this.adapter.getOpponentState();
+        this.opponent.currentThrow = opponentState.currentThrow;
+        this.opponent.displayThrow = opponentState.displayThrow;
+        this.opponent.isBlind = opponentState.isBlind;
+        this.opponent.isMexico = opponentState.isMexico;
+
+        // Reveal any blind throws
+        if (this.player.isBlind) {
+            this.revealDice();
+        }
+
+        if (this.opponent.isBlind) {
+            // Update opponent history
+            if (opponentThrowHistory.length > 0) {
+                opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+                updateThrowHistory();
+            }
+        }
+
+        // Determine winner
+        const winner = this.determineWinner();
+        const loser = winner === this.player.id ? this.opponent.id : this.player.id;
+
+        // Update lives
+        if (winner === this.player.id) {
+            this.opponent.lives--;
+            debugLog(`[GameEngine] Player wins! Opponent lives: ${this.opponent.lives}`);
+        } else {
+            this.player.lives--;
+            debugLog(`[GameEngine] Opponent wins! Player lives: ${this.player.lives}`);
+        }
+
+        // Update UI
+        updateLives(this.player.id, this.player.lives);
+        updateLives(this.opponent.id, this.opponent.lives);
+
+        // Update last round summary
+        const isVoorgooier = (this.voorgooierId === this.player.id);
+        updateLastRoundSummary({
+            voorgooierId: this.voorgooierId,
+            achterliggerId: isVoorgooier ? this.opponent.id : this.player.id,
+            voorgooierResult: (winner === this.voorgooierId) ? 'won' : 'lost',
+            achterliggerResult: (winner !== this.voorgooierId) ? 'won' : 'lost',
+            winnerId: winner,
+            loserId: loser,
+            livesLeft: winner === this.player.id ? this.player.lives : this.opponent.lives
+        });
+
+        // Check for game over
+        if (this.isGameOver()) {
+            await this.endGame();
+        } else {
+            await this.startNextRound();
+        }
+    }
+
+    /**
+     * Determine round winner
+     */
+    determineWinner() {
+        const playerThrow = this.player.currentThrow;
+        const opponentThrow = this.opponent.currentThrow;
+
+        // Mexico always wins
+        if (playerThrow === 1000 && opponentThrow !== 1000) {
+            return this.player.id;
+        }
+        if (opponentThrow === 1000 && playerThrow !== 1000) {
+            return this.opponent.id;
+        }
+
+        // Both Mexico = tie (voorgooier wins)
+        if (playerThrow === 1000 && opponentThrow === 1000) {
+            return this.voorgooierId;
+        }
+
+        // Higher throw wins
+        if (playerThrow > opponentThrow) {
+            return this.player.id;
+        }
+        if (opponentThrow > playerThrow) {
+            return this.opponent.id;
+        }
+
+        // Tie = voorgooier wins
+        return this.voorgooierId;
+    }
+
+    /**
+     * Start next round
+     */
+    async startNextRound() {
+        this.roundNumber++;
+        this.isFirstRound = false;
+
+        // Alternate voorgooier
+        this.voorgooierId = (this.voorgooierId === this.player.id) ? this.opponent.id : this.player.id;
+        this.currentTurnId = this.voorgooierId;
+
+        // Reset throw states
+        this.player.throwCount = 0;
+        this.player.dice1 = null;
+        this.player.dice2 = null;
+        this.player.currentThrow = null;
+        this.player.displayThrow = null;
+        this.player.isBlind = false;
+        this.player.isMexico = false;
+        this.player.throwHistory = [];
+
+        // Clear UI history
+        playerThrowHistory = [];
+        opponentThrowHistory = [];
+        updateThrowHistory();
+
+        // Update UI
+        showDice('', '', false, false);
+        showOpponentDice('', '', false, false);
+        updateRoundInfo();
+
+        showToast(`Ronde ${this.roundNumber} begint!`, 'info', 2000);
+
+        debugLog(`[GameEngine] Round ${this.roundNumber} started. Voorgooier: ${this.voorgooierId}`);
+
+        // Call adapter for mode-specific logic
+        this.adapter.startNextRound();
+    }
+
+    /**
+     * Check if game is over
+     */
+    isGameOver() {
+        return this.player.lives <= 0 || this.opponent.lives <= 0;
+    }
+
+    /**
+     * End game
+     */
+    async endGame() {
+        const winner = this.player.lives > 0 ? this.player.id : this.opponent.id;
+        const loser = winner === this.player.id ? this.opponent.id : this.player.id;
+
+        debugLog(`[GameEngine] Game over! Winner: ${winner}`);
+
+        const result = {
+            gameId: this.gameId,
+            winnerId: winner,
+            loserId: loser,
+            playerLives: this.player.lives,
+            opponentLives: this.opponent.lives
+        };
+
+        // Call adapter for mode-specific end game logic
+        this.adapter.endGame(result);
+
+        return result;
+    }
+
+    /**
+     * Check if it's player's turn
+     */
+    isPlayerTurn() {
+        return this.currentTurnId === this.player.id;
+    }
+
+    /**
+     * Calculate throw value
+     */
+    calculateThrowValue(dice1, dice2) {
+        if ((dice1 === 2 && dice2 === 1) || (dice1 === 1 && dice2 === 2)) {
+            return 1000; // Mexico
+        }
+        if (dice1 === dice2) {
+            return dice1 * 100; // Pair
+        }
+        return Math.max(dice1, dice2) * 10 + Math.min(dice1, dice2); // Normal
+    }
+
+    /**
+     * Get current game state
+     */
+    getState() {
+        return {
+            gameId: this.gameId,
+            mode: this.mode,
+            roundNumber: this.roundNumber,
+            isFirstRound: this.isFirstRound,
+            maxThrows: this.maxThrows,
+            voorgooierId: this.voorgooierId,
+            currentTurnId: this.currentTurnId,
+            isPlayerTurn: this.isPlayerTurn(),
+            player: {
+                id: this.player.id,
+                username: this.player.username,
+                lives: this.player.lives,
+                currentThrow: this.player.currentThrow,
+                displayThrow: this.player.displayThrow,
+                throwCount: this.player.throwCount,
+                isBlind: this.player.isBlind,
+                isMexico: this.player.isMexico
+            },
+            opponent: {
+                id: this.opponent.id,
+                username: this.opponent.username,
+                lives: this.opponent.lives,
+                currentThrow: this.opponent.currentThrow,
+                displayThrow: this.opponent.displayThrow
+            },
+            isGameOver: this.isGameOver()
+        };
+    }
+}
+
+// Global game engine instance
+let gameEngine = null;
+
 // Start bot game
 function startBotGame() {
     debugLog('🤖 Starting bot game...');
+
+    // ✅ SWITCH TO BOT ADAPTER
+    BotAdapter.startGame();
 
     // Hide gambling checkbox for bot games
     const gamblingCheckbox = document.getElementById('gamblingCheckbox');
@@ -4815,9 +5526,6 @@ function startBotGame() {
         gamblingCheckbox.checked = false;
         gamblingCheckbox.disabled = true;
     }
-
-    // Initialize bot
-    botGame.active = true;
     botGame.botPlayer = {
         id: 'bot-' + Date.now(),
         username: getRandomBotName(),
