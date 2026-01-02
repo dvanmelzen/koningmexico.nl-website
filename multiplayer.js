@@ -5809,7 +5809,8 @@ class GameEngine {
             botGame.maxThrows = this.maxThrows;
             botGame.voorgooier = (this.voorgooierId === this.opponent.id) ? 'bot' : 'player';
             botGame.roundNumber = this.roundNumber;
-            debugLog(`[GameEngine] Synced to botGame: maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}`);
+            botGame.isFirstRound = this.isFirstRound;
+            debugLog(`[GameEngine] Synced to botGame: maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}, isFirstRound=${botGame.isFirstRound}`);
 
             // Execute bot turn after short delay (don't call adapter to prevent duplicate)
             setTimeout(() => {
