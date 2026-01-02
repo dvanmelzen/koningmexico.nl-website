@@ -6075,6 +6075,16 @@ function botTurnThrowSequence() {
     // Check if bot reached max throws
     if (bot.throwCount >= botGame.maxThrows) {
         debugLog(`[Bot] Reached max throws (${botGame.maxThrows})`);
+
+        // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
+        if (botGame.voorgooier === 'bot') {
+            showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+            showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
+            showThrowButtons(false, false); // Enable open/blind throw for player
+            return; // DON'T compare yet - wait for player response
+        }
+
+        // Bot is achterligger: compare immediately
         compareBotRound();
         return;
     }
@@ -6095,7 +6105,15 @@ function botTurnThrowSequence() {
             if (botGame.voorgooier === 'bot') {
                 botGame.maxThrows = bot.throwCount;
                 debugLog(`[Bot] Voorgooier sets max throws: ${botGame.maxThrows}`);
+
+                // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
+                showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+                showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
+                showThrowButtons(false, false); // Enable open/blind throw for player
+                return; // DON'T compare yet - wait for player response
             }
+
+            // Bot is achterligger: compare immediately
             compareBotRound();
             return;
         }
