@@ -3470,6 +3470,25 @@ function handleOpponentVast(data) {
 function handleFirstRoundReveal(data) {
     debugLog('👁️ First round reveal:', data);
 
+    // ✅ UPDATE GAMEENGINE STATE with actual server dice values
+    if (gameEngine) {
+        debugLog('[GameEngine] Updating player state with server dice from reveal');
+        gameEngine.player.dice1 = data.yourThrow.dice1;
+        gameEngine.player.dice2 = data.yourThrow.dice2;
+        gameEngine.player.currentThrow = data.yourThrow.value;
+        gameEngine.player.displayThrow = data.yourThrow.name;
+        gameEngine.player.isBlind = false; // Revealed
+        gameEngine.player.isMexico = data.yourThrow.isMexico || false;
+
+        debugLog('[GameEngine] Updating opponent state with server dice from reveal');
+        gameEngine.opponent.dice1 = data.opponentThrow.dice1;
+        gameEngine.opponent.dice2 = data.opponentThrow.dice2;
+        gameEngine.opponent.currentThrow = data.opponentThrow.value;
+        gameEngine.opponent.displayThrow = data.opponentThrow.name;
+        gameEngine.opponent.isBlind = false; // Revealed
+        gameEngine.opponent.isMexico = data.opponentThrow.isMexico || false;
+    }
+
     // Show both throws
     showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, false); // No animation - just reveal
     showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, false); // No animation - just reveal
@@ -4187,6 +4206,32 @@ function showWaitingMessage(message) {
     }
 }
 
+function hideWaitingMessage() {
+    const indicator = document.getElementById('turnIndicator');
+    if (indicator) {
+        indicator.textContent = '';
+    }
+}
+
+function updateOpponentName(name, eloRating) {
+    const opponentNameDisplay = name + (eloRating ? ` (${eloRating})` : '');
+
+    const opponentDiceCupLabel = document.getElementById('opponentDiceCupLabel');
+    if (opponentDiceCupLabel) {
+        opponentDiceCupLabel.textContent = `🎯 ${opponentNameDisplay}`;
+    }
+
+    const opponentThrowHistoryLabel = document.getElementById('opponentThrowHistoryLabel');
+    if (opponentThrowHistoryLabel) {
+        opponentThrowHistoryLabel.textContent = `🎯 ${opponentNameDisplay}`;
+    }
+
+    const opponentCardLabel = document.getElementById('opponentCardLabel');
+    if (opponentCardLabel) {
+        opponentCardLabel.textContent = `🎯 ${name.toUpperCase()}`;
+    }
+}
+
 // Voorgooier pattern display functions VERWIJDERD - overbodig met throw history statistieken
 
 function returnToLobby() {
@@ -4448,11 +4493,12 @@ function updateLastRoundSummary(data) {
 
     if (!summaryEl || !contentEl || !data) return;
 
-    // Determine names
-    const voorgooierName = data.voorgooierId === currentUser.id ? 'Jij' : currentGame.opponent.username;
-    const achterliggerName = data.achterliggerId === currentUser.id ? 'Jij' : currentGame.opponent.username;
-    const winnerName = data.winnerId === currentUser.id ? 'Jij' : currentGame.opponent.username;
-    const loserName = data.loserId === currentUser.id ? 'Jij' : currentGame.opponent.username;
+    // Determine names (✅ FIX: Add safety checks for bot mode)
+    const opponentName = currentGame?.opponent?.username || gameEngine?.opponent?.username || 'Tegenstander';
+    const voorgooierName = data.voorgooierId === currentUser.id ? 'Jij' : opponentName;
+    const achterliggerName = data.achterliggerId === currentUser.id ? 'Jij' : opponentName;
+    const winnerName = data.winnerId === currentUser.id ? 'Jij' : opponentName;
+    const loserName = data.loserId === currentUser.id ? 'Jij' : opponentName;
 
     // Get throw values - replace 1000 with "Mexico!"
     let voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value || '?';
@@ -4840,11 +4886,21 @@ const MultiplayerAdapter = Object.create(GameModeAdapter);
 MultiplayerAdapter.mode = 'multiplayer';
 
 MultiplayerAdapter.getOpponentState = function() {
-    // Opponent state comes from socket events
+    // ✅ FIX: Get opponent state from GameEngine instead of undefined variables
+    const game = gameState.getGame();
+    if (gameEngine) {
+        return {
+            lives: gameEngine.opponent.lives || 0,
+            currentThrow: gameEngine.opponent.currentThrow || null,
+            isRevealed: !gameEngine.opponent.isBlind
+        };
+    }
+
+    // Fallback to game state if no GameEngine
     return {
-        lives: opponentLives || 0,
-        currentThrow: opponentCurrentThrow || null,
-        isRevealed: opponentThrowRevealed || false
+        lives: game?.opponent?.lives || 0,
+        currentThrow: null,
+        isRevealed: false
     };
 };
 
@@ -4901,9 +4957,14 @@ MultiplayerAdapter.rollDice = function(isBlind) {
 
         // Listen for throw result (once)
         socket.once('throw_result', (data) => {
+            // ✅ FIX: First-round blind throws don't include dice values for security
+            // Roll locally if undefined (will be corrected by first_round_reveal later)
+            const dice1 = data.dice1 !== undefined ? data.dice1 : Math.ceil(Math.random() * 6);
+            const dice2 = data.dice2 !== undefined ? data.dice2 : Math.ceil(Math.random() * 6);
+
             resolve({
-                dice1: data.dice1,
-                dice2: data.dice2,
+                dice1,
+                dice2,
                 isBlind: data.isBlind
             });
         });
