@@ -4,7 +4,7 @@ class GameEngine {
         this.gameId = null;
         this.roundNumber = 1;
         this.isFirstRound = true;
-        this.maxThrows = 3;
+        this.maxThrows = 1; // First round: 1 blind throw only!
         this.voorgooierId = null;
         this.currentTurnId = null;
 
@@ -63,6 +63,11 @@ class GameEngine {
     async throwDice(isBlind) {
         if (!this.isPlayerTurn()) {
             throw new Error('Not your turn!');
+        }
+
+        // First round must be blind!
+        if (this.isFirstRound && !isBlind) {
+            throw new Error('First round must be blind!');
         }
 
         // Roll dice locally
@@ -290,6 +295,7 @@ class GameEngine {
     async startNextRound() {
         this.roundNumber++;
         this.isFirstRound = false;
+        this.maxThrows = 3; // After first round: 3 throws allowed
 
         this.voorgooierId = (this.voorgooierId === this.player.id) ? this.opponent.id : this.player.id;
         this.currentTurnId = this.voorgooierId;
@@ -303,9 +309,16 @@ class GameEngine {
         this.player.isMexico = false;
         this.player.throwHistory = [];
 
+        this.opponent.throwCount = 0;
+        this.opponent.dice1 = null;
+        this.opponent.dice2 = null;
+        this.opponent.currentThrow = null;
+        this.opponent.displayThrow = null;
+        this.opponent.isBlind = false;
+        this.opponent.isMexico = false;
         this.opponent.throwHistory = [];
 
-        console.log(`[GameEngine] Round ${this.roundNumber} started. Voorgooier: ${this.voorgooierId === this.player.id ? 'Player' : 'Bot'}`);
+        console.log(`[GameEngine] Round ${this.roundNumber} started. Voorgooier: ${this.voorgooierId === this.player.id ? 'Player' : 'Opponent'}, MaxThrows: ${this.maxThrows}`);
     }
 
     isGameOver() {
