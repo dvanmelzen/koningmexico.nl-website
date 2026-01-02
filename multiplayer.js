@@ -4895,6 +4895,11 @@ function startBotGame() {
     updateLives(botGame.botPlayer.id, 6);
     updateRoundInfo();
 
+    // ✅ INITIALIZE THROW HISTORY DISPLAY
+    playerThrowHistory = [];
+    opponentThrowHistory = [];
+    updateThrowHistory();
+
     // Show gambling pot as 0
     const gamblingPotDisplay = document.getElementById('gamblingPotDisplay');
     if (gamblingPotDisplay) {
@@ -4934,13 +4939,25 @@ function botThrowDice(isBlind) {
         botGame.voorgooierPattern.push(isBlind);
     }
 
-    // Add to history
+    // Add to internal bot history
     bot.throwHistory.push({
         dice1: bot.dice1,
         dice2: bot.dice2,
         value: bot.currentThrow,
         isBlind: isBlind
     });
+
+    // ✅ ADD TO MULTIPLAYER THROW HISTORY (for UI display)
+    const throwInfo = calculateThrowDisplay(bot.dice1, bot.dice2);
+    opponentThrowHistory.push({
+        displayValue: throwInfo.displayValue,
+        isMexico: throwInfo.isMexico,
+        isBlind: isBlind,
+        wasBlind: isBlind,
+        dice1: bot.dice1,
+        dice2: bot.dice2
+    });
+    updateThrowHistory();
 }
 
 // Bot turn sequence
@@ -5019,6 +5036,12 @@ function botTurnThrowSequence() {
                 showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
                 showInlineMessage(`🤖 Bot onthult: ${bot.displayThrow}`, 'info');
 
+                // ✅ UPDATE THROW HISTORY (mark as revealed)
+                if (opponentThrowHistory.length > 0) {
+                    opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+                    updateThrowHistory();
+                }
+
                 // Continue sequence
                 setTimeout(() => {
                     botTurnThrowSequence();
@@ -5054,44 +5077,70 @@ function compareBotRound() {
         player.isBlind = false;
         player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
         showDice(player.dice1, player.dice2, player.isMexico, false);
+
+        // ✅ UPDATE THROW HISTORY
+        if (playerThrowHistory.length > 0) {
+            playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+            updateThrowHistory();
+        }
     }
 
     if (bot.isBlind) {
         bot.isBlind = false;
         bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
         showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+
+        // ✅ UPDATE THROW HISTORY
+        if (opponentThrowHistory.length > 0) {
+            opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+            updateThrowHistory();
+        }
     }
 
     showInlineMessage(`Vergelijken: Jij ${player.displayThrow} vs Bot ${bot.displayThrow}`, 'info');
 
     setTimeout(() => {
         let winner = null;
-        let loser = null;
+        let winnerId = null;
+        let loserId = null;
         let resultMessage = '';
 
         if (player.currentThrow > bot.currentThrow) {
             winner = 'player';
-            loser = 'bot';
+            winnerId = currentUser.id;
+            loserId = botGame.botPlayer.id;
             resultMessage = '🎉 Jij wint deze ronde!';
-            player.lives = Math.max(0, player.lives);  // Winner keeps lives
-            bot.lives--;  // Loser loses life
+            player.lives = Math.max(0, player.lives);
+            bot.lives--;
         } else if (bot.currentThrow > player.currentThrow) {
             winner = 'bot';
-            loser = 'player';
+            winnerId = botGame.botPlayer.id;
+            loserId = currentUser.id;
             resultMessage = '😔 Bot wint deze ronde';
-            bot.lives = Math.max(0, bot.lives);  // Winner keeps lives
-            player.lives--;  // Loser loses life
+            bot.lives = Math.max(0, bot.lives);
+            player.lives--;
         } else {
             // Tie - overgooien
             resultMessage = '🤝 Gelijkspel! Overgooien (1 worp)';
             showInlineMessage(resultMessage, 'info');
 
-            // Reset for overgooien
             setTimeout(() => {
                 startBotOvergooien();
             }, 2000);
             return;
         }
+
+        // ✅ UPDATE LAST ROUND SUMMARY (like normal multiplayer)
+        const isVoorgooier = (botGame.voorgooier === 'player');
+        updateLastRoundSummary({
+            voorgooierId: isVoorgooier ? currentUser.id : botGame.botPlayer.id,
+            achterliggerId: isVoorgooier ? botGame.botPlayer.id : currentUser.id,
+            voorgooierResult: (winnerId === (isVoorgooier ? currentUser.id : botGame.botPlayer.id)) ? 'won' : 'lost',
+            achterliggerResult: (winnerId === (isVoorgooier ? botGame.botPlayer.id : currentUser.id)) ? 'won' : 'lost',
+            winnerId: winnerId,
+            loserId: loserId,
+            livesLeft: winner === 'player' ? player.lives : bot.lives
+        });
 
         // Update lives display
         updateLives(currentUser.id, player.lives);
@@ -5145,6 +5194,11 @@ function startBotNextRound() {
     botGame.botState.dice2 = 1;
     botGame.botState.throwHistory = [];
 
+    // ✅ CLEAR MULTIPLAYER THROW HISTORY
+    playerThrowHistory = [];
+    opponentThrowHistory = [];
+    updateThrowHistory();
+
     // Update UI
     showDice('', '', false, false);
     showOpponentDice('', '', false, false);
@@ -5152,6 +5206,8 @@ function startBotNextRound() {
 
     currentGame.roundNumber = botGame.roundNumber;
     currentGame.voorgooier = botGame.voorgooier === 'player' ? currentUser.id : botGame.botPlayer.id;
+
+    showToast(`Ronde ${botGame.roundNumber} begint!`, 'info', 2000);
 
     if (botGame.voorgooier === 'player') {
         showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Jij bent voorgooier!`, 'info');
@@ -5181,6 +5237,11 @@ function startBotOvergooien() {
     botGame.botState.displayThrow = null;
     botGame.botState.throwCount = 0;
     botGame.botState.isBlind = false;
+
+    // ✅ CLEAR THROW HISTORY FOR OVERGOOIEN
+    playerThrowHistory = [];
+    opponentThrowHistory = [];
+    updateThrowHistory();
 
     // Show UI
     showDice('', '', false, false);
@@ -5250,13 +5311,26 @@ window.throwDice = function(isBlind) {
             botGame.voorgooierPattern.push(isBlind);
         }
 
-        // Add to history
+        // Add to internal bot history
         player.throwHistory.push({
             dice1: player.dice1,
             dice2: player.dice2,
             value: player.currentThrow,
             isBlind: isBlind
         });
+
+        // ✅ ADD TO MULTIPLAYER THROW HISTORY (for UI display)
+        const throwInfo = calculateThrowDisplay(player.dice1, player.dice2);
+        playerThrowHistory.push({
+            displayValue: throwInfo.displayValue,
+            isMexico: throwInfo.isMexico,
+            isBlind: isBlind,
+            wasBlind: isBlind
+        });
+        updateThrowHistory();
+
+        // ✅ UPDATE THROW COUNTER
+        updateThrowCounter(player.throwCount, botGame.maxThrows);
 
         debugLog(`[Player] Worp ${player.throwCount}: ${player.dice1}-${player.dice2} = ${player.currentThrow} (${isBlind ? 'BLIND' : 'OPEN'})`);
 
@@ -5341,6 +5415,12 @@ window.revealDice = function() {
 
         showDice(player.dice1, player.dice2, player.isMexico, false);
         showInlineMessage(`Je onthult: ${player.displayThrow}`, player.isMexico ? 'success' : 'info');
+
+        // ✅ UPDATE THROW HISTORY (mark as revealed)
+        if (playerThrowHistory.length > 0) {
+            playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+            updateThrowHistory();
+        }
 
         debugLog(`[Player] REVEAL: ${player.displayThrow}`);
 
