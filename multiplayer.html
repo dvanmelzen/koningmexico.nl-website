@@ -1153,6 +1153,9 @@
         <div class="flex justify-between items-center mb-2 border-b border-gray-500 pb-2">
             <span class="font-bold text-white">🐛 Debug Log</span>
             <div class="flex gap-2">
+                <button id="submitDebugBtn" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">
+                    📤 Submit to Server
+                </button>
                 <button id="copyDebugBtn" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">
                     📋 Copy
                 </button>
@@ -1162,6 +1165,64 @@
             </div>
         </div>
         <div id="debugLog" class="overflow-y-auto space-y-1" style="max-height: 340px;"></div>
+    </div>
+
+    <!-- Debug Log Submit Modal -->
+    <div id="debugSubmitModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[60] hidden" style="backdrop-filter: blur(3px);">
+        <div class="relative max-w-lg w-full mx-4 bg-gray-900 rounded-lg shadow-2xl p-6 animate-fade-in">
+            <!-- Close Button -->
+            <button id="closeDebugSubmitModal" class="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white text-xl font-bold shadow-xl transition hover:scale-110">
+                ✕
+            </button>
+
+            <!-- Title -->
+            <h2 class="text-2xl font-bold mb-4 text-white flex items-center gap-2">
+                📤 Debug Log Versturen
+            </h2>
+
+            <!-- User Notes Input -->
+            <div class="mb-4">
+                <label for="debugNotesInput" class="block text-sm font-medium text-gray-300 mb-2">
+                    Beschrijf wat er mis ging (optioneel):
+                </label>
+                <textarea
+                    id="debugNotesInput"
+                    rows="4"
+                    class="w-full px-3 py-2 bg-gray-800 text-white rounded border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                    placeholder="Bijvoorbeeld: Game freezed na reconnect in ronde 9, beide spelers zagen 'wachten op tegenstander'"
+                ></textarea>
+            </div>
+
+            <!-- Info Text -->
+            <p class="text-sm text-gray-400 mb-4">
+                Je debug log wordt 5 dagen bewaard en krijgt een unieke code die je kunt delen met de ontwikkelaar.
+            </p>
+
+            <!-- Buttons -->
+            <div class="flex gap-3">
+                <button id="confirmDebugSubmit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium transition">
+                    📤 Verstuur Log
+                </button>
+                <button id="cancelDebugSubmit" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition">
+                    Annuleer
+                </button>
+            </div>
+
+            <!-- Result Area (hidden initially) -->
+            <div id="debugSubmitResult" class="mt-4 hidden">
+                <div class="bg-green-900 border border-green-700 rounded p-4">
+                    <p class="text-green-300 font-medium mb-2">✅ Debug log verstuurd!</p>
+                    <p class="text-sm text-gray-300 mb-2">Je unieke code:</p>
+                    <div class="flex items-center gap-2">
+                        <code id="debugLogCode" class="flex-1 px-3 py-2 bg-gray-800 text-green-400 font-mono text-lg rounded border border-green-700"></code>
+                        <button id="copyDebugCodeBtn" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                            📋 Kopieer
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">Deel deze code met de ontwikkelaar om je debug log op te vragen.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Spelregels Parchment Modal -->

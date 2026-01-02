@@ -812,6 +812,51 @@ app.post('/api/disclaimer/accept', authenticateToken, (req, res) => {
     }
 });
 
+// Debug log submission endpoint
+app.post('/api/debug-log/submit', (req, res) => {
+    try {
+        const { logContent, userNotes } = req.body;
+
+        // Validate input
+        if (!logContent || typeof logContent !== 'string') {
+            return res.status(400).json({ error: 'Invalid log content' });
+        }
+
+        // Get user info (if authenticated)
+        const userId = req.user?.id || null;
+        const username = req.user?.username || null;
+        const userAgent = req.headers['user-agent'] || null;
+
+        // Combine log content with user notes
+        const fullLogContent = userNotes
+            ? `=== User Notes ===\n${userNotes}\n\n=== Debug Log ===\n${logContent}`
+            : logContent;
+
+        // Save to database
+        const result = db.saveDebugLog({
+            userId,
+            username,
+            logContent: fullLogContent,
+            userAgent
+        });
+
+        if (!result.success) {
+            return res.status(500).json({ error: 'Failed to save debug log' });
+        }
+
+        console.log(`📝 Debug log submitted: ${result.logId} by ${username || 'anonymous'}`);
+
+        res.json({
+            success: true,
+            logId: result.logId,
+            message: 'Debug log submitted successfully'
+        });
+    } catch (error) {
+        console.error('❌ Error submitting debug log:', error);
+        res.status(500).json({ error: 'Failed to submit debug log' });
+    }
+});
+
 // ============================================
 // INPUT VALIDATION HELPERS (Socket.IO)
 // ============================================
@@ -2991,6 +3036,18 @@ function endGame(game, winnerId, reason) {
     // Broadcast updated stats (game ended)
     broadcastStats();
 }
+
+// ============================================
+// DEBUG LOG CLEANUP
+// ============================================
+
+// Run cleanup on server start
+db.cleanupOldDebugLogs();
+
+// Schedule cleanup to run daily (every 24 hours)
+setInterval(() => {
+    db.cleanupOldDebugLogs();
+}, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
 
 // ============================================
 // START SERVER

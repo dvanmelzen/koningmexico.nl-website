@@ -135,6 +135,18 @@ function initializeDatabase() {
         )
     `);
 
+    // Create debug_logs table (for submitted debug logs)
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS debug_logs (
+            id TEXT PRIMARY KEY,
+            userId TEXT,
+            username TEXT,
+            logContent TEXT NOT NULL,
+            userAgent TEXT,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // Create indexes for faster queries
     db.exec(`
         CREATE INDEX IF NOT EXISTS idx_game_history_winner ON game_history(winnerId);
@@ -147,6 +159,7 @@ function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_credit_transactions_createdAt ON credit_transactions(createdAt);
         CREATE INDEX IF NOT EXISTS idx_user_inventory_userId ON user_inventory(userId);
         CREATE INDEX IF NOT EXISTS idx_user_inventory_itemId ON user_inventory(itemId);
+        CREATE INDEX IF NOT EXISTS idx_debug_logs_createdAt ON debug_logs(createdAt);
     `);
 
     // Initialize shop items if table is empty
@@ -900,6 +913,69 @@ function getUnusedPowerupCount(userId, itemId) {
 }
 
 // ============================================
+// DEBUG LOGS MANAGEMENT
+// ============================================
+
+// Generate unique debug log ID (DBG-XXXXXX)
+function generateDebugLogId() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude similar looking chars
+    let id = 'DBG-';
+    for (let i = 0; i < 6; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+}
+
+// Save debug log
+function saveDebugLog(logData) {
+    const logId = generateDebugLogId();
+
+    const stmt = db.prepare(`
+        INSERT INTO debug_logs (id, userId, username, logContent, userAgent, createdAt)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `);
+
+    try {
+        stmt.run(
+            logId,
+            logData.userId || null,
+            logData.username || null,
+            logData.logContent,
+            logData.userAgent || null
+        );
+        return { success: true, logId };
+    } catch (error) {
+        console.error('❌ Failed to save debug log:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Get debug log by ID
+function getDebugLog(logId) {
+    const stmt = db.prepare('SELECT * FROM debug_logs WHERE id = ?');
+    return stmt.get(logId);
+}
+
+// Cleanup old debug logs (older than 5 days)
+function cleanupOldDebugLogs() {
+    const stmt = db.prepare(`
+        DELETE FROM debug_logs
+        WHERE datetime(createdAt) < datetime('now', '-5 days')
+    `);
+
+    try {
+        const result = stmt.run();
+        if (result.changes > 0) {
+            console.log(`🗑️ Cleaned up ${result.changes} old debug logs`);
+        }
+        return { success: true, deletedCount: result.changes };
+    } catch (error) {
+        console.error('❌ Failed to cleanup debug logs:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// ============================================
 // DISCLAIMER ACCEPTANCE
 // ============================================
 
@@ -974,5 +1050,9 @@ module.exports = {
     hasAcceptedCurrentDisclaimer,
     getCurrentDisclaimerVersion,
     CURRENT_DISCLAIMER_VERSION,
+    // Debug log functions
+    saveDebugLog,
+    getDebugLog,
+    cleanupOldDebugLogs,
     db // Export db instance for direct queries if needed
 };

@@ -978,6 +978,107 @@ function setupUIListeners() {
         });
     });
 
+    // Submit debug log to server
+    document.getElementById('submitDebugBtn')?.addEventListener('click', () => {
+        const modal = document.getElementById('debugSubmitModal');
+        const notesInput = document.getElementById('debugNotesInput');
+        const resultArea = document.getElementById('debugSubmitResult');
+
+        if (!modal) return;
+
+        // Reset modal state
+        notesInput.value = '';
+        resultArea.classList.add('hidden');
+
+        // Show modal
+        modal.classList.remove('hidden');
+    });
+
+    // Close debug submit modal
+    document.getElementById('closeDebugSubmitModal')?.addEventListener('click', () => {
+        document.getElementById('debugSubmitModal')?.classList.add('hidden');
+    });
+
+    document.getElementById('cancelDebugSubmit')?.addEventListener('click', () => {
+        document.getElementById('debugSubmitModal')?.classList.add('hidden');
+    });
+
+    // Confirm debug log submission
+    document.getElementById('confirmDebugSubmit')?.addEventListener('click', async () => {
+        const debugLog = document.getElementById('debugLog');
+        const notesInput = document.getElementById('debugNotesInput');
+        const confirmBtn = document.getElementById('confirmDebugSubmit');
+        const resultArea = document.getElementById('debugSubmitResult');
+        const codeDisplay = document.getElementById('debugLogCode');
+
+        if (!debugLog || !confirmBtn) return;
+
+        // Extract all log text
+        const logText = Array.from(debugLog.children)
+            .map(entry => entry.textContent)
+            .join('\n');
+
+        if (!logText.trim()) {
+            showToast('❌ Debug log is leeg', 'error', 2000);
+            return;
+        }
+
+        // Disable button during submission
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '⏳ Versturen...';
+
+        try {
+            const response = await fetch('/api/debug-log/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    logContent: logText,
+                    userNotes: notesInput.value.trim() || null
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to submit debug log');
+            }
+
+            // Show success with debug code
+            codeDisplay.textContent = data.logId;
+            resultArea.classList.remove('hidden');
+
+            // Hide the input section
+            notesInput.parentElement.classList.add('hidden');
+            document.querySelector('#debugSubmitModal .flex.gap-3').classList.add('hidden');
+
+            showToast('✅ Debug log verstuurd!', 'success', 3000);
+
+            debugLog(`✅ Debug log submitted: ${data.logId}`, 'success');
+
+        } catch (error) {
+            console.error('Failed to submit debug log:', error);
+            showToast('❌ Versturen mislukt: ' + error.message, 'error', 3000);
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = '📤 Verstuur Log';
+        }
+    });
+
+    // Copy debug code to clipboard
+    document.getElementById('copyDebugCodeBtn')?.addEventListener('click', () => {
+        const codeDisplay = document.getElementById('debugLogCode');
+        if (!codeDisplay) return;
+
+        navigator.clipboard.writeText(codeDisplay.textContent).then(() => {
+            showToast('📋 Code gekopieerd!', 'success', 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('❌ Kopiëren mislukt', 'error', 2000);
+        });
+    });
+
     // Auto-hide menu on scroll down (mobile optimization)
     let lastScrollTop = 0;
     let scrollTimeout;
