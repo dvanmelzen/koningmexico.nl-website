@@ -112,6 +112,20 @@ function initializeDatabase() {
         )
     `);
 
+    // Create user_inventory table (owned power-ups)
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS user_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId TEXT NOT NULL,
+            itemId TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            usedAt TEXT,
+            purchasedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (userId) REFERENCES users(id),
+            FOREIGN KEY (itemId) REFERENCES shop_items(id)
+        )
+    `);
+
     // Create indexes for faster queries
     db.exec(`
         CREATE INDEX IF NOT EXISTS idx_game_history_winner ON game_history(winnerId);
@@ -122,6 +136,8 @@ function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_game_details_timestamp ON game_details(throwTimestamp);
         CREATE INDEX IF NOT EXISTS idx_credit_transactions_userId ON credit_transactions(userId);
         CREATE INDEX IF NOT EXISTS idx_credit_transactions_createdAt ON credit_transactions(createdAt);
+        CREATE INDEX IF NOT EXISTS idx_user_inventory_userId ON user_inventory(userId);
+        CREATE INDEX IF NOT EXISTS idx_user_inventory_itemId ON user_inventory(itemId);
     `);
 
     // Initialize shop items if table is empty
@@ -639,6 +655,10 @@ function purchasePowerup(userId, itemId) {
 
     const getItem = db.prepare('SELECT * FROM shop_items WHERE id = ? AND isActive = 1');
     const getCredits = db.prepare('SELECT balance FROM user_credits WHERE userId = ?');
+    const addToInventory = db.prepare(`
+        INSERT INTO user_inventory (userId, itemId, quantity, purchasedAt)
+        VALUES (?, ?, 1, datetime('now'))
+    `);
 
     // Execute as transaction
     const transaction = db.transaction(() => {
@@ -668,6 +688,9 @@ function purchasePowerup(userId, itemId) {
         if (!success) {
             throw new Error('Credits update mislukt');
         }
+
+        // Add to user inventory
+        addToInventory.run(userId, itemId);
 
         return {
             success: true,
@@ -728,6 +751,146 @@ function freezeGamblingCredits(userId, amount, gameId) {
 }
 
 // ============================================
+// INVENTORY MANAGEMENT (Phase 3.5)
+// ============================================
+
+// Get user's full inventory with item details
+function getUserInventory(userId) {
+    // Skip guests
+    if (!userId || userId.startsWith('guest-')) {
+        return [];
+    }
+
+    const stmt = db.prepare(`
+        SELECT
+            inv.id,
+            inv.userId,
+            inv.itemId,
+            inv.quantity,
+            inv.usedAt,
+            inv.purchasedAt,
+            item.name,
+            item.description,
+            item.type,
+            item.metadata
+        FROM user_inventory inv
+        JOIN shop_items item ON inv.itemId = item.id
+        WHERE inv.userId = ?
+        ORDER BY inv.purchasedAt DESC
+    `);
+
+    return stmt.all(userId).map(item => ({
+        ...item,
+        metadata: item.metadata ? JSON.parse(item.metadata) : null,
+        isUsed: !!item.usedAt
+    }));
+}
+
+// Get unused power-ups of a specific type
+function getUnusedPowerups(userId, itemId) {
+    // Skip guests
+    if (!userId || userId.startsWith('guest-')) {
+        return [];
+    }
+
+    const stmt = db.prepare(`
+        SELECT
+            inv.id,
+            inv.userId,
+            inv.itemId,
+            inv.quantity,
+            inv.purchasedAt,
+            item.name,
+            item.description,
+            item.metadata
+        FROM user_inventory inv
+        JOIN shop_items item ON inv.itemId = item.id
+        WHERE inv.userId = ? AND inv.itemId = ? AND inv.usedAt IS NULL
+        ORDER BY inv.purchasedAt ASC
+    `);
+
+    return stmt.all(userId, itemId).map(item => ({
+        ...item,
+        metadata: item.metadata ? JSON.parse(item.metadata) : null
+    }));
+}
+
+// Check if user has at least one unused powerup of a type
+function hasUnusedPowerup(userId, itemId) {
+    // Skip guests
+    if (!userId || userId.startsWith('guest-')) {
+        return false;
+    }
+
+    const stmt = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM user_inventory
+        WHERE userId = ? AND itemId = ? AND usedAt IS NULL
+    `);
+
+    const result = stmt.get(userId, itemId);
+    return result && result.count > 0;
+}
+
+// Use a power-up (mark as used)
+function usePowerup(userId, itemId) {
+    // Skip guests
+    if (!userId || userId.startsWith('guest-')) {
+        return { success: false, error: 'Gasten kunnen geen power-ups gebruiken' };
+    }
+
+    // Get oldest unused powerup of this type
+    const getUnused = db.prepare(`
+        SELECT id, itemId
+        FROM user_inventory
+        WHERE userId = ? AND itemId = ? AND usedAt IS NULL
+        ORDER BY purchasedAt ASC
+        LIMIT 1
+    `);
+
+    const markUsed = db.prepare(`
+        UPDATE user_inventory
+        SET usedAt = datetime('now')
+        WHERE id = ?
+    `);
+
+    try {
+        const unused = getUnused.get(userId, itemId);
+        if (!unused) {
+            return { success: false, error: 'Je hebt geen ongebruikte power-ups van dit type' };
+        }
+
+        markUsed.run(unused.id);
+
+        return {
+            success: true,
+            inventoryId: unused.id,
+            itemId: unused.itemId
+        };
+    } catch (error) {
+        console.error('❌ Use powerup failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Get count of unused powerups by type
+function getUnusedPowerupCount(userId, itemId) {
+    // Skip guests
+    if (!userId || userId.startsWith('guest-')) {
+        return 0;
+    }
+
+    const stmt = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM user_inventory
+        WHERE userId = ? AND itemId = ? AND usedAt IS NULL
+    `);
+
+    const result = stmt.get(userId, itemId);
+    return result ? result.count : 0;
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
@@ -756,5 +919,11 @@ module.exports = {
     purchasePowerup,
     awardGamblingPot,
     freezeGamblingCredits,
+    // Phase 3.5: Inventory management functions
+    getUserInventory,
+    getUnusedPowerups,
+    hasUnusedPowerup,
+    usePowerup,
+    getUnusedPowerupCount,
     db // Export db instance for direct queries if needed
 };

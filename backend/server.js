@@ -683,6 +683,71 @@ app.post('/api/credits/purchase', authenticateToken, purchaseLimiter, async (req
 });
 
 // ============================================
+// INVENTORY ENDPOINTS (Phase 3.5)
+// ============================================
+
+// Get user's inventory
+app.get('/api/inventory', authenticateToken, (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const inventory = db.getUserInventory(userId);
+
+        // Add counts by item type
+        const summary = {};
+        inventory.forEach(item => {
+            if (!summary[item.itemId]) {
+                summary[item.itemId] = {
+                    itemId: item.itemId,
+                    name: item.name,
+                    description: item.description,
+                    total: 0,
+                    unused: 0
+                };
+            }
+            summary[item.itemId].total++;
+            if (!item.isUsed) {
+                summary[item.itemId].unused++;
+            }
+        });
+
+        res.json({
+            inventory,
+            summary: Object.values(summary)
+        });
+    } catch (error) {
+        console.error('❌ Error fetching inventory:', error);
+        res.status(500).json({ error: 'Kon inventory niet ophalen' });
+    }
+});
+
+// Use a power-up
+app.post('/api/inventory/use', authenticateToken, (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { itemId } = req.body;
+
+        if (!itemId) {
+            return res.status(400).json({ error: 'itemId is verplicht' });
+        }
+
+        const result = db.usePowerup(userId, itemId);
+
+        if (!result.success) {
+            return res.status(400).json({ error: result.error });
+        }
+
+        res.json({
+            success: true,
+            message: 'Power-up geactiveerd!',
+            itemId: result.itemId
+        });
+    } catch (error) {
+        console.error('❌ Error using power-up:', error);
+        res.status(500).json({ error: 'Kon power-up niet gebruiken' });
+    }
+});
+
+// ============================================
 // INPUT VALIDATION HELPERS (Socket.IO)
 // ============================================
 
@@ -951,6 +1016,59 @@ io.on('connection', (socket) => {
         // Notify opponent that player reconnected
         socket.to(gameId).emit('opponent_reconnected', {
             username: user.username
+        });
+    });
+
+    // ============================================
+    // POWER-UP EVENTS (Phase 3.5)
+    // ============================================
+
+    socket.on('activate_powerup', async (data) => {
+        const { gameId, itemId } = data;
+
+        if (!gameId || !itemId) {
+            return socket.emit('error', { message: 'gameId and itemId required' });
+        }
+
+        const game = games.get(gameId);
+        if (!game) {
+            return socket.emit('error', { message: 'Game not found' });
+        }
+
+        // Verify player is in this game
+        if (userId !== game.player1Id && userId !== game.player2Id) {
+            return socket.emit('error', { message: 'Not your game' });
+        }
+
+        // Verify player has this power-up unused in inventory
+        const hasUnused = db.hasUnusedPowerup(userId, itemId);
+        if (!hasUnused) {
+            return socket.emit('error', { message: 'Power-up not in inventory or already used' });
+        }
+
+        // Mark power-up as used in database
+        const result = db.usePowerup(userId, itemId);
+        if (!result.success) {
+            return socket.emit('error', { message: result.error });
+        }
+
+        // Activate power-up in game state
+        const playerKey = userId === game.player1Id ? 'player1' : 'player2';
+        if (game.activePowerups[playerKey][itemId] !== undefined) {
+            game.activePowerups[playerKey][itemId] = true;
+            console.log(`✨ ${user.username} activated ${itemId} in game ${gameId}`);
+        }
+
+        // Notify both players
+        io.to(game.player1SocketId).emit('powerup_activated', {
+            playerId: userId,
+            itemId,
+            playerUsername: user.username
+        });
+        io.to(game.player2SocketId).emit('powerup_activated', {
+            playerId: userId,
+            itemId,
+            playerUsername: user.username
         });
     });
 
@@ -1360,7 +1478,18 @@ function createGame(player1Data, player2Data) {
         gamblingPot,
         status: 'active',
         startedAt: new Date(),
-        createdAt: Date.now() // For cleanup tracking
+        createdAt: Date.now(), // For cleanup tracking
+        // Power-up tracking (Phase 3.5)
+        activePowerups: {
+            player1: {
+                mexico_shield: false,        // Blocks next Mexico penalty
+                penalty_reduction: false     // Reduces next penalty by 1
+            },
+            player2: {
+                mexico_shield: false,
+                penalty_reduction: false
+            }
+        }
     };
 
     games.set(gameId, game);
@@ -1849,7 +1978,27 @@ function compareFirstRoundThrows(game) {
 
         // Determine penalty (Mexico = -2, normal = -1)
         // BELANGRIJK: Als de WINNAAR Mexico gooit, krijgt de verliezer 2x penalty!
-        const penalty = winnerThrow.isMexico ? 2 : 1;
+        let penalty = winnerThrow.isMexico ? 2 : 1;
+        let powerupUsed = null;
+
+        // Check power-ups (Phase 3.5)
+        const loserKey = loserId === game.player1Id ? 'player1' : 'player2';
+        const loserPowerups = game.activePowerups[loserKey];
+
+        // Mexico Shield: Blocks Mexico penalty completely
+        if (winnerThrow.isMexico && loserPowerups.mexico_shield) {
+            penalty = 0;
+            loserPowerups.mexico_shield = false; // Consumed
+            powerupUsed = 'mexico_shield';
+            console.log(`   ⚡ ${loser.username} used Mexico Shield! Penalty blocked!`);
+        }
+        // Penalty Reduction: Reduces any penalty by 1 (min 0)
+        else if (loserPowerups.penalty_reduction) {
+            penalty = Math.max(0, penalty - 1);
+            loserPowerups.penalty_reduction = false; // Consumed
+            powerupUsed = 'penalty_reduction';
+            console.log(`   🛡️ ${loser.username} used Penalty Reduction! Penalty reduced to ${penalty}`);
+        }
 
         // Apply penalty
         if (loserId === game.player1Id) {
@@ -1860,7 +2009,7 @@ function compareFirstRoundThrows(game) {
 
         const loserLivesLeft = loserId === game.player1Id ? game.player1Lives : game.player2Lives;
 
-        console.log(`   Penalty: -${penalty} ${penalty === 2 ? '(MEXICO!)' : ''}`);
+        console.log(`   Penalty: -${penalty} ${penalty === 2 ? '(MEXICO!)' : penalty === 0 ? '(BLOCKED!)' : ''}`);
         console.log(`   ${loser.username} lives left: ${loserLivesLeft}`);
 
         // Check if game over
@@ -1875,7 +2024,8 @@ function compareFirstRoundThrows(game) {
                 loserThrow,
                 penalty,
                 loserLivesLeft: 0,
-                gameOver: true
+                gameOver: true,
+                powerupUsed // Phase 3.5
             });
             io.to(game.player2SocketId).emit('first_round_result', {
                 winnerId,
@@ -1884,7 +2034,8 @@ function compareFirstRoundThrows(game) {
                 loserThrow,
                 penalty,
                 loserLivesLeft: 0,
-                gameOver: true
+                gameOver: true,
+                powerupUsed // Phase 3.5
             });
 
             setTimeout(() => endGame(game, winnerId, 'first_round_knockout'), 2000);
@@ -1904,7 +2055,8 @@ function compareFirstRoundThrows(game) {
             penalty,
             loserLivesLeft,
             newVoorgooier: loserId,
-            gameOver: false
+            gameOver: false,
+            powerupUsed // Phase 3.5
         });
         io.to(game.player2SocketId).emit('first_round_result', {
             winnerId,
@@ -1914,7 +2066,8 @@ function compareFirstRoundThrows(game) {
             penalty,
             loserLivesLeft,
             newVoorgooier: loserId,
-            gameOver: false
+            gameOver: false,
+            powerupUsed // Phase 3.5
         });
 
         // Start round 2 after delay
@@ -1999,7 +2152,27 @@ function compareVastgooierThrows(game) {
         // Als beide spelers Mexico gooiden → vastgooier → winnaar krijgt 2x penalty
         const wasMexico = game.vastgooierOriginalVoorgooierThrow?.isMexico ||
                          game.vastgooierOriginalAchterliggerThrow?.isMexico;
-        const penalty = wasMexico ? 2 : 1;
+        let penalty = wasMexico ? 2 : 1;
+        let powerupUsed = null;
+
+        // Check power-ups (Phase 3.5)
+        const loserKey = loserId === game.player1Id ? 'player1' : 'player2';
+        const loserPowerups = game.activePowerups[loserKey];
+
+        // Mexico Shield: Blocks Mexico penalty completely
+        if (wasMexico && loserPowerups.mexico_shield) {
+            penalty = 0;
+            loserPowerups.mexico_shield = false; // Consumed
+            powerupUsed = 'mexico_shield';
+            console.log(`   ⚡ ${loser.username} used Mexico Shield! Penalty blocked!`);
+        }
+        // Penalty Reduction: Reduces any penalty by 1 (min 0)
+        else if (loserPowerups.penalty_reduction) {
+            penalty = Math.max(0, penalty - 1);
+            loserPowerups.penalty_reduction = false; // Consumed
+            powerupUsed = 'penalty_reduction';
+            console.log(`   🛡️ ${loser.username} used Penalty Reduction! Penalty reduced to ${penalty}`);
+        }
 
         // Apply penalty
         if (loserId === game.player1Id) {
@@ -2010,7 +2183,7 @@ function compareVastgooierThrows(game) {
 
         const loserLivesLeft = loserId === game.player1Id ? game.player1Lives : game.player2Lives;
 
-        console.log(`   Penalty: -${penalty} ${wasMexico ? '(MEXICO vastgooier! Originele worp was Mexico)' : '(normale vastgooier)'}`);
+        console.log(`   Penalty: -${penalty} ${wasMexico ? '(MEXICO vastgooier! Originele worp was Mexico)' : '(normale vastgooier)'}${penalty === 0 ? ' (BLOCKED!)' : ''}`);
         console.log(`   ${loser.username} lives left: ${loserLivesLeft}`);
 
         // Check if game over
@@ -2025,7 +2198,8 @@ function compareVastgooierThrows(game) {
                 loserThrow,
                 penalty,
                 loserLivesLeft: 0,
-                gameOver: true
+                gameOver: true,
+                powerupUsed // Phase 3.5
             });
             io.to(game.player2SocketId).emit('vastgooier_result', {
                 winnerId,
@@ -2034,7 +2208,8 @@ function compareVastgooierThrows(game) {
                 loserThrow,
                 penalty,
                 loserLivesLeft: 0,
-                gameOver: true
+                gameOver: true,
+                powerupUsed // Phase 3.5
             });
 
             setTimeout(() => endGame(game, winnerId, 'vastgooier_knockout'), 2000);
@@ -2061,7 +2236,8 @@ function compareVastgooierThrows(game) {
             penalty,
             loserLivesLeft,
             newVoorgooier: loserId,
-            gameOver: false
+            gameOver: false,
+            powerupUsed // Phase 3.5
         });
         io.to(game.player2SocketId).emit('vastgooier_result', {
             winnerId,
@@ -2071,7 +2247,8 @@ function compareVastgooierThrows(game) {
             penalty,
             loserLivesLeft,
             newVoorgooier: loserId,
-            gameOver: false
+            gameOver: false,
+            powerupUsed // Phase 3.5
         });
 
         // Start next round after delay
