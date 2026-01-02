@@ -1737,6 +1737,10 @@ function initializeSocket() {
     // Reconnection handling
     socket.on('game_rejoined', handleGameRejoined);
     socket.on('rejoin_failed', handleRejoinFailed);
+
+    // Grace period disconnect/reconnect events
+    socket.on('opponent_disconnected_grace', handleOpponentDisconnectedGrace);
+    socket.on('opponent_reconnected_grace_cancelled', handleOpponentReconnectedGraceCancelled);
 }
 
 // Attempt to reconnect to an active game
@@ -1869,6 +1873,137 @@ function handleRejoinFailed(data) {
 
     // Return to lobby
     showLobby();
+}
+
+// Grace period disconnect/reconnect handlers
+let gracePeriodInterval = null;
+let gracePeriodSecondsLeft = 0;
+
+function handleOpponentDisconnectedGrace(data) {
+    console.log('⏳ Opponent disconnected - grace period started:', data);
+
+    gracePeriodSecondsLeft = data.gracePeriodSeconds || 120;
+
+    // Show waiting overlay with countdown
+    const gameArea = document.getElementById('gameArea');
+    if (!gameArea) return;
+
+    // Create grace period overlay
+    let graceOverlay = document.getElementById('graceOverlay');
+    if (!graceOverlay) {
+        graceOverlay = document.createElement('div');
+        graceOverlay.id = 'graceOverlay';
+        graceOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        `;
+        gameArea.appendChild(graceOverlay);
+    }
+
+    graceOverlay.innerHTML = `
+        <div style="text-align: center; max-width: 500px;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
+            <h2 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1.5rem;">
+                ${data.disconnectedPlayerName} is inactief
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 1.1rem;">
+                We wachten maximaal <span id="graceCountdown" style="color: var(--primary-color); font-weight: bold; font-size: 1.3rem;">${gracePeriodSecondsLeft}</span> seconden.
+            </p>
+            <p style="color: var(--text-secondary); margin-bottom: 30px; font-size: 0.95rem;">
+                Als ${data.disconnectedPlayerName} niet opnieuw verbindt, verliest hij/zij automatisch.
+            </p>
+            <button id="forfeitDuringGraceBtn" class="btn btn-danger" style="
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                color: white;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+            ">
+                Verlaten (Jij verliest)
+            </button>
+        </div>
+    `;
+
+    // Add hover effect to button
+    const forfeitBtn = document.getElementById('forfeitDuringGraceBtn');
+    forfeitBtn.addEventListener('mouseenter', () => {
+        forfeitBtn.style.transform = 'scale(1.05)';
+        forfeitBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+    });
+    forfeitBtn.addEventListener('mouseleave', () => {
+        forfeitBtn.style.transform = 'scale(1)';
+        forfeitBtn.style.boxShadow = 'none';
+    });
+
+    // Handle forfeit button
+    forfeitBtn.addEventListener('click', () => {
+        if (confirm('Weet je zeker dat je het spel wilt verlaten? Je verliest dan automatisch.')) {
+            // User chooses to leave - they lose
+            socket.emit('leave_game', { gameId: currentGame.gameId, forfeit: true });
+            clearGracePeriodUI();
+        }
+    });
+
+    // Start countdown
+    clearInterval(gracePeriodInterval);
+    gracePeriodInterval = setInterval(() => {
+        gracePeriodSecondsLeft--;
+
+        const countdownEl = document.getElementById('graceCountdown');
+        if (countdownEl) {
+            countdownEl.textContent = gracePeriodSecondsLeft;
+
+            // Change color as time runs out
+            if (gracePeriodSecondsLeft <= 30) {
+                countdownEl.style.color = '#f59e0b'; // Orange
+            }
+            if (gracePeriodSecondsLeft <= 10) {
+                countdownEl.style.color = '#dc2626'; // Red
+            }
+        }
+
+        if (gracePeriodSecondsLeft <= 0) {
+            clearInterval(gracePeriodInterval);
+            // Server will handle game end
+        }
+    }, 1000);
+
+    showToast(`⏳ ${data.disconnectedPlayerName} is inactief. Wacht alsjeblieft...`, 'warning', 3000);
+}
+
+function handleOpponentReconnectedGraceCancelled(data) {
+    console.log('✅ Opponent reconnected - grace period cancelled:', data);
+
+    clearGracePeriodUI();
+
+    showToast(`✅ ${data.username} is terug! Het spel gaat verder.`, 'success', 2000);
+}
+
+function clearGracePeriodUI() {
+    // Clear countdown interval
+    if (gracePeriodInterval) {
+        clearInterval(gracePeriodInterval);
+        gracePeriodInterval = null;
+    }
+
+    // Remove overlay
+    const graceOverlay = document.getElementById('graceOverlay');
+    if (graceOverlay) {
+        graceOverlay.remove();
+    }
 }
 
 // ============================================

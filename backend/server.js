@@ -1018,6 +1018,26 @@ io.on('connection', (socket) => {
 
         console.log(`✅ ${user.username} successfully rejoined game: ${gameId}`);
 
+        // Cancel grace period timer if player was disconnected
+        if (game.disconnectedPlayer === userId && game.disconnectTimer) {
+            console.log(`⏱️ Cancelling grace period timer for ${user.username}`);
+            clearTimeout(game.disconnectTimer);
+
+            // Clear disconnection state
+            delete game.disconnectedPlayer;
+            delete game.disconnectedPlayerName;
+            delete game.disconnectedAt;
+            delete game.disconnectGracePeriod;
+            delete game.disconnectTimer;
+
+            // Notify opponent that grace period is cancelled
+            const opponentSocketId = game.player1Id === userId ? game.player2SocketId : game.player1SocketId;
+            io.to(opponentSocketId).emit('opponent_reconnected_grace_cancelled', {
+                username: user.username,
+                message: `${user.username} is terug! Het spel gaat verder.`
+            });
+        }
+
         // Determine current dice state for UI restoration
         const playerState = game.players[playerIndex];
         const opponentIndex = playerIndex === 0 ? 1 : 0;
@@ -1417,11 +1437,41 @@ io.on('connection', (socket) => {
             matchmakingQueue.splice(queueIndex, 1);
         }
 
-        // Handle active games (forfeit)
+        // Handle active games - implement 120-second grace period
         for (const [gameId, game] of games.entries()) {
             if (game.player1Id === userId || game.player2Id === userId) {
-                const winnerId = game.player1Id === userId ? game.player2Id : game.player1Id;
-                endGame(game, winnerId, 'opponent_disconnected');
+                const opponentId = game.player1Id === userId ? game.player2Id : game.player1Id;
+                const opponentSocketId = game.player1Id === userId ? game.player2SocketId : game.player1SocketId;
+
+                console.log(`⏳ Player ${user.username} disconnected from game ${gameId}. Starting 120-second grace period...`);
+
+                // Mark game as waiting for reconnection
+                game.disconnectedPlayer = userId;
+                game.disconnectedPlayerName = user.username;
+                game.disconnectedAt = Date.now();
+                game.disconnectGracePeriod = 120; // seconds
+
+                // Start 120-second timer
+                game.disconnectTimer = setTimeout(() => {
+                    console.log(`⏰ Grace period expired for ${user.username}. Ending game.`);
+
+                    // Clear disconnection state
+                    delete game.disconnectedPlayer;
+                    delete game.disconnectedPlayerName;
+                    delete game.disconnectedAt;
+                    delete game.disconnectGracePeriod;
+                    delete game.disconnectTimer;
+
+                    // End game - disconnected player loses
+                    endGame(game, opponentId, 'opponent_timeout');
+                }, 120000); // 120 seconds = 120000ms
+
+                // Notify opponent that player disconnected and they need to wait
+                io.to(opponentSocketId).emit('opponent_disconnected_grace', {
+                    disconnectedPlayerName: user.username,
+                    gracePeriodSeconds: 120,
+                    message: `${user.username} is inactief, we wachten maximaal 120 seconden.`
+                });
             }
         }
 
