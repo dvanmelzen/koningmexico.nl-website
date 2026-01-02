@@ -2696,9 +2696,61 @@ function handleGameStart(data) {
     }
 }
 
-function throwDice(isBlind) {
+async function throwDice(isBlind) {
     if (!currentGame) return;
 
+    // ✅ USE GAMEENGINE IF AVAILABLE (BOT MODE)
+    if (gameEngine) {
+        debugLog(`🎲 [GameEngine] Throwing dice (${isBlind ? 'BLIND' : 'OPEN'})`);
+
+        try {
+            hideAllActionButtons();
+            showWaitingMessage('Dobbelstenen rollen...');
+
+            const result = await gameEngine.throwDice(isBlind);
+
+            debugLog(`🎲 [GameEngine] Throw result:`, result);
+
+            // Update UI directly (same as handleThrowResult would do)
+            currentThrowData = result;
+            updateThrowCounter(result.throwCount, gameEngine.maxThrows);
+
+            // Add to player history
+            const throwInfo = calculateThrowDisplay(result.dice1, result.dice2);
+            playerThrowHistory.push({
+                displayValue: throwInfo.displayValue,
+                isMexico: throwInfo.isMexico,
+                isBlind: result.isBlind,
+                wasBlind: result.isBlind
+            });
+
+            // Show dice
+            showDice(result.dice1, result.dice2, result.isBlind, result.isMexico);
+            updateThrowHistory();
+
+            hideWaitingMessage();
+
+            // Show appropriate buttons
+            if (result.canKeep && result.canThrowAgain) {
+                showKeepAndThrowAgainButtons();
+            } else if (result.canKeep) {
+                showKeepButton();
+            }
+
+            if (result.isBlind) {
+                showRevealButton();
+            }
+
+            return;
+        } catch (err) {
+            debugLog(`❌ [GameEngine] Throw error:`, err);
+            showInlineMessage(err.message, 'error');
+            hideWaitingMessage();
+            return;
+        }
+    }
+
+    // ⚠️ FALLBACK: MULTIPLAYER MODE (socket.io)
     // In simultane modus (ronde 1) is isMyTurn altijd true voor beide spelers
     // In normale modus checken we isMyTurn
     if (!currentGame.isSimultaneous && !isMyTurn) return;
@@ -2839,11 +2891,40 @@ function updateThrowCounter(currentThrow, maxThrows) {
     counter.style.fontWeight = 'bold';
 }
 
-function revealDice() {
+async function revealDice() {
     if (!currentGame) return;
 
     debugLog('👁️  Revealing dice');
 
+    // ✅ USE GAMEENGINE IF AVAILABLE (BOT MODE)
+    if (gameEngine) {
+        debugLog(`👁️ [GameEngine] Revealing dice`);
+
+        try {
+            const result = await gameEngine.revealDice();
+
+            debugLog(`👁️ [GameEngine] Reveal result:`, result);
+
+            // Show revealed dice with animation
+            showDice(result.dice1, result.dice2, false, true);
+
+            // Update last throw in player history to not blind anymore
+            if (playerThrowHistory.length > 0) {
+                playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+                updateThrowHistory();
+            }
+
+            hideWaitingMessage();
+
+            return;
+        } catch (err) {
+            debugLog(`❌ [GameEngine] Reveal error:`, err);
+            showInlineMessage(err.message, 'error');
+            return;
+        }
+    }
+
+    // ⚠️ FALLBACK: MULTIPLAYER MODE (socket.io)
     socket.emit('reveal_dice', {
         gameId: currentGame.gameId
     });
@@ -2878,11 +2959,75 @@ function handleDiceRevealed(data) {
     }
 }
 
-function keepThrow() {
+async function keepThrow() {
     if (!currentGame) return;
 
     debugLog('✅ Keeping throw');
 
+    // ✅ USE GAMEENGINE IF AVAILABLE (BOT MODE)
+    if (gameEngine) {
+        debugLog(`✅ [GameEngine] Keeping throw`);
+
+        try {
+            hideAllActionButtons();
+            showWaitingMessage('Bot speelt...');
+
+            const result = await gameEngine.keepThrow();
+
+            debugLog(`✅ [GameEngine] Keep result:`, result);
+
+            // Round is complete, bot has played, result is compared
+            const state = result.state;
+
+            // Update lives
+            updateLives(state.player.id, state.player.lives);
+            updateLives(state.opponent.id, state.opponent.lives);
+
+            // Update round info
+            currentGame.roundNumber = state.roundNumber;
+            currentGame.voorgooier = state.voorgooierId;
+            currentGame.currentTurn = state.currentTurnId;
+            updateRoundInfo();
+
+            // Clear throw histories
+            playerThrowHistory = [];
+            opponentThrowHistory = [];
+            updateThrowHistory();
+
+            hideWaitingMessage();
+
+            // Check if game is over
+            if (state.isGameOver) {
+                const winner = state.player.lives > 0 ? state.player : state.opponent;
+                showInlineMessage(`🎉 ${winner.username} wint het spel!`, 'success');
+                hideAllActionButtons();
+                return;
+            }
+
+            // Start next round
+            showInlineMessage(`Ronde ${state.roundNumber} begint!`, 'info');
+
+            // Show appropriate buttons for next round
+            if (state.isPlayerTurn) {
+                if (state.isFirstRound) {
+                    showThrowButtons(false, true); // Blind only
+                } else {
+                    showThrowButtons(false, false); // Normal
+                }
+            } else {
+                showWaitingMessage('Bot is aan de beurt...');
+            }
+
+            return;
+        } catch (err) {
+            debugLog(`❌ [GameEngine] Keep error:`, err);
+            showInlineMessage(err.message, 'error');
+            hideWaitingMessage();
+            return;
+        }
+    }
+
+    // ⚠️ FALLBACK: MULTIPLAYER MODE (socket.io)
     socket.emit('keep_throw', {
         gameId: currentGame.gameId
     });
@@ -5514,11 +5659,8 @@ class GameEngine {
 let gameEngine = null;
 
 // Start bot game
-function startBotGame() {
-    debugLog('🤖 Starting bot game...');
-
-    // ✅ SWITCH TO BOT ADAPTER
-    BotAdapter.startGame();
+async function startBotGame() {
+    debugLog('🤖 Starting bot game with GameEngine...');
 
     // Hide gambling checkbox for bot games
     const gamblingCheckbox = document.getElementById('gamblingCheckbox');
@@ -5526,43 +5668,27 @@ function startBotGame() {
         gamblingCheckbox.checked = false;
         gamblingCheckbox.disabled = true;
     }
-    botGame.botPlayer = {
+
+    // Setup bot player
+    const botPlayer = {
         id: 'bot-' + Date.now(),
         username: getRandomBotName(),
         eloRating: 1200
     };
 
-    // Reset states
-    botGame.botState = {
-        dice1: 1,
-        dice2: 1,
-        currentThrow: null,
-        displayThrow: null,
-        throwCount: 0,
-        isBlind: false,
-        isMexico: false,
-        lives: 6,
-        throwHistory: []
-    };
+    // ✅ INITIALIZE GAMEENGINE IN BOT MODE
+    gameEngine = new GameEngine('bot');
 
-    botGame.playerState = {
-        dice1: 1,
-        dice2: 1,
-        currentThrow: null,
-        displayThrow: null,
-        throwCount: 0,
-        isBlind: false,
-        isMexico: false,
-        lives: 6,
-        throwHistory: []
-    };
+    await gameEngine.initialize({
+        gameId: 'bot-game-' + Date.now(),
+        playerId: currentUser.id,
+        playerName: currentUser.username,
+        opponentId: botPlayer.id,
+        opponentName: botPlayer.username
+    });
 
-    botGame.roundNumber = 1;
-    botGame.isFirstRound = true;
-    botGame.voorgooier = 'player';  // Player goes first in first round
-    botGame.currentTurn = 'player';
-    botGame.maxThrows = 3;
-    botGame.voorgooierPattern = [];
+    // Keep old botGame object for backwards compatibility (psychology, etc.)
+    botGame.botPlayer = botPlayer;
     botGame.aiPersonality = null;
     botGame.aiPsychology = {
         consecutiveLosses: 0,
@@ -5579,12 +5705,12 @@ function startBotGame() {
         recentWins: 0
     };
 
-    // Set fake game ID
+    // Set currentGame for UI compatibility
     currentGame = {
-        gameId: 'bot-game-' + Date.now(),
+        gameId: gameEngine.gameId,
         players: [
             { id: currentUser.id, username: currentUser.username, lives: 6 },
-            { id: botGame.botPlayer.id, username: botGame.botPlayer.username, lives: 6 }
+            { id: botPlayer.id, username: botPlayer.username, lives: 6 }
         ],
         roundNumber: 1,
         voorgooier: currentUser.id,
@@ -5598,9 +5724,9 @@ function startBotGame() {
     showGame();
 
     // Update UI
-    updateOpponentName(botGame.botPlayer.username, botGame.botPlayer.eloRating);
+    updateOpponentName(botPlayer.username, botPlayer.eloRating);
     updateLives(currentUser.id, 6);
-    updateLives(botGame.botPlayer.id, 6);
+    updateLives(botPlayer.id, 6);
     updateRoundInfo();
 
     // ✅ INITIALIZE THROW HISTORY DISPLAY
@@ -5617,6 +5743,8 @@ function startBotGame() {
     // First round: player starts (blind throw only)
     showInlineMessage('🤖 Ronde 1 - Eerste ronde! Jij moet blind gooien', 'info');
     showThrowButtons(false, true);  // Only blind throw in first round
+
+    debugLog('✅ GameEngine initialized in bot mode:', gameEngine.getState());
 }
 
 // Bot throw dice (simulates rolling)
