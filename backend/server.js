@@ -369,8 +369,11 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         // Generate token
         const accessToken = generateToken(user);
 
-        // Return user (without password)
+        // Return user (without password) + credits data (Phase 3)
         const { password: _, ...userResponse } = user;
+        const credits = db.getUserCredits(user.id); // Get credits data (500 signup bonus)
+        userResponse.credits = credits; // Add to response
+
         res.status(201).json({
             user: userResponse,
             accessToken
@@ -414,8 +417,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         // Generate token
         const accessToken = generateToken(user);
 
-        // Return user (without password)
+        // Return user (without password) + credits data (Phase 3)
         const { password: _, ...userResponse } = user;
+        const credits = db.getUserCredits(user.id); // Get credits data
+        userResponse.credits = credits; // Add to response
+
         res.status(200).json({
             user: userResponse,
             accessToken

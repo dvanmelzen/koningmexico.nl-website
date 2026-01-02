@@ -445,8 +445,8 @@ function updateGamblingOptInVisibility() {
 
     // Only show for registered users (not guests) with sufficient credits
     if (currentUser && !currentUser.id.startsWith('guest-')) {
-        // Check if user has at least 100 credits
-        const hasEnoughCredits = currentUser.credits && currentUser.credits >= 100;
+        // Check if user has at least 100 credits (credits is an object with balance property)
+        const hasEnoughCredits = currentUser.credits && currentUser.credits.balance >= 100;
 
         if (hasEnoughCredits) {
             gamblingOptIn.classList.remove('hidden');
