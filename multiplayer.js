@@ -2735,15 +2735,18 @@ async function throwDice(isBlind) {
 
             debugLog(`🎲 [GameEngine] Throw result:`, result);
 
-            // Update UI directly (same as handleThrowResult would do)
+            // Update UI (GameEngine class does history/counter, we do dice display)
             currentThrowData = result;
+            updateThrowCounter(result.throwCount, gameEngine.maxThrows);
 
-            // ⚠️ REMOVED: GameEngine.throwDice() already handles:
-            // - playerThrowHistory.push() at line 5557
-            // - showDice() at line 5573
-            // - updateThrowHistory() at line 5565
-            // - updateThrowCounter() at line 5566
-            // Calling these again causes DUPLICATE dice display and throwHistory entries!
+            // Show dice
+            if (result.isBlind) {
+                showDice('', '', false, true);
+                showInlineMessage('🙈 Je gooide blind', 'info');
+            } else {
+                showDice(result.dice1, result.dice2, result.isMexico, false);
+                showInlineMessage(`Je gooide: ${result.displayValue}`, result.isMexico ? 'success' : 'info');
+            }
 
             hideWaitingMessage();
 
@@ -5554,18 +5557,11 @@ class GameEngine {
             wasBlind: isBlind
         });
 
-        // Update UI
-        updateThrowHistory();
-        updateThrowCounter(this.player.throwCount, this.maxThrows);
-
-        // Show dice
-        if (this.player.isBlind) {
-            showDice('', '', false, true);
-            showInlineMessage('🙈 Je gooide blind', 'info');
-        } else {
-            showDice(this.player.dice1, this.player.dice2, this.player.isMexico, false);
-            showInlineMessage(`Je gooide: ${this.player.displayThrow}`, this.player.isMexico ? 'success' : 'info');
-        }
+        // ⚠️ REMOVED: UI updates moved to throwDice() function (line 2734) to prevent duplicates
+        // - updateThrowHistory() was called twice
+        // - showDice() was called twice  ← THIS WAS THE DUPLICATE!
+        // - showInlineMessage() was called twice
+        // Now throwDice() function handles all UI updates after calling gameEngine.throwDice()
 
         debugLog(`[GameEngine] Throw result: ${this.player.dice1}-${this.player.dice2} = ${this.player.currentThrow}`);
 
@@ -6082,9 +6078,10 @@ function botTurnThrowSequence() {
 
         // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
         if (botGame.voorgooier === 'bot') {
-            // 🔥 CRITICAL: Switch turn to PLAYER in GameEngine!
+            // 🔥 CRITICAL: Sync maxThrows to GameEngine AND switch turn to PLAYER!
+            gameEngine.maxThrows = botGame.maxThrows;
             gameEngine.currentTurnId = gameEngine.player.id;
-            debugLog(`[Bot] Switched turn to player (${gameEngine.player.username})`);
+            debugLog(`[Bot] Synced maxThrows=${gameEngine.maxThrows} and switched turn to player (${gameEngine.player.username})`);
 
             showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
             showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
@@ -6116,9 +6113,10 @@ function botTurnThrowSequence() {
                 botGame.maxThrows = bot.throwCount;
                 debugLog(`[Bot] Voorgooier sets max throws: ${botGame.maxThrows}`);
 
-                // 🔥 CRITICAL: Switch turn to PLAYER in GameEngine!
+                // 🔥 CRITICAL: Sync maxThrows to GameEngine AND switch turn to PLAYER!
+                gameEngine.maxThrows = botGame.maxThrows;
                 gameEngine.currentTurnId = gameEngine.player.id;
-                debugLog(`[Bot] Switched turn to player (${gameEngine.player.username})`);
+                debugLog(`[Bot] Synced maxThrows=${gameEngine.maxThrows} and switched turn to player (${gameEngine.player.username})`);
 
                 // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
                 showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
