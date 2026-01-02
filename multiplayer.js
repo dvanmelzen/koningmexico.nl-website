@@ -1028,12 +1028,19 @@ function setupUIListeners() {
         confirmBtn.textContent = '⏳ Versturen...';
 
         try {
+            // Build headers - only include Authorization if token exists
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            const token = localStorage.getItem('token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/api/debug-log/submit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
+                headers: headers,
                 body: JSON.stringify({
                     logContent: logText,
                     userNotes: notesInput.value.trim() || null
