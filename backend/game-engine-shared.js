@@ -340,6 +340,15 @@ class GameEngine {
         this.opponent.throwHistory = [];
 
         console.log(`[GameEngine] Round ${this.roundNumber} started. Voorgooier: ${this.voorgooierId === this.player.id ? 'Player' : 'Opponent'}, MaxThrows: ${this.maxThrows}`);
+
+        // 🤖 BOT MODE: If bot is voorgooier, auto-play bot's turn immediately
+        if (this.mode === 'bot' && this.currentTurnId === this.opponent.id) {
+            console.log(`[GameEngine] Bot is voorgooier - auto-playing bot's turn`);
+            await this.botThrow();
+            console.log(`[GameEngine] Bot keeps: ${this.opponent.displayThrow}`);
+            this.currentTurnId = this.player.id; // Switch to player's turn
+            console.log(`[GameEngine] Now player's turn to respond`);
+        }
     }
 
     isGameOver() {
