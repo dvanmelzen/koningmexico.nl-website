@@ -5278,7 +5278,7 @@ class GameEngine {
         this.gameId = null;
         this.roundNumber = 1;
         this.isFirstRound = true;
-        this.maxThrows = 3;
+        this.maxThrows = 1; // First round: 1 blind throw only!
         this.voorgooierId = null;
         this.currentTurnId = null;
         this.isGambling = false;
@@ -5341,6 +5341,11 @@ class GameEngine {
             throw new Error('Not your turn!');
         }
 
+        // First round must be blind!
+        if (this.isFirstRound && !isBlind) {
+            throw new Error('Eerste ronde moet blind!');
+        }
+
         debugLog(`[GameEngine] Player throws ${isBlind ? 'BLIND' : 'OPEN'}`);
 
         // Roll dice via adapter (local or server)
@@ -5398,6 +5403,15 @@ class GameEngine {
         const canThrowAgain = this.player.throwCount < this.maxThrows;
         const isLastThrow = this.player.throwCount >= this.maxThrows;
 
+        // 🎯 UX IMPROVEMENT: First round blind throw auto-keeps (no user action needed)
+        if (this.isFirstRound && isBlind && isLastThrow) {
+            debugLog('[GameEngine] Auto-keeping first round blind throw');
+            // Auto-keep after a short delay for UX
+            setTimeout(async () => {
+                await this.keepThrow();
+            }, 800);
+        }
+
         return {
             dice1: this.player.dice1,
             dice2: this.player.dice2,
@@ -5406,7 +5420,7 @@ class GameEngine {
             isMexico: this.player.isMexico,
             throwCount: this.player.throwCount,
             canKeep,
-            canThrowAgain,
+            canThrowAgain: this.isFirstRound && isBlind ? false : canThrowAgain, // No second throw in round 1
             isLastThrow,
             state: this.getState()
         };
@@ -5574,6 +5588,7 @@ class GameEngine {
     async startNextRound() {
         this.roundNumber++;
         this.isFirstRound = false;
+        this.maxThrows = 3; // After first round: 3 throws allowed
 
         // Alternate voorgooier
         this.voorgooierId = (this.voorgooierId === this.player.id) ? this.opponent.id : this.player.id;
