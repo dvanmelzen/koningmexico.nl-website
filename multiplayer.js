@@ -2614,20 +2614,6 @@ function handleGameStart(data) {
         gamblingPot: data.gamblingPot || 0
     };
 
-    // ✅ INITIALIZE GAMEENGINE IN MULTIPLAYER MODE
-    const opponent = data.players?.find(p => p.id !== currentUser?.id);
-    gameEngine = new GameEngine('multiplayer');
-
-    gameEngine.initialize({
-        gameId: data.gameId,
-        playerId: currentUser.id,
-        playerName: currentUser.username,
-        opponentId: opponent?.id,
-        opponentName: opponent?.username
-    });
-
-    debugLog('[GameEngine] Initialized for multiplayer:', gameEngine.getState());
-
     // Display gambling pot if this is a gambling game (Phase 3)
     const gamblingPotDisplay = document.getElementById('gamblingPotDisplay');
     const gamblingPotAmount = document.getElementById('gamblingPotAmount');
@@ -2651,6 +2637,17 @@ function handleGameStart(data) {
     // Update opponent name in UI labels
     const opponent = data.players?.find(p => p.id !== currentUser?.id);
     const opponentName = opponent?.username || 'Tegenstander';
+
+    // ✅ INITIALIZE GAMEENGINE IN MULTIPLAYER MODE
+    gameEngine = new GameEngine('multiplayer');
+    gameEngine.initialize({
+        gameId: data.gameId,
+        playerId: currentUser.id,
+        playerName: currentUser.username,
+        opponentId: opponent?.id,
+        opponentName: opponent?.username
+    });
+    debugLog('[GameEngine] Initialized for multiplayer:', gameEngine.getState());
 
     const opponentDiceCupLabel = document.getElementById('opponentDiceCupLabel');
     if (opponentDiceCupLabel) {
