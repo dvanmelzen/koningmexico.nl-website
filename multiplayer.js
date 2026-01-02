@@ -443,9 +443,19 @@ function updateGamblingOptInVisibility() {
     const gamblingOptIn = document.getElementById('gamblingOptIn');
     if (!gamblingOptIn) return;
 
-    // Only show for registered users (not guests)
+    // Only show for registered users (not guests) with sufficient credits
     if (currentUser && !currentUser.id.startsWith('guest-')) {
-        gamblingOptIn.classList.remove('hidden');
+        // Check if user has at least 100 credits
+        const hasEnoughCredits = currentUser.credits && currentUser.credits >= 100;
+
+        if (hasEnoughCredits) {
+            gamblingOptIn.classList.remove('hidden');
+        } else {
+            gamblingOptIn.classList.add('hidden');
+            // Uncheck if hidden
+            const gamblingCheckbox = document.getElementById('gamblingCheckbox');
+            if (gamblingCheckbox) gamblingCheckbox.checked = false;
+        }
     } else {
         gamblingOptIn.classList.add('hidden');
         // Uncheck if hidden
@@ -2490,9 +2500,23 @@ function handleGameStart(data) {
     };
 
     // Display gambling pot if this is a gambling game (Phase 3)
+    const gamblingPotDisplay = document.getElementById('gamblingPotDisplay');
+    const gamblingPotAmount = document.getElementById('gamblingPotAmount');
+
     if (data.isGambling && data.gamblingPot > 0) {
         showToast(`🎰 Gambling Game! Pot: ${data.gamblingPot} credits (winner takes all!)`, 'success');
         console.log(`🎰 GAMBLING GAME - Pot: ${data.gamblingPot} credits`);
+
+        // Show gambling pot banner
+        if (gamblingPotDisplay && gamblingPotAmount) {
+            gamblingPotAmount.textContent = data.gamblingPot;
+            gamblingPotDisplay.classList.remove('hidden');
+        }
+    } else {
+        // Hide gambling pot banner for normal games
+        if (gamblingPotDisplay) {
+            gamblingPotDisplay.classList.add('hidden');
+        }
     }
 
     // Update opponent name in UI labels
@@ -3245,6 +3269,16 @@ function showWinByForfeitPopup(data) {
     const opponentName = data.loserUsername === currentUser.username ? data.winnerUsername : data.loserUsername;
     const eloChange = `+${data.eloChange}`;
 
+    // Build gambling section if applicable (Phase 3)
+    const gamblingSection = (data.isGambling && data.gamblingWinnings) ? `
+        <div class="p-4 rounded-lg mb-4" style="background: linear-gradient(135deg, #b45309 0%, #92400e 100%); border: 2px solid #fbbf24;">
+            <p class="text-2xl mb-2">🎰</p>
+            <p class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Gambling Winnings</p>
+            <p class="text-3xl font-bold" style="color: #fbbf24;">+${data.gamblingWinnings} credits</p>
+            <p class="text-xs mt-1" style="color: rgba(255, 255, 255, 0.7);">Winner takes all!</p>
+        </div>
+    ` : '';
+
     const popupHtml = `
         <div class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" id="winByForfeitModal">
             <div class="rounded-2xl shadow-2xl p-8 max-w-md text-center animate-bounce-in" style="background: linear-gradient(135deg, #1a5f3a 0%, #0d3b24 100%);">
@@ -3259,6 +3293,7 @@ function showWinByForfeitPopup(data) {
                     <p class="text-sm mb-4" style="color: rgba(255, 255, 255, 0.7);">
                         Je wint automatisch door opgave van je tegenstander
                     </p>
+                    ${gamblingSection}
                     <div class="p-4 rounded-lg mb-4" style="background: rgba(255, 215, 0, 0.1); border: 2px solid #FFD700;">
                         <p class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Power wijziging</p>
                         <p class="text-2xl font-bold" style="color: #4ADE80;">${eloChange}</p>
