@@ -1545,30 +1545,112 @@ function createGame(player1Data, player2Data) {
     const player1 = userCache.get(player1Data.userId);
     const player2 = userCache.get(player2Data.userId);
 
+    // CRITICAL: Check if players still exist in cache (could have disconnected)
+    if (!player1 || !player2) {
+        console.error(`❌ Game creation failed - player(s) not found in cache:`, {
+            player1: player1 ? 'found' : 'NULL',
+            player2: player2 ? 'found' : 'NULL',
+            player1Id: player1Data.userId,
+            player2Id: player2Data.userId
+        });
+
+        // Notify available players
+        if (player1) {
+            io.to(player1Data.socketId).emit('error', { message: 'Tegenstander niet meer beschikbaar' });
+        }
+        if (player2) {
+            io.to(player2Data.socketId).emit('error', { message: 'Tegenstander niet meer beschikbaar' });
+        }
+
+        // If gambling, refund both players if they exist
+        if (player1Data.gambling && player1) {
+            db.updateCredits(player1.id, 100, 'gambling_refund', 'Game kon niet starten', gameId);
+        }
+        if (player2Data.gambling && player2) {
+            db.updateCredits(player2.id, 100, 'gambling_refund', 'Game kon niet starten', gameId);
+        }
+
+        return; // Abort game creation
+    }
+
     // Check if this is a gambling game (both players opted in)
     const isGambling = player1Data.gambling && player2Data.gambling;
     let gamblingPot = 0;
 
-    // If gambling, freeze credits
+    // If gambling, freeze credits (CRITICAL: Wrapped in try-catch to prevent credit loss)
     if (isGambling) {
-        const success1 = db.freezeGamblingCredits(player1.id, 100, gameId);
-        const success2 = db.freezeGamblingCredits(player2.id, 100, gameId);
+        let success1 = false;
+        let success2 = false;
 
-        if (!success1 || !success2) {
-            // Refund if one failed
-            if (success1) db.updateCredits(player1.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
-            if (success2) db.updateCredits(player2.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
+        try {
+            success1 = db.freezeGamblingCredits(player1.id, 100, gameId);
+            success2 = db.freezeGamblingCredits(player2.id, 100, gameId);
 
-            console.log(`❌ Gambling game failed to start - refunding credits`);
+            if (!success1 || !success2) {
+                console.log(`❌ Gambling credits freeze failed - attempting refund:`, {
+                    player1Frozen: success1,
+                    player2Frozen: success2
+                });
+
+                // Refund if one succeeded (CRITICAL: wrapped in try-catch)
+                if (success1) {
+                    try {
+                        const refund1 = db.updateCredits(player1.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
+                        if (!refund1) {
+                            console.error(`🚨 CRITICAL: Refund failed for player1 ${player1.username} - credits may be lost!`);
+                        } else {
+                            console.log(`✅ Successfully refunded 100 credits to ${player1.username}`);
+                        }
+                    } catch (refundError) {
+                        console.error(`🚨 CRITICAL: Refund exception for player1 ${player1.username}:`, refundError);
+                    }
+                }
+                if (success2) {
+                    try {
+                        const refund2 = db.updateCredits(player2.id, 100, 'gambling_refund', 'Gambling game geannuleerd', gameId);
+                        if (!refund2) {
+                            console.error(`🚨 CRITICAL: Refund failed for player2 ${player2.username} - credits may be lost!`);
+                        } else {
+                            console.log(`✅ Successfully refunded 100 credits to ${player2.username}`);
+                        }
+                    } catch (refundError) {
+                        console.error(`🚨 CRITICAL: Refund exception for player2 ${player2.username}:`, refundError);
+                    }
+                }
+
+                // Notify players
+                io.to(player1Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
+                io.to(player2Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
+                return;
+            }
+
+            gamblingPot = 200; // 100 from each player
+            console.log(`🎰 Gambling game starting! Pot: ${gamblingPot} credits (${player1.username} vs ${player2.username})`);
+
+        } catch (error) {
+            console.error(`🚨 CRITICAL: Gambling credits freeze exception:`, error);
+
+            // Attempt refunds for both players if credits were frozen
+            if (success1) {
+                try {
+                    db.updateCredits(player1.id, 100, 'gambling_refund', 'Gambling game error', gameId);
+                } catch (refundError) {
+                    console.error(`🚨 CRITICAL: Emergency refund failed for player1:`, refundError);
+                }
+            }
+            if (success2) {
+                try {
+                    db.updateCredits(player2.id, 100, 'gambling_refund', 'Gambling game error', gameId);
+                } catch (refundError) {
+                    console.error(`🚨 CRITICAL: Emergency refund failed for player2:`, refundError);
+                }
+            }
 
             // Notify players
-            io.to(player1Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
-            io.to(player2Data.socketId).emit('error', { message: 'Gambling game kon niet starten' });
+            io.to(player1Data.socketId).emit('error', { message: 'Gambling game kon niet starten (server error)' });
+            io.to(player2Data.socketId).emit('error', { message: 'Gambling game kon niet starten (server error)' });
             return;
         }
-
-        gamblingPot = 200; // 100 from each player
-        console.log(`🎰 Gambling game starting! Pot: ${gamblingPot} credits`);
     }
 
     const game = {

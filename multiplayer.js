@@ -1724,6 +1724,7 @@ function initializeSocket() {
     socket.on('new_round', handleNewRound);
     socket.on('your_turn', handleYourTurn);
     socket.on('waiting_for_opponent', handleWaitingForOpponent);
+    socket.on('turn_changed', handleTurnChanged); // Turn update during game (BUG FIX #3)
     socket.on('vastgooier', handleVastgooier); // Overgooien bij gelijkspel
     socket.on('vastgooier_reveal', handleVastgooierReveal); // Toon beide worpen
     socket.on('vastgooier_result', handleVastgooierResult); // Resultaat van vastgooier
@@ -3087,6 +3088,26 @@ function handleWaitingForOpponent(data) {
 
     showInlineMessage(data.message || 'Wachten op tegenstander...', 'info');
     showWaitingMessage('Wachten op tegenstander...');
+}
+
+// BUG FIX #3: Handle turn changes during game
+function handleTurnChanged(data) {
+    debugLog('🔄 Turn changed:', data);
+
+    // Update turn state
+    isMyTurn = data.isYourTurn;
+
+    // Update UI based on whose turn it is
+    if (data.isYourTurn) {
+        showInlineMessage('Jouw beurt!', 'info');
+        // Show throw buttons if applicable
+        if (currentGame && !currentGame.waitingForResult) {
+            showThrowButtons(currentGame.mustFollowPattern || false);
+        }
+    } else {
+        showInlineMessage('Wachten op tegenstander...', 'info');
+        showWaitingMessage('Wachten op tegenstander...');
+    }
 }
 
 function handleVastExtraThrow(data) {
