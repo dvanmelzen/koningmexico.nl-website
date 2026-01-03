@@ -5717,7 +5717,7 @@ class GameEngine {
         // Enhanced debug log voor worp
         const roleLabel = this.voorgooierId === this.player.id ? "Voorgooier" : "Nagooier";
         const throwDisplay = isBlind ? "??? (BLIND)" : (this.player.isMexico ? "Mexico!" : this.player.currentThrow);
-        console.log(`[${roleLabel}] ${this.player.username} - Worp ${this.player.throwCount}: ${throwDisplay}`);
+        debugLog(`[${roleLabel}] ${this.player.username} - Worp ${this.player.throwCount}: ${throwDisplay}`);
 
         // Determine next actions
         const canKeep = true;
@@ -5756,7 +5756,7 @@ class GameEngine {
         }
 
         debugLog(`[GameEngine] Player keeps throw: ${this.player.displayThrow}`);
-        console.log(`[Beslissing] ${this.player.username} - Vasthouden (worp: ${this.player.displayThrow})`);
+        debugLog(`[Beslissing] ${this.player.username} - Vasthouden (worp: ${this.player.displayThrow})`);
 
         // Notify opponent via adapter
         this.adapter.notifyOpponent('keep', {
@@ -5911,15 +5911,15 @@ class GameEngine {
             debugLog(`[GameEngine] Player wins${isMexicoWin ? ' with MEXICO!' : ''}! Opponent loses ${penalty} life/lives, now at: ${this.opponent.lives}`);
 
         // Enhanced debug log - einde ronde
-        console.log(`
+        debugLog(`
 ${'='.repeat(50)}`);
-        console.log(`==== EINDE RONDE ${this.roundNumber} ====`);
+        debugLog(`==== EINDE RONDE ${this.roundNumber} ====`);
         const winnerName = winner === this.player.id ? this.player.username : this.opponent.username;
         const loserName = winner === this.player.id ? this.opponent.username : this.player.username;
         const penaltyText = isMexicoWin ? '2 levens (MEXICO!)' : '1 leven';
-        console.log(`Winnaar: ${winnerName}`);
-        console.log(`Verliezer: ${loserName} (-${penaltyText})`);
-        console.log(`${'='.repeat(50)}
+        debugLog(`Winnaar: ${winnerName}`);
+        debugLog(`Verliezer: ${loserName} (-${penaltyText})`);
+        debugLog(`${'='.repeat(50)}
 `);
         } else {
             this.player.lives -= penalty;
@@ -6053,11 +6053,11 @@ ${'='.repeat(50)}`);
 
         // Enhanced debug log voor ronde start
         const voorgooierName = this.voorgooierId === this.player.id ? this.player.username : this.opponent.username;
-        console.log(`
+        debugLog(`
 ${'='.repeat(50)}`);
-        console.log(`==== START RONDE ${this.roundNumber} ====`);
-        console.log(`Voorgooier: ${voorgooierName}`);
-        console.log(`${'='.repeat(50)}
+        debugLog(`==== START RONDE ${this.roundNumber} ====`);
+        debugLog(`Voorgooier: ${voorgooierName}`);
+        debugLog(`${'='.repeat(50)}
 `);
 
         // 🤖 BOT MODE: If bot is voorgooier, auto-play bot's turn immediately
@@ -6432,7 +6432,7 @@ function botTurnThrowSequence() {
         const shouldContinue = botShouldThrowAgain();
         if (!shouldContinue) {
             debugLog(`[Bot] Decision: KEEP at ${bot.currentThrow}`);
-            console.log(`[Beslissing] Bot - Vasthouden (worp: ${bot.currentThrow})`);
+            debugLog(`[Beslissing] Bot - Vasthouden (worp: ${bot.currentThrow})`);
             // Set max throws if voorgooier
             if (botGame.voorgooier === 'bot') {
                 botGame.maxThrows = bot.throwCount;
