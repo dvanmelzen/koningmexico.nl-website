@@ -6047,6 +6047,16 @@ ${'='.repeat(50)}`);
             botGame.playerState.throwHistory = [];
         }
 
+        // ✅ FIX: Reset opponent state for new round (prevents stale data from previous round)
+        this.opponent.throwCount = 0;
+        this.opponent.dice1 = null;
+        this.opponent.dice2 = null;
+        this.opponent.currentThrow = null;
+        this.opponent.displayThrow = null;
+        this.opponent.isBlind = false;
+        this.opponent.isMexico = false;
+        debugLog('[startNextRound] Reset opponent state for new round');
+
         // Clear UI history
         playerThrowHistory = [];
         opponentThrowHistory = [];
