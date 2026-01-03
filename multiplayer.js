@@ -5858,6 +5858,7 @@ class GameEngine {
             achterliggerResult: (winner !== this.voorgooierId) ? 'won' : 'lost',
             winnerId: winner,
             loserId: loser,
+            penalty: penalty,  // ✅ FIX: Pass penalty for "2x draaien" text
             livesLeft: winner === this.player.id ? this.player.lives : this.opponent.lives
         });
 
