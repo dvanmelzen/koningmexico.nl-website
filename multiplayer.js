@@ -4577,10 +4577,15 @@ function updateDebugMatchStatus(status, color = '#aaa') {
 // ============================================
 
 function updateLastRoundSummary(data) {
+    debugLog('📊 updateLastRoundSummary called with data:', JSON.stringify(data));
+
     const summaryEl = document.getElementById('lastRoundSummary');
     const contentEl = document.getElementById('lastRoundContent');
 
-    if (!summaryEl || !contentEl || !data) return;
+    if (!summaryEl || !contentEl || !data) {
+        debugLog('⚠️ updateLastRoundSummary: missing element or data');
+        return;
+    }
 
     // Determine names (✅ FIX: Add safety checks for bot mode)
     const opponentName = currentGame?.opponent?.username || gameEngine?.opponent?.username || 'Tegenstander';
@@ -4592,20 +4597,28 @@ function updateLastRoundSummary(data) {
     // Get throw values - replace 1000 with "Mexico!"
     // ✅ FIX: Calculate displayValue from dice if not provided
     let voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value;
+    debugLog(`  Voorgooier: displayName=${data.voorgooierThrow?.displayName}, value=${data.voorgooierThrow?.value}, dice1=${data.voorgooierThrow?.dice1}, dice2=${data.voorgooierThrow?.dice2}`);
+
     if (!voorgooierValue && data.voorgooierThrow?.dice1 && data.voorgooierThrow?.dice2) {
         const throwInfo = calculateThrowDisplay(data.voorgooierThrow.dice1, data.voorgooierThrow.dice2);
         voorgooierValue = throwInfo.displayValue;
+        debugLog(`  ✅ Calculated voorgooier from dice: ${voorgooierValue}`);
     }
     voorgooierValue = voorgooierValue || '?';
     if (voorgooierValue === 1000 || voorgooierValue === '1000') voorgooierValue = 'Mexico!';
+    debugLog(`  Final voorgooierValue: ${voorgooierValue}`);
 
     let achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value;
+    debugLog(`  Achterligger: displayName=${data.achterliggerThrow?.displayName}, value=${data.achterliggerThrow?.value}, dice1=${data.achterliggerThrow?.dice1}, dice2=${data.achterliggerThrow?.dice2}`);
+
     if (!achterliggerValue && data.achterliggerThrow?.dice1 && data.achterliggerThrow?.dice2) {
         const throwInfo = calculateThrowDisplay(data.achterliggerThrow.dice1, data.achterliggerThrow.dice2);
         achterliggerValue = throwInfo.displayValue;
+        debugLog(`  ✅ Calculated achterligger from dice: ${achterliggerValue}`);
     }
     achterliggerValue = achterliggerValue || '?';
     if (achterliggerValue === 1000 || achterliggerValue === '1000') achterliggerValue = 'Mexico!';
+    debugLog(`  Final achterliggerValue: ${achterliggerValue}`);
 
     // Build compact text summary
     let text = '';
