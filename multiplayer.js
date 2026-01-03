@@ -39,6 +39,9 @@ const gameState = {
     // UI State
     debugMode: true,
 
+    // ✅ MUTEX LOCK: Prevent vastgooier race condition (Issue 2.3)
+    vastgooierInProgress: false,
+
     // Getters
     getSocket() { return this.socket; },
     getUser() { return this.currentUser; },
@@ -1704,7 +1707,16 @@ function showToast(message, type = 'info', duration = 3000) {
         transition: all 0.3s ease;
     `;
 
-    toast.innerHTML = `<span style="font-size: 1.25rem; margin-right: 0.5rem;">${icon}</span><span>${message}</span>`;
+    // ✅ XSS FIX (Issue 4.3): Use DOM methods instead of innerHTML
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = 'font-size: 1.25rem; margin-right: 0.5rem;';
+    iconSpan.textContent = icon;
+
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message; // Safe from XSS!
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(messageSpan);
 
     container.appendChild(toast);
 
@@ -3384,22 +3396,8 @@ function handleNewRound(data) {
         console.error('Full error:', error);
     }
 
-    try {
-        // Fallback button logic (old code, may be redundant)
-        debugLog('🔍 Step 9: Fallback button check');
-        if (data.currentTurn === currentUser.id) {
-            isMyTurn = true;
-            showThrowButtons(data.mustBlind);
-            debugLog('✅ Step 9: Fallback buttons shown');
-        } else {
-            isMyTurn = false;
-            showWaitingMessage('Wachten op tegenstander...');
-            debugLog('✅ Step 9: Fallback waiting');
-        }
-    } catch (error) {
-        debugLog('❌ ERROR in handleNewRound step 9 (fallback):', error.message);
-        console.error('Full error:', error);
-    }
+    // ✅ REMOVED Step 9: Duplicate button logic (Issue 2.1 fix)
+    // Step 8a already handles button display correctly
 }
 
 function handleYourTurn(data) {
@@ -4349,6 +4347,13 @@ function handleRematchDeclined(data) {
 // ============================================
 
 function handleVastgooier(data) {
+    // ✅ MUTEX LOCK: Prevent race condition (Issue 2.3)
+    if (gameState.vastgooierInProgress) {
+        debugLog('⚠️ Vastgooier already in progress, ignoring duplicate event');
+        return;
+    }
+    gameState.vastgooierInProgress = true;
+
     debugLog('⚔️  Vastgooier:', data);
 
     showInlineMessage(data.message || '🤝 Gelijkspel! Overgooien!', 'warning');
@@ -4394,6 +4399,9 @@ function handleVastgooierReveal(data) {
 }
 
 function handleVastgooierResult(data) {
+    // ✅ RESET MUTEX LOCK: Vastgooier complete (Issue 2.3)
+    gameState.vastgooierInProgress = false;
+
     debugLog('🏆 Vastgooier result:', data);
 
     const isWinner = data.winnerId === currentUser.id;
@@ -6062,7 +6070,7 @@ function botTurnThrowSequence() {
     // First round: only 1 blind throw
     if (botGame.isFirstRound) {
         botThrowDice(true);  // Blind
-        showOpponentDice('', '', false, true);  // Hidden for blind
+        showOpponentDice('', '', true, true);  // ✅ isHidden=true for animation
         showInlineMessage('🤖 Bot gooide blind...', 'info');
 
         // Compare after short delay
@@ -6137,7 +6145,7 @@ function botTurnThrowSequence() {
 
     // Show dice (or hide if blind)
     if (bot.isBlind) {
-        showOpponentDice('', '', false, true);
+        showOpponentDice('', '', true, true);  // ✅ isHidden=true for animation
         showInlineMessage(`🤖 Bot gooide blind...`, 'info');
 
         // If not last throw, reveal after delay
@@ -6216,21 +6224,30 @@ function compareBotRound() {
         let winnerId = null;
         let loserId = null;
         let resultMessage = '';
+        let penalty = 1; // Default penalty
 
         if (player.currentThrow > bot.currentThrow) {
             winner = 'player';
             winnerId = currentUser.id;
             loserId = botGame.botPlayer.id;
-            resultMessage = '🎉 Jij wint deze ronde!';
+
+            // ✅ Calculate penalty: Mexico = 2 levens, normal = 1
+            penalty = player.isMexico ? 2 : 1;
+
+            resultMessage = penalty === 2 ? '🎉 Jij wint met MEXICO! (Bot verliest 2 levens)' : '🎉 Jij wint deze ronde!';
             player.lives = Math.max(0, player.lives);
-            bot.lives--;
+            bot.lives -= penalty;
         } else if (bot.currentThrow > player.currentThrow) {
             winner = 'bot';
             winnerId = botGame.botPlayer.id;
             loserId = currentUser.id;
-            resultMessage = '😔 Bot wint deze ronde';
+
+            // ✅ Calculate penalty: Mexico = 2 levens, normal = 1
+            penalty = bot.isMexico ? 2 : 1;
+
+            resultMessage = penalty === 2 ? '😔 Bot wint met MEXICO! (Jij verliest 2 levens)' : '😔 Bot wint deze ronde';
             bot.lives = Math.max(0, bot.lives);
-            player.lives--;
+            player.lives -= penalty;
         } else {
             // Tie - overgooien
             resultMessage = '🤝 Gelijkspel! Overgooien (1 worp)';
@@ -6247,10 +6264,19 @@ function compareBotRound() {
         updateLastRoundSummary({
             voorgooierId: isVoorgooier ? currentUser.id : botGame.botPlayer.id,
             achterliggerId: isVoorgooier ? botGame.botPlayer.id : currentUser.id,
+            voorgooierThrow: {
+                value: isVoorgooier ? player.currentThrow : bot.currentThrow,
+                displayName: isVoorgooier ? player.displayThrow : bot.displayThrow
+            },
+            achterliggerThrow: {
+                value: isVoorgooier ? bot.currentThrow : player.currentThrow,
+                displayName: isVoorgooier ? bot.displayThrow : player.displayThrow
+            },
             voorgooierResult: (winnerId === (isVoorgooier ? currentUser.id : botGame.botPlayer.id)) ? 'won' : 'lost',
             achterliggerResult: (winnerId === (isVoorgooier ? botGame.botPlayer.id : currentUser.id)) ? 'won' : 'lost',
             winnerId: winnerId,
             loserId: loserId,
+            penalty: penalty,
             livesLeft: winner === 'player' ? player.lives : bot.lives
         });
 
@@ -6467,7 +6493,16 @@ window.throwDice = function(isBlind) {
             // Show action buttons
             setTimeout(() => {
                 if (player.throwCount < botGame.maxThrows) {
-                    showThrowButtons(false, false);
+                    // ✅ PATTERN ENFORCEMENT: Check if bot is voorgooier
+                    if (botGame.voorgooier === 'bot' && botGame.voorgooierPattern && player.throwCount < botGame.voorgooierPattern.length) {
+                        // Bot is voorgooier - must follow pattern
+                        const mustBeBlind = botGame.voorgooierPattern[player.throwCount];
+                        showThrowButtons(mustBeBlind, true); // true = followingPattern
+                    } else {
+                        // Player is voorgooier or no pattern - show both options
+                        showThrowButtons(false, false);
+                    }
+
                     const keepBtn = document.getElementById('keepBtn');
                     if (keepBtn) {
                         keepBtn.classList.remove('hidden');
@@ -6548,7 +6583,16 @@ window.revealDice = function() {
             // Show action buttons
             setTimeout(() => {
                 if (player.throwCount < botGame.maxThrows) {
-                    showThrowButtons(false, false);
+                    // ✅ PATTERN ENFORCEMENT: Check if bot is voorgooier
+                    if (botGame.voorgooier === 'bot' && botGame.voorgooierPattern && player.throwCount < botGame.voorgooierPattern.length) {
+                        // Bot is voorgooier - must follow pattern
+                        const mustBeBlind = botGame.voorgooierPattern[player.throwCount];
+                        showThrowButtons(mustBeBlind, true); // true = followingPattern
+                    } else {
+                        // Player is voorgooier or no pattern - show both options
+                        showThrowButtons(false, false);
+                    }
+
                     const keepBtn = document.getElementById('keepBtn');
                     if (keepBtn) {
                         keepBtn.classList.remove('hidden');
