@@ -6380,11 +6380,15 @@ function compareBotRound() {
             achterliggerId: isVoorgooier ? botGame.botPlayer.id : currentUser.id,
             voorgooierThrow: {
                 value: isVoorgooier ? player.currentThrow : bot.currentThrow,
-                displayName: isVoorgooier ? player.displayThrow : bot.displayThrow
+                displayName: isVoorgooier ? player.displayThrow : bot.displayThrow,
+                dice1: isVoorgooier ? player.dice1 : bot.dice1,
+                dice2: isVoorgooier ? player.dice2 : bot.dice2
             },
             achterliggerThrow: {
                 value: isVoorgooier ? bot.currentThrow : player.currentThrow,
-                displayName: isVoorgooier ? bot.displayThrow : player.displayThrow
+                displayName: isVoorgooier ? bot.displayThrow : player.displayThrow,
+                dice1: isVoorgooier ? bot.dice1 : player.dice1,
+                dice2: isVoorgooier ? bot.dice2 : player.dice2
             },
             voorgooierResult: (winnerId === (isVoorgooier ? currentUser.id : botGame.botPlayer.id)) ? 'won' : 'lost',
             achterliggerResult: (winnerId === (isVoorgooier ? botGame.botPlayer.id : currentUser.id)) ? 'won' : 'lost',
