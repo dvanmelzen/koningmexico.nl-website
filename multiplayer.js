@@ -5517,9 +5517,9 @@ BotAdapter.rollDice = function(isBlind) {
     });
 };
 
-BotAdapter.executeOpponentTurn = async function() {
-    // Execute bot's turn (for achterligger or vastloper re-throw)
-    debugLog('[BotAdapter] Executing bot turn...');
+BotAdapter.executeOpponentTurn = async function(forceBlind = false) {
+    // Execute bot's turn (for achterligger, vastloper re-throw, or overgooien)
+    debugLog(`[BotAdapter] Executing bot turn... (forceBlind: ${forceBlind})`);
 
     // For now, use simple bot AI (just throw once and keep)
     // TODO: Integrate advanced AI psychology later
@@ -5528,28 +5528,34 @@ BotAdapter.executeOpponentTurn = async function() {
     const dice1 = Math.ceil(Math.random() * 6);
     const dice2 = Math.ceil(Math.random() * 6);
 
-    debugLog(`[BotAdapter] Bot rolled: ${dice1}-${dice2}`);
+    debugLog(`[BotAdapter] Bot rolled: ${dice1}-${dice2} (${forceBlind ? 'BLIND' : 'OPEN'})`);
 
     // Update gameEngine opponent state directly
     if (gameEngine) {
         gameEngine.opponent.dice1 = dice1;
         gameEngine.opponent.dice2 = dice2;
         gameEngine.opponent.currentThrow = gameEngine.calculateThrowValue(dice1, dice2);
-        gameEngine.opponent.displayThrow = gameEngine.opponent.currentThrow === 1000 ? 'MEXICO' : String(gameEngine.opponent.currentThrow);
         gameEngine.opponent.throwCount = 1;
-        gameEngine.opponent.isBlind = false;
+        gameEngine.opponent.isBlind = forceBlind;
         gameEngine.opponent.isMexico = (gameEngine.opponent.currentThrow === 1000);
 
-        // Show opponent dice
-        showOpponentDice(dice1, dice2, false, gameEngine.opponent.isMexico);
+        // If blind, hide the throw value
+        if (forceBlind) {
+            gameEngine.opponent.displayThrow = '???';
+        } else {
+            gameEngine.opponent.displayThrow = gameEngine.opponent.currentThrow === 1000 ? 'MEXICO' : String(gameEngine.opponent.currentThrow);
+        }
+
+        // Show opponent dice (hidden if blind)
+        showOpponentDice(dice1, dice2, forceBlind, gameEngine.opponent.isMexico);
 
         // Add to opponent history
         const throwInfo = calculateThrowDisplay(dice1, dice2);
         opponentThrowHistory.push({
-            displayValue: throwInfo.displayValue,
+            displayValue: forceBlind ? '???' : throwInfo.displayValue,
             isMexico: throwInfo.isMexico,
-            isBlind: false,
-            wasBlind: false
+            isBlind: forceBlind,
+            wasBlind: forceBlind
         });
         updateThrowHistory();
     }
@@ -5606,6 +5612,12 @@ class GameEngine {
         this.isSimultaneous = true; // First round is simultaneous in multiplayer
         this.isGambling = false;
         this.gamblingPot = 0;
+
+        // Overgooien state (mini-game after vastloper)
+        this.isOvergooien = false;
+        this.overgooienDepth = 0;
+        this.rondeThrows = null; // Store original round throws for penalty calculation
+        this.overgooienHistory = [];
 
         // Player state
         this.player = {
@@ -5780,8 +5792,13 @@ class GameEngine {
             debugLog('[GameEngine] Opponent already threw - skipping executeOpponentTurn');
         }
 
-        // After opponent turn, compare round
-        await this.compareRound();
+        // After opponent turn, compare round (or overgooien if in overgooien mode)
+        if (this.isOvergooien) {
+            debugLog('[GameEngine] In overgooien mode - comparing overgooien throws');
+            await this.compareOvergooien();
+        } else {
+            await this.compareRound();
+        }
 
         return {
             roundComplete: true,
@@ -5856,50 +5873,11 @@ class GameEngine {
             }
         }
 
-        // ✅ CHECK FOR VASTLOPER (both same throw)
+        // ✅ CHECK FOR VASTLOPER (both same throw) → Start OVERGOOIEN mini-game
         if (this.player.currentThrow === this.opponent.currentThrow) {
-            debugLog(`[GameEngine] VASTLOPER! Both threw ${this.player.currentThrow} - re-throwing round`);
-
-            // Show vastloper message
-            showInlineMessage(`⚔️ Vastloper! Beide ${this.player.displayThrow} - gooi opnieuw!`, 'warning');
-
-            // Reset both players' throws
-            this.player.currentThrow = null;
-            this.player.displayThrow = null;
-            this.player.throwCount = 0;
-            this.player.isBlind = false;
-
-            this.opponent.currentThrow = null;
-            this.opponent.displayThrow = null;
-            this.opponent.throwCount = 0;
-            this.opponent.isBlind = false;
-
-            // Clear throw history for this round
-            playerThrowHistory = [];
-            opponentThrowHistory = [];
-            updateThrowHistory();
-
-            // Hide dice
-            showDice('', '', false, false);
-
-            // Re-start the round
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Show message for 2 seconds
-
-            // Determine who starts (voorgooier stays the same for re-throw)
-            if (this.mode === 'bot' && this.voorgooierId === this.opponent.id) {
-                // Bot is voorgooier, auto-play bot turn
-                debugLog('[GameEngine] Vastloper re-throw: Bot is voorgooier');
-                this.currentTurnId = this.opponent.id;
-                await this.adapter.executeOpponentTurn();
-                this.currentTurnId = this.player.id;
-                showThrowButtons(this.maxThrows, false);
-            } else {
-                // Player is voorgooier
-                debugLog('[GameEngine] Vastloper re-throw: Player is voorgooier');
-                this.currentTurnId = this.player.id;
-                showThrowButtons(this.maxThrows, false);
-            }
-            return; // Stop here, don't determine winner
+            debugLog(`[GameEngine] VASTLOPER! Both threw ${this.player.currentThrow} - starting overgooien mini-game`);
+            await this.startOvergooien();
+            return; // Stop here, overgooien handles everything
         }
 
         // Determine winner
@@ -5973,6 +5951,240 @@ ${'='.repeat(50)}`);
 
             // ✅ FIX: Pass loser as next voorgooier (loser becomes voorgooier in next round)
             await this.startNextRound(loser);
+        }
+    }
+
+    /**
+     * Start overgooien mini-game (after vastloper)
+     */
+    async startOvergooien() {
+        debugLog(`[GameEngine] Starting OVERGOOIEN mini-game (depth: ${this.overgooienDepth})`);
+
+        // First overgooien: save original round throws for penalty calculation
+        if (this.overgooienDepth === 0) {
+            this.rondeThrows = {
+                player: {
+                    currentThrow: this.player.currentThrow,
+                    isMexico: this.player.isMexico,
+                    dice1: this.player.dice1,
+                    dice2: this.player.dice2
+                },
+                opponent: {
+                    currentThrow: this.opponent.currentThrow,
+                    isMexico: this.opponent.isMexico
+                },
+                wasBothMexico: (this.player.isMexico && this.opponent.isMexico)
+            };
+            debugLog(`[GameEngine] Saved rondeThrows for penalty: player=${this.rondeThrows.player.currentThrow}, opponent=${this.rondeThrows.opponent.currentThrow}, bothMexico=${this.rondeThrows.wasBothMexico}`);
+        }
+
+        // Increment depth
+        this.overgooienDepth++;
+
+        // Safety check: prevent infinite loop
+        if (this.overgooienDepth > 10) {
+            debugLog('[GameEngine] ⚠️ Max overgooien depth reached! Breaking loop.');
+            showInlineMessage('⚠️ Te veel vastlopers! Ronde wordt herstart.', 'warning');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await this.startNextRound(this.voorgooierId);
+            return;
+        }
+
+        // Enter overgooien mode
+        this.isOvergooien = true;
+
+        // Show overgooien message
+        const vastloperMsg = this.overgooienDepth === 1
+            ? `⚔️ Vastloper! Beide ${this.player.displayThrow} - Overgooien: 1x blind!`
+            : `⚔️ Opnieuw vastloper! Overgooien: 1x blind! (${this.overgooienDepth}e keer)`;
+        showInlineMessage(vastloperMsg, 'warning');
+
+        // Reset ONLY current throw state (NOT throwCount, keep history)
+        this.player.currentThrow = null;
+        this.player.displayThrow = null;
+        this.player.isBlind = false;
+        this.player.isMexico = false;
+        this.player.dice1 = null;
+        this.player.dice2 = null;
+
+        this.opponent.currentThrow = null;
+        this.opponent.displayThrow = null;
+        this.opponent.isBlind = false;
+        this.opponent.isMexico = false;
+
+        // Hide dice
+        showDice('', '', false, false);
+
+        // Wait for message
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Force simultaneous blind throws
+        this.isSimultaneous = true;
+
+        // Start overgooien throws
+        if (this.mode === 'bot') {
+            // Bot mode: both throw blind simultaneously
+            debugLog('[GameEngine] Overgooien: Bot + Player throw blind simultaneously');
+
+            // Bot throws first (with delay for UX)
+            await new Promise(resolve => setTimeout(resolve, 300));
+            await this.adapter.executeOpponentTurn(true); // true = force blind
+
+            // Player throws
+            this.currentTurnId = this.player.id;
+            showThrowButtons(1, true); // Only 1 throw, force blind
+        } else {
+            // Multiplayer mode: both players throw blind
+            debugLog('[GameEngine] Overgooien: Both players throw blind simultaneously');
+            this.currentTurnId = this.player.id;
+            showThrowButtons(1, true); // Only 1 throw, force blind
+        }
+    }
+
+    /**
+     * Compare overgooien throws and determine winner
+     */
+    async compareOvergooien() {
+        debugLog(`[GameEngine] Comparing OVERGOOIEN throws (depth: ${this.overgooienDepth})`);
+
+        // Get opponent state
+        const opponentState = this.adapter.getOpponentState();
+        this.opponent.currentThrow = opponentState.currentThrow;
+        this.opponent.displayThrow = opponentState.displayThrow;
+        this.opponent.isBlind = opponentState.isBlind;
+        this.opponent.isMexico = opponentState.isMexico;
+
+        // Add suspense delay
+        debugLog('[GameEngine] Overgooien: Waiting 500ms before revealing');
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Reveal both throws
+        if (this.player.isBlind) {
+            this.revealDice();
+        }
+        if (this.opponent.isBlind) {
+            this.opponent.displayThrow = this.opponent.isMexico ? 'Mexico!' : String(this.opponent.currentThrow);
+            this.opponent.isBlind = false;
+
+            if (opponentThrowHistory.length > 0) {
+                opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+                updateThrowHistory();
+            }
+        }
+
+        // Check for ANOTHER vastloper (recursive)
+        if (this.player.currentThrow === this.opponent.currentThrow) {
+            debugLog(`[GameEngine] OVERGOOIEN VASTLOPER! Both threw ${this.player.currentThrow} - repeat overgooien`);
+
+            // Add to history
+            this.overgooienHistory.push({
+                depth: this.overgooienDepth,
+                playerThrow: this.player.currentThrow,
+                opponentThrow: this.opponent.currentThrow,
+                result: 'vastloper'
+            });
+
+            // Recursive: start another overgooien
+            await this.startOvergooien();
+            return;
+        }
+
+        // Determine overgooien winner
+        const overgooienWinner = this.player.currentThrow > this.opponent.currentThrow
+            ? this.player.id
+            : this.opponent.id;
+
+        const overgooienLoser = overgooienWinner === this.player.id
+            ? this.opponent.id
+            : this.player.id;
+
+        debugLog(`[GameEngine] Overgooien winner: ${overgooienWinner === this.player.id ? this.player.username : this.opponent.username}`);
+
+        // Add to history
+        this.overgooienHistory.push({
+            depth: this.overgooienDepth,
+            playerThrow: this.player.currentThrow,
+            opponentThrow: this.opponent.currentThrow,
+            winnerId: overgooienWinner
+        });
+
+        // Calculate penalty based on ORIGINAL round throws (NOT overgooien throws)
+        let penalty = 1; // Default
+        if (this.rondeThrows.wasBothMexico) {
+            // Both threw Mexico in original round
+            // aantal_spelers × 2 (for 2 players = 4 lives)
+            const aantalSpelers = 2; // TODO: make dynamic if game supports 3+ players
+            penalty = aantalSpelers * 2;
+            debugLog(`[GameEngine] Penalty: Both Mexico in round → ${aantalSpelers} × 2 = ${penalty} levens`);
+        } else if (this.rondeThrows.player.isMexico || this.rondeThrows.opponent.isMexico) {
+            // One Mexico in original round
+            penalty = 2;
+            debugLog(`[GameEngine] Penalty: One Mexico in round → 2 levens`);
+        } else {
+            // Normal penalty
+            penalty = 1;
+            debugLog(`[GameEngine] Penalty: Normal → 1 leven`);
+        }
+
+        // Note: Mexico thrown IN overgooien does NOT count as double penalty!
+        // It just wins the overgooien, but penalty is based on rondeThrows.
+
+        // Apply penalty
+        if (overgooienWinner === this.player.id) {
+            this.opponent.lives -= penalty;
+            debugLog(`[GameEngine] Player wins overgooien! Opponent loses ${penalty} life/lives, now at: ${this.opponent.lives}`);
+        } else {
+            this.player.lives -= penalty;
+            debugLog(`[GameEngine] Opponent wins overgooien! Player loses ${penalty} life/lives, now at: ${this.player.lives}`);
+        }
+
+        // Update UI
+        updateLives(this.player.id, this.player.lives);
+        updateLives(this.opponent.id, this.opponent.lives);
+
+        // Update last round summary (show overgooien result)
+        const isVoorgooier = (this.voorgooierId === this.player.id);
+        const voorgooierPlayer = isVoorgooier ? this.player : this.opponent;
+        const achterliggerPlayer = isVoorgooier ? this.opponent : this.player;
+
+        updateLastRoundSummary({
+            voorgooierId: this.voorgooierId,
+            achterliggerId: isVoorgooier ? this.opponent.id : this.player.id,
+            voorgooierThrow: {
+                value: this.rondeThrows.player.currentThrow,
+                displayName: this.rondeThrows.player.isMexico ? 'Mexico!' : String(this.rondeThrows.player.currentThrow),
+                dice1: this.rondeThrows.player.dice1,
+                dice2: this.rondeThrows.player.dice2
+            },
+            achterliggerThrow: {
+                value: this.rondeThrows.opponent.currentThrow,
+                displayName: this.rondeThrows.opponent.isMexico ? 'Mexico!' : String(this.rondeThrows.opponent.currentThrow),
+                dice1: null, // Don't have opponent dice stored
+                dice2: null
+            },
+            voorgooierResult: (overgooienWinner === this.voorgooierId) ? 'won' : 'lost',
+            achterliggerResult: (overgooienWinner !== this.voorgooierId) ? 'won' : 'lost',
+            winnerId: overgooienWinner,
+            loserId: overgooienLoser,
+            penalty: penalty,
+            livesLeft: overgooienWinner === this.player.id ? this.player.lives : this.opponent.lives,
+            wasOvergooien: true,
+            overgooienDepth: this.overgooienDepth
+        });
+
+        // Exit overgooien mode
+        this.isOvergooien = false;
+        this.overgooienDepth = 0;
+        this.rondeThrows = null;
+        this.overgooienHistory = [];
+
+        // Check for game over
+        if (this.isGameOver()) {
+            await this.endGame();
+        } else {
+            // Wait before starting next round
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await this.startNextRound(overgooienLoser);
         }
     }
 
