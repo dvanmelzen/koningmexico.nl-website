@@ -5082,7 +5082,9 @@ let botGame = {
         lastThrowQuality: 0,
         firstThrowOfRound: null,
         recentWins: 0
-    }
+    },
+    // ✅ Track original Mexico status before overgooien for correct penalty
+    originalMexicoThrown: false
 };
 
 // Select random bot name
@@ -6231,8 +6233,13 @@ function compareBotRound() {
             winnerId = currentUser.id;
             loserId = botGame.botPlayer.id;
 
-            // ✅ Calculate penalty: Mexico = 2 levens, normal = 1
-            penalty = player.isMexico ? 2 : 1;
+            // ✅ Calculate penalty: Check if original throw (before overgooien) was Mexico
+            if (botGame.originalMexicoThrown) {
+                penalty = 2;  // Original throw was Mexico, use 2-life penalty
+                debugLog('[Bot] Using originalMexicoThrown for penalty: 2 lives');
+            } else {
+                penalty = player.isMexico ? 2 : 1;  // Normal penalty calculation
+            }
 
             resultMessage = penalty === 2 ? '🎉 Jij wint met MEXICO! (Bot verliest 2 levens)' : '🎉 Jij wint deze ronde!';
             player.lives = Math.max(0, player.lives);
@@ -6242,8 +6249,13 @@ function compareBotRound() {
             winnerId = botGame.botPlayer.id;
             loserId = currentUser.id;
 
-            // ✅ Calculate penalty: Mexico = 2 levens, normal = 1
-            penalty = bot.isMexico ? 2 : 1;
+            // ✅ Calculate penalty: Check if original throw (before overgooien) was Mexico
+            if (botGame.originalMexicoThrown) {
+                penalty = 2;  // Original throw was Mexico, use 2-life penalty
+                debugLog('[Bot] Using originalMexicoThrown for penalty: 2 lives');
+            } else {
+                penalty = bot.isMexico ? 2 : 1;  // Normal penalty calculation
+            }
 
             resultMessage = penalty === 2 ? '😔 Bot wint met MEXICO! (Jij verliest 2 levens)' : '😔 Bot wint deze ronde';
             bot.lives = Math.max(0, bot.lives);
@@ -6258,6 +6270,9 @@ function compareBotRound() {
             }, 2000);
             return;
         }
+
+        // ✅ RESET originalMexicoThrown flag after penalty applied
+        botGame.originalMexicoThrown = false;
 
         // ✅ UPDATE LAST ROUND SUMMARY (like normal multiplayer)
         const isVoorgooier = (botGame.voorgooier === 'player');
@@ -6364,6 +6379,12 @@ function startBotNextRound() {
 // Overgooien with bot
 function startBotOvergooien() {
     debugLog('[Bot] Starting overgooien (1 throw each)');
+
+    // ✅ SAVE ORIGINAL MEXICO STATUS BEFORE OVERGOOIEN (for correct penalty)
+    const player = botGame.playerState;
+    const bot = botGame.botState;
+    botGame.originalMexicoThrown = player.isMexico || bot.isMexico;
+    debugLog(`[Bot] Saved originalMexicoThrown: ${botGame.originalMexicoThrown} (player: ${player.isMexico}, bot: ${bot.isMexico})`);
 
     botGame.maxThrows = 1;
 
