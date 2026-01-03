@@ -197,8 +197,8 @@
             // Doubles as hundreds (66 = 600, 55 = 500, etc.)
             throwValue = higher * 100;
         } else if ((higher === 2 && lower === 1) || (higher === 1 && lower === 2)) {
-            // Mexico!
-            throwValue = 21;
+            // Mexico! (internal value 1000, display as 21)
+            throwValue = 1000;
         } else {
             // Regular throw (highest first)
             throwValue = higher * 10 + lower;
@@ -213,7 +213,7 @@
         elements.dice2.classList.remove('rolling');
 
         // Check for Mexico FIRST (always visible, even when blind!)
-        if (throwValue === 21) {
+        if (throwValue === 1000) {
             // Mexico is always revealed immediately!
             gameState.isBlind = false;
             elements.dice1.classList.remove('hidden');
@@ -552,10 +552,13 @@
 
     function updateThrowDisplay() {
         const value = gameState.currentThrow;
-        elements.currentThrow.textContent = value;
+
+        // Display "21" for Mexico (internal value 1000)
+        const displayValue = value === 1000 ? 21 : value;
+        elements.currentThrow.textContent = displayValue;
 
         // Style based on throw value
-        if (value === 21) {
+        if (value === 1000) {
             elements.currentThrow.className = 'throw-result mexico';
         } else if (value >= 100) {
             elements.currentThrow.className = 'throw-result';
