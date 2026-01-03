@@ -3929,8 +3929,13 @@ function calculateThrowDisplay(dice1, dice2) {
 }
 
 function updateThrowHistory() {
+    debugLog('📊 updateThrowHistory() called. Player history length:', playerThrowHistory.length, 'Opponent:', opponentThrowHistory.length);
+
     const historyDisplay = document.getElementById('throwHistoryDisplay');
-    if (!historyDisplay) return;
+    if (!historyDisplay) {
+        debugLog('⚠️ throwHistoryDisplay element not found!');
+        return;
+    }
 
     // Always show the history panel (even when empty)
     historyDisplay.classList.remove('hidden');
@@ -3948,6 +3953,8 @@ function updateThrowHistory() {
             playerHtml = '<div class="text-xs opacity-50" style="color: var(--text-secondary);">Nog geen worpen</div>';
         } else {
             playerThrowHistory.forEach((throwData, index) => {
+                debugLog(`  👤 Player throw ${index + 1}:`, JSON.stringify(throwData));
+
                 // Check if this is still blind (not revealed)
                 // A throw is still blind if: isBlind is true AND wasRevealed is not true
                 const isStillBlind = throwData.isBlind && !throwData.wasRevealed;
@@ -3959,8 +3966,10 @@ function updateThrowHistory() {
                     displayValue = '???';
                     typeLabel = '🙈 Verborgen';
                     mexicoLabel = '';
+                    debugLog(`    ⚠️ Still BLIND (showing ???)`);
                 } else {
                     // Throw has been revealed (or was open from start)
+                    debugLog(`    ✅ Revealed or was open from start`);
                     // Ensure we have dice values
                     if (!throwData.displayValue && throwData.dice1 && throwData.dice2) {
                         const result = calculateThrowDisplay(throwData.dice1, throwData.dice2);
