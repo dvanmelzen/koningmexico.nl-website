@@ -5999,9 +5999,10 @@ ${'='.repeat(50)}`);
             : `⚔️ Opnieuw vastloper! Overgooien: 1x blind! (${this.overgooienDepth}e keer)`;
         showInlineMessage(vastloperMsg, 'warning');
 
-        // Reset ONLY current throw state (NOT throwCount, keep history)
+        // Reset current throw state INCLUDING throwCount (overgooien is like a mini-round)
         this.player.currentThrow = null;
         this.player.displayThrow = null;
+        this.player.throwCount = 0;
         this.player.isBlind = false;
         this.player.isMexico = false;
         this.player.dice1 = null;
@@ -6009,6 +6010,7 @@ ${'='.repeat(50)}`);
 
         this.opponent.currentThrow = null;
         this.opponent.displayThrow = null;
+        this.opponent.throwCount = 0;
         this.opponent.isBlind = false;
         this.opponent.isMexico = false;
 
