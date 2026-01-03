@@ -5742,7 +5742,8 @@ class GameEngine {
             isMexico: this.player.isMexico,
             throwCount: this.player.throwCount,
             canKeep,
-            canThrowAgain: this.isFirstRound && isBlind ? false : canThrowAgain, // No second throw in round 1
+            // ✅ FIX: Blind = SEALED (beurt verzegeld) - ALTIJD, niet alleen ronde 1
+            canThrowAgain: isBlind ? false : (this.player.throwCount < this.maxThrows),
             isLastThrow,
             state: this.getState()
         };
@@ -5990,10 +5991,9 @@ ${'='.repeat(50)}`);
             return this.opponent.id;
         }
 
-        // Both Mexico = tie (voorgooier wins)
-        if (playerThrow === 1000 && opponentThrow === 1000) {
-            return this.voorgooierId;
-        }
+        // ✅ FIX: Removed "both Mexico = voorgooier wins" check
+        // Both Mexico should be treated as VASTLOPER (handled by line 5859 check)
+        // This allows Mexico vastloper to trigger overgooien
 
         // Higher throw wins
         if (playerThrow > opponentThrow) {
