@@ -4560,7 +4560,8 @@ function debugLog(...args) {
 
     const debugLogEl = document.getElementById('debugLog');
     if (debugLogEl) {
-        const timestamp = new Date().toLocaleTimeString();
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
         const message = args.map(arg =>
             typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
         ).join(' ');
@@ -5966,6 +5967,9 @@ ${'='.repeat(50)}`);
         if (this.isGameOver()) {
             await this.endGame();
         } else {
+            // ✅ FIX: Add 2000ms delay so player can see round summary before next round starts
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             // ✅ FIX: Pass loser as next voorgooier (loser becomes voorgooier in next round)
             await this.startNextRound(loser);
         }
