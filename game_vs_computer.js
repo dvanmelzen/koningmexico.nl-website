@@ -1,4 +1,17 @@
 // ========================================
+// ⚠️ DEPRECATED - DO NOT USE
+// ========================================
+// This file is LEGACY CODE from an older project.
+// It has been replaced by the modern bot mode in multiplayer.js
+// which uses the same AI psychology but with consistent game rules.
+//
+// Use multiplayer.html?mode=bot instead of spel_vs_computer.html
+//
+// This file is kept for reference only and will be removed in the future.
+// Last updated: 2026-01-03 (marked as deprecated)
+// ========================================
+
+// ========================================
 // Koning Mexico vs Computer - Game Logic
 // ========================================
 
