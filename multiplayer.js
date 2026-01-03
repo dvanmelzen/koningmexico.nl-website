@@ -2778,7 +2778,7 @@ async function throwDice(isBlind) {
                 debugLog('[UI] Last throw - auto-keeping after delay (no choice)');
                 setTimeout(async () => {
                     await keepThrow();
-                }, 800);
+                }, 1500);
             } else if (result.canKeep && result.canThrowAgain) {
                 showKeepAndThrowAgainButtons();
             } else if (result.canKeep) {
@@ -5523,7 +5523,7 @@ BotAdapter.executeOpponentTurn = async function(forceBlind = false) {
 
     // For now, use simple bot AI (just throw once and keep)
     // TODO: Integrate advanced AI psychology later
-    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate thinking
+    await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate thinking
 
     const dice1 = Math.ceil(Math.random() * 6);
     const dice2 = Math.ceil(Math.random() * 6);
@@ -5852,8 +5852,8 @@ class GameEngine {
         // ✅ FIX: Add suspense delay before revealing blind throws
         const hasBlindThrows = this.player.isBlind || this.opponent.isBlind;
         if (hasBlindThrows) {
-            debugLog('[GameEngine] Waiting 500ms before revealing blind throws (suspense)');
-            await new Promise(resolve => setTimeout(resolve, 500));
+            debugLog('[GameEngine] Waiting 1500ms before revealing blind throws (suspense)');
+            await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
         // Reveal any blind throws
@@ -5946,8 +5946,8 @@ ${'='.repeat(50)}`);
         if (this.isGameOver()) {
             await this.endGame();
         } else {
-            // ✅ FIX: Add 2000ms delay so player can see round summary before next round starts
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // ✅ FIX: Add 2500ms delay so player can see round summary before next round starts
+            await new Promise(resolve => setTimeout(resolve, 2500));
 
             // ✅ FIX: Pass loser as next voorgooier (loser becomes voorgooier in next round)
             await this.startNextRound(loser);
@@ -6057,8 +6057,8 @@ ${'='.repeat(50)}`);
         this.opponent.isMexico = opponentState.isMexico;
 
         // Add suspense delay
-        debugLog('[GameEngine] Overgooien: Waiting 500ms before revealing');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        debugLog('[GameEngine] Overgooien: Waiting 1500ms before revealing');
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Reveal both throws
         if (this.player.isBlind) {
@@ -6185,7 +6185,7 @@ ${'='.repeat(50)}`);
             await this.endGame();
         } else {
             // Wait before starting next round
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 2500));
             await this.startNextRound(overgooienLoser);
         }
     }
@@ -6943,8 +6943,16 @@ function startBotNextRound() {
     botGame.roundNumber++;
     botGame.isFirstRound = false;
 
-    // Alternate voorgooier
-    botGame.voorgooier = (botGame.voorgooier === 'player') ? 'bot' : 'player';
+    // ✅ FIX: Sync with GameEngine's voorgooier (loser becomes voorgooier)
+    // Don't alternate - respect GameEngine's decision!
+    if (gameEngine) {
+        botGame.voorgooier = (gameEngine.voorgooierId === gameEngine.player.id) ? 'player' : 'bot';
+        debugLog(`[startBotNextRound] Synced voorgooier with GameEngine: ${botGame.voorgooier}`);
+    } else {
+        // Fallback: alternate (should never happen in normal flow)
+        botGame.voorgooier = (botGame.voorgooier === 'player') ? 'bot' : 'player';
+        debugLog(`[startBotNextRound] WARNING: GameEngine not found, alternating voorgooier`);
+    }
     botGame.currentTurn = botGame.voorgooier;
     botGame.voorgooierPattern = [];
     botGame.maxThrows = 3;
