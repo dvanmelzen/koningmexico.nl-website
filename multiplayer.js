@@ -6329,8 +6329,11 @@ function botTurnThrowSequence() {
             return; // DON'T compare yet - wait for player response
         }
 
-        // Bot is achterligger: compare immediately
-        compareBotRound();
+        // Bot is achterligger: compare after brief pause so player can see final throw
+        debugLog(`[Bot] Reached max throws - pausing 300ms before comparison...`);
+        setTimeout(() => {
+            compareBotRound();
+        }, 300);
         return;
     }
 
@@ -6397,8 +6400,11 @@ function botTurnThrowSequence() {
                 return; // DON'T compare yet - wait for player response
             }
 
-            // Bot is achterligger: compare immediately
-            compareBotRound();
+            // Bot is achterligger: compare after brief pause so player can see final throw
+            debugLog(`[Bot] Pausing 300ms before comparison...`);
+            setTimeout(() => {
+                compareBotRound();
+            }, 300);
             return;
         }
     }
@@ -6438,10 +6444,14 @@ function botTurnThrowSequence() {
                     updateThrowHistory();
                 }
 
-                // Continue sequence
+                // ✅ FIX: Add visible pause (200-300ms) so player can see the revealed throw
+                const visiblePause = 200 + Math.random() * 100; // 200-300ms
+                debugLog(`[Bot] Showing revealed throw for ${Math.round(visiblePause)}ms before decision...`);
+
+                // Continue sequence after pause
                 setTimeout(() => {
                     botTurnThrowSequence();
-                }, 1200);
+                }, visiblePause + 1000); // Visible pause + decision time
             }, 1000);
         } else {
             // Last throw stays blind until comparison
@@ -6454,10 +6464,14 @@ function botTurnThrowSequence() {
         showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
         showInlineMessage(`🤖 Bot gooide: ${bot.displayThrow}`, 'info');
 
-        // Continue sequence after delay
+        // ✅ FIX: Add visible pause (200-300ms) so player can see the throw before bot decides
+        const visiblePause = 200 + Math.random() * 100; // 200-300ms
+        debugLog(`[Bot] Showing throw for ${Math.round(visiblePause)}ms before decision...`);
+
+        // Continue sequence after pause
         setTimeout(() => {
             botTurnThrowSequence();
-        }, 1500);
+        }, visiblePause + 1000); // Visible pause + decision time
     }
 }
 
