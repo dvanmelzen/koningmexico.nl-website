@@ -5454,6 +5454,12 @@ BotAdapter.rollDice = function(isBlind) {
 };
 
 BotAdapter.executeOpponentTurn = async function() {
+    // ✅ FIX: Check if bot already has a throw (as voorgooier)
+    if (gameEngine && gameEngine.opponent.currentThrow !== null) {
+        debugLog('[BotAdapter] Bot already has throw (voorgooier), skipping executeOpponentTurn');
+        return;
+    }
+
     // Execute bot's turn
     debugLog('[BotAdapter] Executing bot turn...');
 
