@@ -5843,6 +5843,10 @@ class GameEngine {
         }
 
         if (this.opponent.isBlind) {
+            // ✅ FIX: Update opponent displayThrow so summary shows actual value, not ???
+            this.opponent.displayThrow = this.opponent.isMexico ? 'Mexico!' : String(this.opponent.currentThrow);
+            this.opponent.isBlind = false;
+
             // Update opponent history
             if (opponentThrowHistory.length > 0) {
                 opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
@@ -6516,13 +6520,13 @@ function botTurnThrowSequence() {
                 }
 
                 // ✅ FIX: Add visible pause (200-300ms) so player can see the revealed throw
-                const visiblePause = 2000 + Math.random() * 500; // 2000-2500ms
+                const visiblePause = 1000 + Math.random() * 500; // 1000-1500ms
                 debugLog(`[Bot] Showing revealed throw for ${Math.round(visiblePause)}ms before decision...`);
 
                 // Continue sequence after pause
                 setTimeout(() => {
                     botTurnThrowSequence();
-                }, visiblePause + 2000); // Visible pause + decision time (~4000ms total)
+                }, visiblePause + 1500); // Visible pause + decision time (~4000ms total)
             }, 1000);
         } else {
             // Last throw stays blind until comparison
@@ -6536,13 +6540,13 @@ function botTurnThrowSequence() {
         showInlineMessage(`🤖 Bot gooide: ${bot.displayThrow}`, 'info');
 
         // ✅ FIX: Add visible pause (200-300ms) so player can see the throw before bot decides
-        const visiblePause = 2000 + Math.random() * 500; // 2000-2500ms
+        const visiblePause = 1000 + Math.random() * 500; // 1000-1500ms
         debugLog(`[Bot] Showing throw for ${Math.round(visiblePause)}ms before decision...`);
 
         // Continue sequence after pause
         setTimeout(() => {
             botTurnThrowSequence();
-        }, visiblePause + 2000); // Visible pause + decision time (~4000ms total)
+        }, visiblePause + 1500); // Visible pause + decision time (~4000ms total)
     }
 }
 
