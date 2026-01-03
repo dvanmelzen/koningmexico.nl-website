@@ -2756,7 +2756,8 @@ async function throwDice(isBlind) {
                 showDice('', '', false, true);
                 showInlineMessage('🙈 Je gooide blind', 'info');
             } else {
-                showDice(result.dice1, result.dice2, result.isMexico, true); // ✅ WITH animation!
+                // ✅ FIX: Always use false for isHidden on open throws (even Mexico!)
+                showDice(result.dice1, result.dice2, false, true); // ✅ WITH animation!
                 showInlineMessage(`Je gooide: ${result.displayValue}`, result.isMexico ? 'success' : 'info');
 
                 // ✅ Fire confetti for Mexico!
@@ -5791,8 +5792,8 @@ class GameEngine {
             updateThrowHistory();
         }
 
-        // Show dice
-        showDice(this.player.dice1, this.player.dice2, this.player.isMexico, false);
+        // Show dice (always visible after reveal, even Mexico)
+        showDice(this.player.dice1, this.player.dice2, false, false);
         showInlineMessage(`Je onthult: ${this.player.displayThrow}`, this.player.isMexico ? 'success' : 'info');
 
         return {
@@ -6502,7 +6503,8 @@ function compareBotRound() {
     if (player.isBlind) {
         player.isBlind = false;
         player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
-        showDice(player.dice1, player.dice2, player.isMexico, true); // ✅ WITH animation!
+        // ✅ FIX: Always visible after reveal (isHidden=false), even for Mexico
+        showDice(player.dice1, player.dice2, false, true); // ✅ WITH animation!
 
         // ✅ UPDATE THROW HISTORY with actual dice values
         if (playerThrowHistory.length > 0) {
@@ -6841,7 +6843,8 @@ window.throwDice = function(isBlind) {
                 }
             }, 500);
         } else {
-            showDice(player.dice1, player.dice2, player.isMexico, false);
+            // ✅ FIX: Open throw always visible (isHidden=false), even Mexico
+            showDice(player.dice1, player.dice2, false, false);
             showInlineMessage(`Je gooide: ${player.displayThrow}`, player.isMexico ? 'success' : 'info');
 
             // Show action buttons
@@ -6916,7 +6919,8 @@ window.revealDice = function() {
         player.isBlind = false;
         player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
 
-        showDice(player.dice1, player.dice2, player.isMexico, false);
+        // ✅ FIX: Revealed throw always visible (isHidden=false), even Mexico
+        showDice(player.dice1, player.dice2, false, false);
         showInlineMessage(`Je onthult: ${player.displayThrow}`, player.isMexico ? 'success' : 'info');
 
         // ✅ UPDATE THROW HISTORY (mark as revealed)
