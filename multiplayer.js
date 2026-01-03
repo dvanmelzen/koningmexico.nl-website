@@ -5752,8 +5752,16 @@ class GameEngine {
         // Switch turn to opponent
         this.currentTurnId = this.opponent.id;
 
-        // Execute opponent turn via adapter
-        await this.adapter.executeOpponentTurn();
+        // ✅ FIX: Only execute opponent turn if opponent hasn't played yet
+        // (Prevents overwriting voorgooier's throw when player is achterligger)
+        if (!this.opponent.currentThrow) {
+            // Opponent hasn't thrown yet (player was voorgooier)
+            debugLog('[GameEngine] Opponent hasn\'t thrown yet - executing opponent turn');
+            await this.adapter.executeOpponentTurn();
+        } else {
+            // Opponent already threw (opponent was voorgooier)
+            debugLog('[GameEngine] Opponent already threw - skipping executeOpponentTurn');
+        }
 
         // After opponent turn, compare round
         await this.compareRound();
