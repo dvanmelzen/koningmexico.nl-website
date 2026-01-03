@@ -2953,8 +2953,9 @@ async function revealDice() {
 
             debugLog(`👁️ [GameEngine] Reveal result:`, result);
 
-            // Show revealed dice with animation
-            showDice(result.dice1, result.dice2, false, true);
+            // ✅ FIX: GameEngine.revealDice() already calls showDice() internally
+            // So we don't need to call it again here (prevents undefined dice bug)
+            // The dice values are already shown by the GameEngine
 
             // Update last throw in player history to not blind anymore
             if (playerThrowHistory.length > 0) {
