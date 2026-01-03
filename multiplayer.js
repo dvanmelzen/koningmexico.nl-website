@@ -4573,10 +4573,21 @@ function updateLastRoundSummary(data) {
     const loserName = data.loserId === currentUser.id ? 'Jij' : opponentName;
 
     // Get throw values - replace 1000 with "Mexico!"
-    let voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value || '?';
+    // ✅ FIX: Calculate displayValue from dice if not provided
+    let voorgooierValue = data.voorgooierThrow?.displayName || data.voorgooierThrow?.value;
+    if (!voorgooierValue && data.voorgooierThrow?.dice1 && data.voorgooierThrow?.dice2) {
+        const throwInfo = calculateThrowDisplay(data.voorgooierThrow.dice1, data.voorgooierThrow.dice2);
+        voorgooierValue = throwInfo.displayValue;
+    }
+    voorgooierValue = voorgooierValue || '?';
     if (voorgooierValue === 1000 || voorgooierValue === '1000') voorgooierValue = 'Mexico!';
 
-    let achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value || '?';
+    let achterliggerValue = data.achterliggerThrow?.displayName || data.achterliggerThrow?.value;
+    if (!achterliggerValue && data.achterliggerThrow?.dice1 && data.achterliggerThrow?.dice2) {
+        const throwInfo = calculateThrowDisplay(data.achterliggerThrow.dice1, data.achterliggerThrow.dice2);
+        achterliggerValue = throwInfo.displayValue;
+    }
+    achterliggerValue = achterliggerValue || '?';
     if (achterliggerValue === 1000 || achterliggerValue === '1000') achterliggerValue = 'Mexico!';
 
     // Build compact text summary
@@ -6190,12 +6201,24 @@ function botTurnThrowSequence() {
             setTimeout(() => {
                 bot.isBlind = false;
                 bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
-                showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+                showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, true); // ✅ WITH animation!
                 showInlineMessage(`🤖 Bot onthult: ${bot.displayThrow}`, 'info');
 
-                // ✅ UPDATE THROW HISTORY (mark as revealed)
+                // ✅ UPDATE THROW HISTORY with actual dice values
                 if (opponentThrowHistory.length > 0) {
-                    opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+                    const lastThrow = opponentThrowHistory[opponentThrowHistory.length - 1];
+                    lastThrow.isBlind = false;
+
+                    // Update dice values and displayValue
+                    if (bot.dice1 && bot.dice2) {
+                        const throwInfo = calculateThrowDisplay(bot.dice1, bot.dice2);
+                        lastThrow.displayValue = throwInfo.displayValue;
+                        lastThrow.isMexico = throwInfo.isMexico;
+                        lastThrow.dice1 = bot.dice1;
+                        lastThrow.dice2 = bot.dice2;
+                        debugLog(`✅ Updated bot mid-game throw history: ${bot.dice1}-${bot.dice2} = ${throwInfo.displayValue}`);
+                    }
+
                     updateThrowHistory();
                 }
 
@@ -6233,11 +6256,23 @@ function compareBotRound() {
     if (player.isBlind) {
         player.isBlind = false;
         player.displayThrow = player.isMexico ? '🎉 Mexico!' : player.currentThrow.toString();
-        showDice(player.dice1, player.dice2, player.isMexico, false);
+        showDice(player.dice1, player.dice2, player.isMexico, true); // ✅ WITH animation!
 
-        // ✅ UPDATE THROW HISTORY
+        // ✅ UPDATE THROW HISTORY with actual dice values
         if (playerThrowHistory.length > 0) {
-            playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+            const lastThrow = playerThrowHistory[playerThrowHistory.length - 1];
+            lastThrow.isBlind = false;
+
+            // Update dice values and displayValue
+            if (player.dice1 && player.dice2) {
+                const throwInfo = calculateThrowDisplay(player.dice1, player.dice2);
+                lastThrow.displayValue = throwInfo.displayValue;
+                lastThrow.isMexico = throwInfo.isMexico;
+                lastThrow.dice1 = player.dice1;
+                lastThrow.dice2 = player.dice2;
+                debugLog(`✅ Updated player throw history: ${player.dice1}-${player.dice2} = ${throwInfo.displayValue}`);
+            }
+
             updateThrowHistory();
         }
     }
@@ -6245,11 +6280,23 @@ function compareBotRound() {
     if (bot.isBlind) {
         bot.isBlind = false;
         bot.displayThrow = bot.isMexico ? '🎉 Mexico!' : bot.currentThrow.toString();
-        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, true); // ✅ WITH animation!
 
-        // ✅ UPDATE THROW HISTORY
+        // ✅ UPDATE THROW HISTORY with actual dice values
         if (opponentThrowHistory.length > 0) {
-            opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
+            const lastThrow = opponentThrowHistory[opponentThrowHistory.length - 1];
+            lastThrow.isBlind = false;
+
+            // Update dice values and displayValue
+            if (bot.dice1 && bot.dice2) {
+                const throwInfo = calculateThrowDisplay(bot.dice1, bot.dice2);
+                lastThrow.displayValue = throwInfo.displayValue;
+                lastThrow.isMexico = throwInfo.isMexico;
+                lastThrow.dice1 = bot.dice1;
+                lastThrow.dice2 = bot.dice2;
+                debugLog(`✅ Updated bot throw history: ${bot.dice1}-${bot.dice2} = ${throwInfo.displayValue}`);
+            }
+
             updateThrowHistory();
         }
     }
