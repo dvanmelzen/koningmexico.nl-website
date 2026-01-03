@@ -5817,12 +5817,17 @@ class GameEngine {
         const loser = winner === this.player.id ? this.opponent.id : this.player.id;
 
         // Update lives
+        // ✅ FIX: Mexico penalty is 2 lives, not 1
+        const winnerPlayer = (winner === this.player.id) ? this.player : this.opponent;
+        const isMexicoWin = (winnerPlayer.currentThrow === 1000);
+        const penalty = isMexicoWin ? 2 : 1;
+
         if (winner === this.player.id) {
-            this.opponent.lives--;
-            debugLog(`[GameEngine] Player wins! Opponent lives: ${this.opponent.lives}`);
+            this.opponent.lives -= penalty;
+            debugLog(`[GameEngine] Player wins${isMexicoWin ? ' with MEXICO!' : ''}! Opponent loses ${penalty} life/lives, now at: ${this.opponent.lives}`);
         } else {
-            this.player.lives--;
-            debugLog(`[GameEngine] Opponent wins! Player lives: ${this.player.lives}`);
+            this.player.lives -= penalty;
+            debugLog(`[GameEngine] Opponent wins${isMexicoWin ? ' with MEXICO!' : ''}! Player loses ${penalty} life/lives, now at: ${this.player.lives}`);
         }
 
         // Update UI
@@ -6240,7 +6245,15 @@ function botTurnThrowSequence() {
 
             showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
             showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
-            showThrowButtons(false, false); // Enable open/blind throw for player
+
+            // ✅ FIX: Pattern enforcement - player must follow bot's pattern
+            if (botGame.voorgooier === 'bot' && botGame.voorgooierPattern && botGame.voorgooierPattern.length > 0) {
+                const mustBeBlind = botGame.voorgooierPattern[0]; // Player's first throw must follow bot's first throw
+                debugLog(`[Bot] Bot was voorgooier - player must follow pattern: ${mustBeBlind ? 'BLIND' : 'OPEN'}`);
+                showThrowButtons(mustBeBlind, true); // true = followingPattern
+            } else {
+                showThrowButtons(false, false); // Enable open/blind throw for player
+            }
             return; // DON'T compare yet - wait for player response
         }
 
@@ -6276,7 +6289,15 @@ function botTurnThrowSequence() {
                 // 🎯 Bot is voorgooier: show throw and enable PLAYER buttons
                 showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
                 showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
-                showThrowButtons(false, false); // Enable open/blind throw for player
+
+                // ✅ FIX: Pattern enforcement - player must follow bot's pattern
+                if (botGame.voorgooier === 'bot' && botGame.voorgooierPattern && botGame.voorgooierPattern.length > 0) {
+                    const mustBeBlind = botGame.voorgooierPattern[0]; // Player's first throw must follow bot's first throw
+                    debugLog(`[Bot] Bot was voorgooier - player must follow pattern: ${mustBeBlind ? 'BLIND' : 'OPEN'}`);
+                    showThrowButtons(mustBeBlind, true); // true = followingPattern
+                } else {
+                    showThrowButtons(false, false); // Enable open/blind throw for player
+                }
                 return; // DON'T compare yet - wait for player response
             }
 
