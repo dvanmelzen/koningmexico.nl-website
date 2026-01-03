@@ -2772,26 +2772,24 @@ async function throwDice(isBlind) {
             hideWaitingMessage();
 
             // Show appropriate buttons
-            if (result.canKeep && result.canThrowAgain) {
+            // ✅ FIX: Don't show buttons if it's the last throw (no choice!)
+            if (result.isLastThrow) {
+                // Last throw (blind or open) - no buttons, auto-continue after delay
+                debugLog('[UI] Last throw - auto-keeping after delay (no choice)');
+                setTimeout(async () => {
+                    await keepThrow();
+                }, 800);
+            } else if (result.canKeep && result.canThrowAgain) {
                 showKeepAndThrowAgainButtons();
             } else if (result.canKeep) {
                 showKeepButton();
             }
 
-            // ✅ FIX: Only show reveal button if NOT last throw
+            // ✅ FIX: Only show reveal button if NOT last throw (and is blind)
             // Last throw (3rd blind) should auto-continue to bot turn, then auto-reveal
             if (result.isBlind && !result.isLastThrow) {
                 showRevealButton();
             }
-
-            // ✅ FIX: Auto-keep after last blind throw (not just first round)
-            if (result.isBlind && result.isLastThrow) {
-                debugLog('[UI] Auto-keeping last blind throw after delay');
-                setTimeout(async () => {
-                    await keepThrow();
-                }, 800);
-            }
-
             return;
         } catch (err) {
             debugLog(`❌ [GameEngine] Throw error:`, err);
