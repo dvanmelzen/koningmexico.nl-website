@@ -6503,13 +6503,13 @@ function botTurnThrowSequence() {
                 }
 
                 // ✅ FIX: Add visible pause (200-300ms) so player can see the revealed throw
-                const visiblePause = 200 + Math.random() * 100; // 200-300ms
+                const visiblePause = 2000 + Math.random() * 500; // 2000-2500ms
                 debugLog(`[Bot] Showing revealed throw for ${Math.round(visiblePause)}ms before decision...`);
 
                 // Continue sequence after pause
                 setTimeout(() => {
                     botTurnThrowSequence();
-                }, visiblePause + 1000); // Visible pause + decision time
+                }, visiblePause + 2000); // Visible pause + decision time (~4000ms total)
             }, 1000);
         } else {
             // Last throw stays blind until comparison
@@ -6523,13 +6523,13 @@ function botTurnThrowSequence() {
         showInlineMessage(`🤖 Bot gooide: ${bot.displayThrow}`, 'info');
 
         // ✅ FIX: Add visible pause (200-300ms) so player can see the throw before bot decides
-        const visiblePause = 200 + Math.random() * 100; // 200-300ms
+        const visiblePause = 2000 + Math.random() * 500; // 2000-2500ms
         debugLog(`[Bot] Showing throw for ${Math.round(visiblePause)}ms before decision...`);
 
         // Continue sequence after pause
         setTimeout(() => {
             botTurnThrowSequence();
-        }, visiblePause + 1000); // Visible pause + decision time
+        }, visiblePause + 2000); // Visible pause + decision time (~4000ms total)
     }
 }
 
