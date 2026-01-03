@@ -6315,8 +6315,15 @@ function botTurnThrowSequence() {
             gameEngine.currentTurnId = gameEngine.player.id;
             debugLog(`[Bot] Synced maxThrows=${gameEngine.maxThrows} and switched turn to player (${gameEngine.player.username})`);
 
-            showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
-            showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
+            // ✅ FIX: If last throw was blind, keep dice hidden until comparison
+            if (bot.isBlind) {
+                showOpponentDice('', '', true, true); // Keep hidden (???)
+                showInlineMessage(`🤖 Bot houdt: ??? - Jouw beurt!`, 'info');
+                debugLog(`[Bot] Last throw was blind - keeping dice hidden until comparison`);
+            } else {
+                showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+                showInlineMessage(`🤖 Bot houdt: ${bot.displayThrow} - Jouw beurt!`, 'info');
+            }
 
             // ✅ FIX: Pattern enforcement - player must follow bot's pattern
             if (botGame.voorgooier === 'bot' && botGame.voorgooierPattern && botGame.voorgooierPattern.length > 0) {
