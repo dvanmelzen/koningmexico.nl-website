@@ -6471,6 +6471,19 @@ function botTurnThrowSequence() {
     debugLog(`[botTurnThrowSequence] About to throw: mustBlind=${mustBlind}`);
     botThrowDice(mustBlind);
 
+    // 🔥 CRITICAL FIX: Sync bot state to gameEngine.opponent after each throw
+    if (gameEngine) {
+        const bot = botGame.botState;
+        gameEngine.opponent.dice1 = bot.dice1;
+        gameEngine.opponent.dice2 = bot.dice2;
+        gameEngine.opponent.currentThrow = bot.currentThrow;
+        gameEngine.opponent.displayThrow = bot.displayThrow;
+        gameEngine.opponent.throwCount = bot.throwCount;
+        gameEngine.opponent.isBlind = bot.isBlind;
+        gameEngine.opponent.isMexico = bot.isMexico;
+        debugLog(`[Bot] Synced bot state to gameEngine.opponent: ${bot.currentThrow} (blind=${bot.isBlind})`);
+    }
+
     // Show dice (or hide if blind)
     if (bot.isBlind) {
         showOpponentDice('', '', true, true);  // ✅ isHidden=true for animation
