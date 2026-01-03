@@ -2778,8 +2778,18 @@ async function throwDice(isBlind) {
                 showKeepButton();
             }
 
-            if (result.isBlind) {
+            // ✅ FIX: Only show reveal button if NOT last throw
+            // Last throw (3rd blind) should auto-continue to bot turn, then auto-reveal
+            if (result.isBlind && !result.isLastThrow) {
                 showRevealButton();
+            }
+
+            // ✅ FIX: Auto-keep after last blind throw (not just first round)
+            if (result.isBlind && result.isLastThrow) {
+                debugLog('[UI] Auto-keeping last blind throw after delay');
+                setTimeout(async () => {
+                    await keepThrow();
+                }, 800);
             }
 
             return;
@@ -5815,6 +5825,13 @@ class GameEngine {
         this.opponent.displayThrow = opponentState.displayThrow;
         this.opponent.isBlind = opponentState.isBlind;
         this.opponent.isMexico = opponentState.isMexico;
+
+        // ✅ FIX: Add suspense delay before revealing blind throws
+        const hasBlindThrows = this.player.isBlind || this.opponent.isBlind;
+        if (hasBlindThrows) {
+            debugLog('[GameEngine] Waiting 500ms before revealing blind throws (suspense)');
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         // Reveal any blind throws
         if (this.player.isBlind) {
