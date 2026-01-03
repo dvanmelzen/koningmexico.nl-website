@@ -5454,13 +5454,7 @@ BotAdapter.rollDice = function(isBlind) {
 };
 
 BotAdapter.executeOpponentTurn = async function() {
-    // ✅ FIX: Check if bot already has a throw (as voorgooier)
-    if (gameEngine && gameEngine.opponent.currentThrow !== null) {
-        debugLog('[BotAdapter] Bot already has throw (voorgooier), skipping executeOpponentTurn');
-        return;
-    }
-
-    // Execute bot's turn
+    // Execute bot's turn (for achterligger or vastloper re-throw)
     debugLog('[BotAdapter] Executing bot turn...');
 
     // For now, use simple bot AI (just throw once and keep)
@@ -5770,6 +5764,52 @@ class GameEngine {
                 opponentThrowHistory[opponentThrowHistory.length - 1].isBlind = false;
                 updateThrowHistory();
             }
+        }
+
+        // ✅ CHECK FOR VASTLOPER (both same throw)
+        if (this.player.currentThrow === this.opponent.currentThrow) {
+            debugLog(`[GameEngine] VASTLOPER! Both threw ${this.player.currentThrow} - re-throwing round`);
+
+            // Show vastloper message
+            showInlineMessage(`⚔️ Vastloper! Beide ${this.player.displayThrow} - gooi opnieuw!`, 'warning');
+
+            // Reset both players' throws
+            this.player.currentThrow = null;
+            this.player.displayThrow = null;
+            this.player.throwCount = 0;
+            this.player.isBlind = false;
+
+            this.opponent.currentThrow = null;
+            this.opponent.displayThrow = null;
+            this.opponent.throwCount = 0;
+            this.opponent.isBlind = false;
+
+            // Clear throw history for this round
+            playerThrowHistory = [];
+            opponentThrowHistory = [];
+            updateThrowHistory();
+
+            // Hide dice
+            showDice('', '', false, false);
+
+            // Re-start the round
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Show message for 2 seconds
+
+            // Determine who starts (voorgooier stays the same for re-throw)
+            if (this.mode === 'bot' && this.voorgooierId === this.opponent.id) {
+                // Bot is voorgooier, auto-play bot turn
+                debugLog('[GameEngine] Vastloper re-throw: Bot is voorgooier');
+                this.currentTurnId = this.opponent.id;
+                await this.adapter.executeOpponentTurn();
+                this.currentTurnId = this.player.id;
+                showThrowButtons(this.maxThrows, false);
+            } else {
+                // Player is voorgooier
+                debugLog('[GameEngine] Vastloper re-throw: Player is voorgooier');
+                this.currentTurnId = this.player.id;
+                showThrowButtons(this.maxThrows, false);
+            }
+            return; // Stop here, don't determine winner
         }
 
         // Determine winner
