@@ -5860,7 +5860,8 @@ class GameEngine {
         if (this.isGameOver()) {
             await this.endGame();
         } else {
-            await this.startNextRound();
+            // ✅ FIX: Pass loser as next voorgooier (loser becomes voorgooier in next round)
+            await this.startNextRound(loser);
         }
     }
 
@@ -5899,14 +5900,21 @@ class GameEngine {
     /**
      * Start next round
      */
-    async startNextRound() {
+    async startNextRound(newVoorgooierId) {
         this.roundNumber++;
         this.isFirstRound = false;
         this.isSimultaneous = false; // After first round: turn-based
         this.maxThrows = 3; // After first round: 3 throws allowed
 
-        // Alternate voorgooier
-        this.voorgooierId = (this.voorgooierId === this.player.id) ? this.opponent.id : this.player.id;
+        // ✅ FIX: Assign voorgooier to loser of previous round (Mexico rule)
+        if (newVoorgooierId) {
+            this.voorgooierId = newVoorgooierId;
+            debugLog(`[GameEngine] Loser becomes voorgooier: ${newVoorgooierId === this.player.id ? 'Player' : 'Bot'}`);
+        } else {
+            // Fallback to alternating (shouldn't happen in normal flow)
+            this.voorgooierId = (this.voorgooierId === this.player.id) ? this.opponent.id : this.player.id;
+            debugLog(`[GameEngine] WARNING: No voorgooier specified, alternating`);
+        }
         this.currentTurnId = this.voorgooierId;
 
         // Reset throw states
