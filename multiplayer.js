@@ -5932,6 +5932,16 @@ class GameEngine {
         this.player.isMexico = false;
         this.player.throwHistory = [];
 
+        // ✅ FIX: Also reset botGame player state (for consistency)
+        if (this.mode === 'bot') {
+            botGame.playerState.throwCount = 0;
+            botGame.playerState.currentThrow = null;
+            botGame.playerState.displayThrow = null;
+            botGame.playerState.isBlind = false;
+            botGame.playerState.isMexico = false;
+            botGame.playerState.throwHistory = [];
+        }
+
         // Clear UI history
         playerThrowHistory = [];
         opponentThrowHistory = [];
@@ -5959,7 +5969,15 @@ class GameEngine {
             botGame.voorgooier = (this.voorgooierId === this.opponent.id) ? 'bot' : 'player';
             botGame.roundNumber = this.roundNumber;
             botGame.isFirstRound = this.isFirstRound;
-            debugLog(`[GameEngine] Synced to botGame: maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}, isFirstRound=${botGame.isFirstRound}`);
+
+            // ✅ FIX: Reset bot state for new round
+            botGame.botState.throwCount = 0;
+            botGame.botState.currentThrow = null;
+            botGame.botState.displayThrow = null;
+            botGame.botState.isBlind = false;
+            botGame.botState.isMexico = false;
+            botGame.voorgooierPattern = [];
+            debugLog(`[GameEngine] Synced to botGame: maxThrows=${botGame.maxThrows}, voorgooier=${botGame.voorgooier}, isFirstRound=${botGame.isFirstRound}, bot reset`);
 
             // Execute bot turn after short delay (don't call adapter to prevent duplicate)
             setTimeout(() => {
