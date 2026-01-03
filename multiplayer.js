@@ -3168,11 +3168,23 @@ function handleThrowRevealed(data) {
     debugLog('👁️  Blind throw auto-revealed:', data);
 
     // Show the dice values (no longer hidden)
-    showDice(data.dice1, data.dice2, false, false); // No animation - just reveal
+    showDice(data.dice1, data.dice2, false, true); // ✅ WITH animation for reveal moment!
 
     // Update last throw in player history to not blind anymore
     if (playerThrowHistory.length > 0) {
-        playerThrowHistory[playerThrowHistory.length - 1].isBlind = false;
+        const lastThrow = playerThrowHistory[playerThrowHistory.length - 1];
+        lastThrow.isBlind = false;
+
+        // ✅ FIX: Update dice values and displayValue for throw history
+        if (data.dice1 && data.dice2) {
+            const throwInfo = calculateThrowDisplay(data.dice1, data.dice2);
+            lastThrow.displayValue = throwInfo.displayValue;
+            lastThrow.isMexico = throwInfo.isMexico;
+            lastThrow.dice1 = data.dice1;
+            lastThrow.dice2 = data.dice2;
+            debugLog(`✅ Updated player throw history with dice values: ${data.dice1}-${data.dice2}`);
+        }
+
         updateThrowHistory();
     }
 
@@ -3405,6 +3417,12 @@ function handleYourTurn(data) {
 
     isMyTurn = true;
 
+    // ✅ FIX Bug #4: Sync GameEngine currentTurnId when turn changes
+    if (gameEngine) {
+        gameEngine.currentTurnId = currentUser.id;
+        debugLog('[GameEngine] Turn synced: currentTurnId =', gameEngine.currentTurnId);
+    }
+
     showInlineMessage(data.message || 'Jouw beurt!', 'info');
 
     // Store pattern info in currentGame for later use
@@ -3436,6 +3454,12 @@ function handleWaitingForOpponent(data) {
 
     isMyTurn = false;
 
+    // ✅ FIX Bug #4: Sync GameEngine currentTurnId when turn changes to opponent
+    if (gameEngine && gameEngine.opponent) {
+        gameEngine.currentTurnId = gameEngine.opponent.id;
+        debugLog('[GameEngine] Turn synced: currentTurnId =', gameEngine.currentTurnId, '(opponent)');
+    }
+
     showInlineMessage(data.message || 'Wachten op tegenstander...', 'info');
     showWaitingMessage('Wachten op tegenstander...');
 }
@@ -3446,6 +3470,17 @@ function handleTurnChanged(data) {
 
     // Update turn state
     isMyTurn = data.isYourTurn;
+
+    // ✅ FIX Bug #4: Sync GameEngine currentTurnId when turn changes
+    if (gameEngine) {
+        if (data.isYourTurn) {
+            gameEngine.currentTurnId = currentUser.id;
+            debugLog('[GameEngine] Turn synced: currentTurnId =', gameEngine.currentTurnId, '(your turn)');
+        } else if (gameEngine.opponent) {
+            gameEngine.currentTurnId = gameEngine.opponent.id;
+            debugLog('[GameEngine] Turn synced: currentTurnId =', gameEngine.currentTurnId, '(opponent turn)');
+        }
+    }
 
     // Update UI based on whose turn it is
     if (data.isYourTurn) {
@@ -3499,8 +3534,8 @@ function handleFirstRoundReveal(data) {
     }
 
     // Show both throws
-    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, false); // No animation - just reveal
-    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, false); // No animation - just reveal
+    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, true); // ✅ WITH animation for reveal moment!
+    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, true); // ✅ WITH animation for reveal moment!
 
     // Update both throws in history to not blind anymore
     if (playerThrowHistory.length > 0) {
@@ -4380,10 +4415,10 @@ function handleVastgooierReveal(data) {
     debugLog('👁️  Vastgooier reveal:', data);
 
     // Show own throw
-    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, false); // No animation - just reveal
+    showDice(data.yourThrow.dice1, data.yourThrow.dice2, false, true); // ✅ WITH animation for reveal moment!
 
     // Show opponent throw
-    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, false); // No animation - just reveal
+    showOpponentDice(data.opponentThrow.dice1, data.opponentThrow.dice2, false, true); // ✅ WITH animation for reveal moment!
 
     // Update both throws in history to not blind anymore
     if (playerThrowHistory.length > 0) {
