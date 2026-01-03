@@ -5785,9 +5785,24 @@ class GameEngine {
 
         // Update last round summary
         const isVoorgooier = (this.voorgooierId === this.player.id);
+        const voorgooierPlayer = isVoorgooier ? this.player : this.opponent;
+        const achterliggerPlayer = isVoorgooier ? this.opponent : this.player;
+
         updateLastRoundSummary({
             voorgooierId: this.voorgooierId,
             achterliggerId: isVoorgooier ? this.opponent.id : this.player.id,
+            voorgooierThrow: {
+                value: voorgooierPlayer.currentThrow,
+                displayName: voorgooierPlayer.displayThrow,
+                dice1: voorgooierPlayer.dice1,
+                dice2: voorgooierPlayer.dice2
+            },
+            achterliggerThrow: {
+                value: achterliggerPlayer.currentThrow,
+                displayName: achterliggerPlayer.displayThrow,
+                dice1: achterliggerPlayer.dice1,
+                dice2: achterliggerPlayer.dice2
+            },
             voorgooierResult: (winner === this.voorgooierId) ? 'won' : 'lost',
             achterliggerResult: (winner !== this.voorgooierId) ? 'won' : 'lost',
             winnerId: winner,
