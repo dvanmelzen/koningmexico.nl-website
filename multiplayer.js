@@ -2756,9 +2756,17 @@ async function throwDice(isBlind) {
                 showDice('', '', false, true);
                 showInlineMessage('🙈 Je gooide blind', 'info');
             } else {
-                showDice(result.dice1, result.dice2, result.isMexico, false);
+                showDice(result.dice1, result.dice2, result.isMexico, true); // ✅ WITH animation!
                 showInlineMessage(`Je gooide: ${result.displayValue}`, result.isMexico ? 'success' : 'info');
+
+                // ✅ Fire confetti for Mexico!
+                if (result.isMexico) {
+                    fireMexicoConfetti('mexico');
+                }
             }
+
+            // ✅ FIX: Update throw history UI (was missing!)
+            updateThrowHistory();
 
             hideWaitingMessage();
 
@@ -6442,7 +6450,8 @@ function startBotNextRound() {
     currentGame.roundNumber = botGame.roundNumber;
     currentGame.voorgooier = botGame.voorgooier === 'player' ? currentUser.id : botGame.botPlayer.id;
 
-    showToast(`Ronde ${botGame.roundNumber} begint!`, 'info', 2000);
+    // ✅ REMOVED: Duplicate toast (GameEngine already shows toast in startRound())
+    // showToast(`Ronde ${botGame.roundNumber} begint!`, 'info', 2000);
 
     if (botGame.voorgooier === 'player') {
         showInlineMessage(`🎲 Ronde ${botGame.roundNumber} - Jij bent voorgooier!`, 'info');
