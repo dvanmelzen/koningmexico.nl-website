@@ -4264,8 +4264,61 @@ function showKeepButton() {
 function showKeepAndThrowAgainButtons() {
     hideAllActionButtons();
     document.getElementById('keepBtn')?.classList.remove('hidden');
-    document.getElementById('throwOpenBtn')?.classList.remove('hidden');
-    document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+
+    // ✅ FIX: 3rd throw MUST be blind (Mexico rule)
+    // Exception: achterligger MAY throw open IF voorgooier threw 3x open
+    let mustBlind = false;
+    let throwCount = 0;
+    let isVoorgooier = true;
+    let voorgooierPattern = [];
+
+    // Get state from GameEngine (bot mode) or currentGame (multiplayer mode)
+    if (gameEngine) {
+        // Bot mode - use GameEngine state
+        const state = gameEngine.getState();
+        throwCount = state.player.throwCount;
+        isVoorgooier = (state.voorgooier === 'player');
+        voorgooierPattern = state.voorgooierPattern || [];
+        debugLog(`[showKeepAndThrowAgainButtons] Bot mode: throwCount=${throwCount}, voorgooier=${state.voorgooier}`);
+    } else if (currentGame) {
+        // Multiplayer mode - use currentGame state
+        throwCount = currentGame.throwCount || 0;
+        isVoorgooier = !currentGame.mustFollowPattern;
+        voorgooierPattern = currentGame.voorgooierPattern || [];
+        debugLog(`[showKeepAndThrowAgainButtons] Multiplayer mode: throwCount=${throwCount}, isVoorgooier=${isVoorgooier}`);
+    }
+
+    // Rule: 3rd throw MUST be blind (Mexico rule)
+    if (throwCount === 2) { // About to throw 3rd time (throwCount is 0-based, so 2 = 3rd throw)
+        if (isVoorgooier) {
+            // Player is voorgooier - 3rd throw MUST be blind
+            mustBlind = true;
+            debugLog(`[showKeepAndThrowAgainButtons] 3rd throw as voorgooier - MUST be blind (Mexico rule)`);
+        } else {
+            // Player is achterligger - check if voorgooier threw 3x open
+            if (voorgooierPattern.length >= 3 && voorgooierPattern[2] === false) {
+                // Voorgooier threw 3x open - player MAY throw open
+                mustBlind = false;
+                debugLog(`[showKeepAndThrowAgainButtons] 3rd throw as achterligger - voorgooier threw 3x open, MAY throw open`);
+            } else {
+                // Voorgooier didn't throw 3x OR threw 3rd blind - player MUST throw blind
+                mustBlind = true;
+                debugLog(`[showKeepAndThrowAgainButtons] 3rd throw as achterligger - MUST be blind (pattern enforcement or voorgooier threw blind)`);
+            }
+        }
+    }
+
+    // Show appropriate buttons
+    if (mustBlind) {
+        // Only show blind button
+        document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        debugLog(`[showKeepAndThrowAgainButtons] Showing: Keep + Blind only`);
+    } else {
+        // Show both throw buttons
+        document.getElementById('throwOpenBtn')?.classList.remove('hidden');
+        document.getElementById('throwBlindBtn')?.classList.remove('hidden');
+        debugLog(`[showKeepAndThrowAgainButtons] Showing: Keep + Open + Blind`);
+    }
 }
 
 // showResultChoiceButtons VERWIJDERD - automatische vergelijking!
@@ -6281,12 +6334,36 @@ function botTurnThrowSequence() {
         return;
     }
 
-    // Decide if should throw blind (pattern enforcement)
+    // Decide if should throw blind (pattern enforcement + 3rd throw rule)
     let mustBlind = false;
+
+    // Rule 1: Pattern enforcement (achterligger must follow voorgooier pattern)
     if (botGame.voorgooier === 'player' && bot.throwCount < botGame.voorgooierPattern.length) {
         mustBlind = botGame.voorgooierPattern[bot.throwCount];
         debugLog(`[Bot] Must follow pattern: ${mustBlind ? 'BLIND' : 'OPEN'}`);
     }
+
+    // Rule 2: 3rd throw MUST be blind (Mexico rule)
+    // Exception: achterligger MAY throw open IF voorgooier threw 3x open
+    if (bot.throwCount === 2) { // About to throw 3rd time (throwCount is 0-based, so 2 = 3rd throw)
+        if (botGame.voorgooier === 'bot') {
+            // Bot is voorgooier - 3rd throw MUST be blind
+            mustBlind = true;
+            debugLog(`[Bot] 3rd throw as voorgooier - MUST be blind (Mexico rule)`);
+        } else {
+            // Bot is achterligger - check if voorgooier threw 3x open
+            if (botGame.voorgooierPattern.length >= 3 && botGame.voorgooierPattern[2] === false) {
+                // Voorgooier threw 3x open - bot MAY throw open
+                mustBlind = false;
+                debugLog(`[Bot] 3rd throw as achterligger - voorgooier threw 3x open, MAY throw open`);
+            } else {
+                // Voorgooier didn't throw 3x OR threw 3rd blind - bot MUST throw blind
+                mustBlind = true;
+                debugLog(`[Bot] 3rd throw as achterligger - MUST be blind (pattern enforcement or voorgooier threw blind)`);
+            }
+        }
+    }
+
     debugLog(`[botTurnThrowSequence] mustBlind=${mustBlind} (voorgooier=${botGame.voorgooier}, throwCount=${bot.throwCount})`);
 
     // Check if should throw again (only after first throw)
