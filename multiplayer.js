@@ -6486,7 +6486,7 @@ function botTurnThrowSequence() {
 
     // Show dice (or hide if blind)
     if (bot.isBlind) {
-        showOpponentDice('', '', true, true);  // ✅ isHidden=true for animation
+        showOpponentDice('', '', true, false);  // ✅ FIX: No animation for initial blind state (???)
         showInlineMessage(`🤖 Bot gooide blind...`, 'info');
 
         // If not last throw, reveal after delay
@@ -6532,7 +6532,7 @@ function botTurnThrowSequence() {
         }
     } else {
         // Open throw
-        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, false);
+        showOpponentDice(bot.dice1, bot.dice2, bot.isMexico, true); // ✅ FIX: animate=true for open throws
         showInlineMessage(`🤖 Bot gooide: ${bot.displayThrow}`, 'info');
 
         // ✅ FIX: Add visible pause (200-300ms) so player can see the throw before bot decides
